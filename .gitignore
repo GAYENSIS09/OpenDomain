@@ -1,0 +1,41 @@
+# Rust
+/target
+**/*.rs.bk
+*.pdb
+
+# Node / Nextra docs site
+node_modules/
+docs-site/.next/
+docs-site/out/
+docs-site/.turbo
+docs-site/.docusaurus
+*.tsbuildinfo
+
+# OpenDomain runtime
+opendomain/.od-cache/
+.opendomain-cache/
+*.od.lock
+
+# LaTeX build artifacts. The PDF is committed; everything pdflatex produces
+# alongside it is not.
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.bbl
+*.blg
+*.lof
+*.lot
+*.nav
+*.vrb
+latexmkrc
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
