@@ -46,6 +46,8 @@ interview.
 Domain behaviour. `REQ-004` does not change because of CNST-001; only how it is
 built does.
 
+-->
+
 ## Rules for this registry
 
 - Every constraint needs an origin. An unsourced constraint is a preference

@@ -52,6 +52,8 @@ does not pay for itself and `CPT-004` should win.
 
 `HYP-005`
 
+-->
+
 ## Rules for this registry
 
 - A concept with no `mechanism` and no `key-difference` is a slogan. Gate 4

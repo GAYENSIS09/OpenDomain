@@ -45,6 +45,8 @@ consume the rest of the operator's time.
 - `HYP-005` as the reason the 2% re-key target is acceptable
 - `EXP-002` as a secondary observation, not a success criterion
 
+-->
+
 ## Rules for this registry
 
 - A baseline without a measured starting point is a target wearing a baseline's

@@ -148,7 +148,8 @@ struct GateArgs {
     /// Run every gate up to and including this one.
     #[arg(long, short)]
     through: Option<u8>,
-    /// Advisory findings do not fail the command; blocking ones always do.
+    /// Accepted for explicitness; blocking findings always fail the command and
+    /// advisory ones never do, so this changes nothing today.
     #[arg(long)]
     strict: bool,
 }
@@ -382,6 +383,30 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         for t in templates {
             println!("  {}", t.path);
         }
+        // The agent files go to the project root and follow different rules from
+        // the registries, so the preview has to follow them too. Listing all
+        // eleven as "would create" would be wrong twice over: a fresh run does
+        // not create them all, and an existing `AGENTS.md` is never replaced
+        // even under `--force`.
+        let root = start.clone();
+        let mut would_write = 0usize;
+        let mut would_keep = 0usize;
+        for t in scaffold::agent_contract::all() {
+            let exists = root.join(&t.path).exists();
+            let keep = exists && t.path == "AGENTS.md";
+            if keep {
+                would_keep += 1;
+            } else if !exists {
+                would_write += 1;
+            }
+            let note = match (keep, exists) {
+                (true, _) => "  (left alone; --force does not replace this)",
+                (_, true) => "  (unchanged; --force would refresh it)",
+                _ => "",
+            };
+            println!("  {}{note}", t.path);
+        }
+        println!("\nagent instructions: {would_write} to write, {would_keep} left alone");
         return Ok(());
     }
 
@@ -404,10 +429,11 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
             style_ok(
                 style,
                 &format!(
-                    "initialised {} — {} created, {} already present",
+                    "initialised {} — {} created, {} already present, {} agent file(s)",
                     od_dir.display(),
                     report.created.len(),
-                    report.skipped.len()
+                    report.skipped.len(),
+                    report.agent_files.len()
                 )
             )
         );
@@ -451,9 +477,28 @@ fn cmd_reference(cli: &Cli, style: Style) -> Result<()> {
                 })
             })
             .collect();
+        let rules: Vec<serde_json::Value> = gates::RULES
+            .iter()
+            .map(|r| {
+                serde_json::json!({
+                    "slug": r.full_slug(),
+                    "gate": r.gate,
+                    "gate_name": r.gate().name,
+                    "severity": if r.severity == gates::Severity::Blocking {
+                        "blocking"
+                    } else {
+                        "advisory"
+                    },
+                })
+            })
+            .collect();
         println!(
             "{}",
-            serde_json::json!({ "gates": gates, "artifact_kinds": kinds })
+            serde_json::json!({
+                "gates": gates,
+                "artifact_kinds": kinds,
+                "rules": rules,
+            })
         );
         return Ok(());
     }
@@ -464,6 +509,35 @@ fn cmd_reference(cli: &Cli, style: Style) -> Result<()> {
     println!("\nartifact kinds\n");
     for k in IdKind::ALL {
         println!("  {:<6} {:<24} {}", k.prefix(), k.label(), k.default_path());
+    }
+
+    // The rule catalogue. An agent has to be able to find out what will be
+    // checked before it writes anything, not only after it trips a rule: a rule
+    // that is invisible until it fires is a rule you find out about by failing.
+    let blocking = gates::RULES
+        .iter()
+        .filter(|r| r.severity == gates::Severity::Blocking)
+        .count();
+    println!(
+        "\nrules ({} total: {} blocking, {} advisory)\n",
+        gates::RULES.len(),
+        blocking,
+        gates::RULES.len() - blocking
+    );
+    for g in Gate::ALL {
+        let rules: Vec<&gates::Rule> = gates::RULES.iter().filter(|r| r.gate == g.number).collect();
+        if rules.is_empty() {
+            continue;
+        }
+        println!("  gate {} — {}", g.number, g.name);
+        for r in rules {
+            let mark = if r.severity == gates::Severity::Blocking {
+                "BLOCK"
+            } else {
+                "adv  "
+            };
+            println!("    {mark}  {}", r.full_slug());
+        }
     }
     let _ = style;
     Ok(())

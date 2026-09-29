@@ -72,6 +72,8 @@ A requisition reaches the approved state.
 
 Choosing the supplier. That is a separate goal, `UC-005`.
 
+-->
+
 ## The nine patterns
 
 Every use case answers these, and the answer is allowed to be "not applicable" —

@@ -60,6 +60,8 @@ reconciliation in both sources depends on it.
 Retention period, access control and export rights are **not** established by
 this evidence. They are open: `UNC-002`.
 
+-->
+
 ## Evidence types
 
 `USER_NEED` `DOMAIN_FACT` `BUSINESS_RULE` `INDUSTRY_PRACTICE`
@@ -79,3 +81,28 @@ this evidence. They are open: `UNC-002`.
   expensive to discover late.
 - `epistemic = "INFERRED"` requires the reasoning to be written out in the
   body. An unexplained inference is an assumption wearing a costume.
+
+## Recording a promotion
+
+When an artifact's `status` advances to `VALIDATED` or `VERIFIED`, record the
+move in `promotions`. This is the only way the tool can tell a promotion backed
+by new evidence from a status typed by hand.
+
+```toml
+status = "VALIDATED"
+epistemic = "EXPLICIT"
+promotions = [
+  { from = "ASSUMED", to = "VALIDATED", evidence = ["EVD-014"], date = "2026-04-10" }
+]
+```
+
+`from` and `evidence` and `date` are optional to write and not optional to
+mean. Gate 7 blocks when a promotion from `ASSUMED` or `INFERRED` into
+`VALIDATED` or `VERIFIED` cites no evidence, cites evidence that is missing, or
+cites evidence that is not itself `EXPLICIT`. It also blocks on the current
+state: an artifact that is `ASSUMED` and `VALIDATED` at the same time is
+laundered whether or not it recorded anything.
+
+A promotion citing explicit evidence is how an assumption stops being one. The
+record is the difference between having changed your mind and having relabelled
+the artifact.

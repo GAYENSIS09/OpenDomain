@@ -42,6 +42,8 @@ everything.
 
 An import-direction check in CI. Recorded as a follow-up task in `PLAN-002`.
 
+-->
+
 ## Quality attribute scenarios
 
 Every quality attribute is written as a scenario, because an attribute with no

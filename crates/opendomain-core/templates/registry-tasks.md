@@ -51,6 +51,8 @@ quantity, including under concurrent confirmation.
 
 The outbox write, which is `TASK-014`.
 
+-->
+
 ## Rules for this registry
 
 - Every task is verifiable. A task with no test attached is a task with no

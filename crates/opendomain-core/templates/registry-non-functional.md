@@ -43,6 +43,8 @@ volume.
 Above 50 concurrent users the system SHALL continue to function; the latency
 target applies only up to that concurrency level.
 
+-->
+
 ## Quality dimensions
 
 `PERFORMANCE` `SECURITY` `RELIABILITY` `AVAILABILITY` `USABILITY` `MAINTAINABILITY` `COMPATIBILITY` `SCALABILITY` `OBSERVABILITY` `AUDITABILITY` `COMPLIANCE` `MAINTAINABILITY` `PORTABILITY` `USABILITY`

@@ -36,6 +36,8 @@ date = "2026-03-10"
 It is not a claim that indefinite retention is correct. It is a decision to
 defer the question without losing data.
 
+-->
+
 ## Rules for this registry
 
 - Record the decision you did *not* make, and why. An ADR with no rejected

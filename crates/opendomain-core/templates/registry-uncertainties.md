@@ -49,6 +49,8 @@ resolves = ["NFR-004"]
 
 Research, then a project decision recorded as `DEC-###`.
 
+-->
+
 ## Status values
 
 `OPEN` — active question

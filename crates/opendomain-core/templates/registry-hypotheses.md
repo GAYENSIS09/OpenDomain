@@ -51,6 +51,8 @@ goods cannot be scanned, and one such supplier is enough to break the workflow.
 - **Partial** — the hypothesis is split: scanning for encoded suppliers, a
   streamlined manual form for the rest
 
+-->
+
 ## Rules for this registry
 
 - A hypothesis without a `fails-when` cannot be tested, so it is not a

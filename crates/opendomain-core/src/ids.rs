@@ -255,6 +255,41 @@ impl IdKind {
         }
     }
 
+    /// `true` when an artifact of this kind asserts something about the world
+    /// or about what the system should do, and therefore owes the reader a
+    /// declared epistemic state (G2-B3).
+    ///
+    /// The distinction is between artifacts that *claim* and artifacts that
+    /// *record process*. A requirement, a business rule and a piece of evidence
+    /// assert; a task, a plan, a test and a drift finding describe work done or
+    /// work to do. Requiring an epistemic state of a task would be noise: a task
+    /// is not a statement that can be wrong about the domain, and G2-B3 applied
+    /// to it would flag every artifact in the workspace on day one, which is how
+    /// a gate gets switched off.
+    ///
+    /// The excluded kinds are listed explicitly rather than derived, so that
+    /// adding a kind later forces a decision about it.
+    pub fn makes_knowledge_claim(self) -> bool {
+        use IdKind::*;
+        match self {
+            // Knowledge substrate: what was read, and what it was taken to mean.
+            Src | Evd | Res | Term | Xconf => true,
+            // Domain model: statements about how the domain behaves.
+            Dom | Stk | Act | Proc | Ent | Event | Rule | Int => true,
+            // An uncertainty and a domain decision both assert something, and an
+            // UNC that does not declare its epistemic state cannot express *why*
+            // it is unknown, which is the field's entire purpose.
+            Unc | Dec => true,
+            // Opportunity: assumptions, concepts and hypotheses are claims.
+            Opp | Asm | Con | Cpt | Hyp | Exp | Cdr => true,
+            // Requirements and specifications assert what must be true.
+            Req | Nfr | Cnst | Bas | Uc | Spec | Ac | Ctr | Scn => true,
+            // Delivery and verification process. These record that something was
+            // done, not that something about the domain is known to hold.
+            Plan | Task | Adr | Test | Gap | Drift => false,
+        }
+    }
+
     /// The stage this artifact belongs to.
     pub fn stage(self) -> Stage {
         use IdKind::*;

@@ -49,6 +49,8 @@ system accepts receipts while the ERP is down and owns the reconciliation.
 
 `STK-004`
 
+-->
+
 ## Status values
 
 `OPEN` `RESOLVED` `ACCEPTED` — both sides are kept, with the cost acknowledged

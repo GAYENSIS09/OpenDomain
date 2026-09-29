@@ -71,6 +71,8 @@ that a retry publishes the same `receiptId`.
 
 This system. The ERP side is owned by `STK-006`.
 
+-->
+
 ## Rules for this registry
 
 - No contract without a version and a verification test. Gate 7 reports

@@ -56,6 +56,8 @@ produce the race it is meant to reproduce.
 If this test fails intermittently, the guard is not correctly serialised. Do
 **not** add a retry; a retry hides the defect and does not remove it.
 
+-->
+
 ## The difference from a unit test
 
 - A **unit test** verifies a function. A **contract test** verifies a boundary

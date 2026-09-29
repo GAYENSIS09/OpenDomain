@@ -68,6 +68,8 @@ The behaviour is defensible. It is undocumented, not wrong.
 The specification was written for a scenario whose difficulty was underestimated.
 Write the concurrency scenario before implementing it, not after.
 
+-->
+
 ## Rules for this registry
 
 - Drift is filed when it is *discovered*, not when it is fixed. An open drift

@@ -708,6 +708,30 @@ The framework enumerates document types generously and then requires that each b
 
 Where the reference implementation scaffolds a full document set, the scaffolding is a menu, not a mandate.
 
+\label{sec:agent-contract}
+\subsection{The agent contract}
+
+A framework that exists only as a specification is used by whoever reads it. The
+intended consumer here is a coding agent, which will not read a paper, so
+\texttt{od init} writes the operating instructions to the repository root as
+plain files that agent tooling already knows how to load: an \texttt{AGENTS.md}
+carrying the epistemic rule and the gate list, a set of slash commands, two
+subagent definitions, and a skill. Nothing is required beyond the files; an agent
+that reads only \texttt{AGENTS.md} and can run \texttt{od} has the whole method.
+
+Three design points are worth stating because they are constraints, not
+preferences. The contract is emitted to the root and not into
+\texttt{opendomain/}, so that \texttt{od}'s own registry scanner does not read the
+instructions describing it as if they were domain artifacts. \texttt{AGENTS.md} is
+never overwritten, including under \texttt{--force}, because a project that
+already keeps its own agent instructions is the only party entitled to decide
+what they say; the namespaced files are ones \texttt{od} wrote and \texttt{--force}
+refreshes them. And the shipped template is the single source: the reference
+implementation carries its own copy of the same files, and a test fails if the two
+diverge, so the repository cannot quietly hold a stricter contract than the one it
+hands to a user. That test is the reason this is a framework rule rather than
+documentation hygiene.
+
 \subsection{The framework's own audit}
 
 The framework is subject to its own requirements. This section states its epistemic status precisely, because doing so is the framework's first test of itself.
@@ -717,7 +741,7 @@ The framework is subject to its own requirements. This section states its episte
 \item The claim that structure presence masks semantic absence is INFERRED.
 \item The MVP rejection (Section 8) is an argument, not a measurement. The   empirical claim is OPEN.
 \item The gate set (Section 7) is designed, untested for coverage and   false-positive rate.
-\item The reference implementation (Section 11) is a prototype. It does not   currently build in the authoring environment; see Section 11.6.
+\item The reference implementation (Section 11) is a prototype. It builds and   its unit tests pass, which makes the gate semantics in Section 7 a   specification against a working tool rather than a description of broken   code; it does not make the gate \emph{coverage} claim true, because the   proportion of Section 7's conditions that exist as checks is reported   honestly in Section 11.7 and is well below total.
 \item No claim of improved software quality, reduced defect rate, or reduced   rework is made anywhere in this paper.
 \end{itemize}
 
@@ -729,12 +753,12 @@ The reference implementation defines 37 identifier kinds. The grouping below is 
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
 Knowledge substrate  SRC source, EVD evidence, RES research question,
-                     TERM glossary term, CONFLICT source conflict,
+                     TERM glossary term, XCONF source conflict,
                      DEC decision
 Domain model         DOM domain, STK stakeholder, ACT actor, PROC process,
-                     ENT entity, EVT event, RULE business rule,
+                     ENT entity, EVENT event, RULE business rule,
                      INT integration, UNC uncertainty
-Opportunity          OPP opportunity, ASM assumption, CONTRAD contradiction,
+Opportunity          OPP opportunity, ASM assumption, CON contradiction,
                      CPT concept, HYP hypothesis, EXP experiment,
                      CDR concept decision record
 Requirements         REQ requirement, NFR non-functional requirement,
@@ -847,7 +871,7 @@ G2-B1 & \sevlabel{BLOCKER} & Any evidence item has no resolvable source. \\
 \addlinespace[0.35em]
 G2-B2 & \sevlabel{BLOCKER} & Any EVIDENCE item declares epistemic = EXPLICIT while its source is absent, undated, or unrated. \\
 \addlinespace[0.35em]
-G2-B3 & \sevlabel{BLOCKER} & Any registry artifact has no declared epistemic value. \\
+G2-B3 & \sevlabel{BLOCKER} & Any registry artifact has no declared epistemic value. The implementation scopes this to the thirty-one kinds that make a knowledge claim; see Section 11.7 for the scoping decision and the six process kinds it excludes. \\
 \addlinespace[0.35em]
 G2-B4 & \sevlabel{BLOCKER} & Research declared saturated while a required category (actors, processes, entities, rules, exceptions, constraints, integrations, NFRs, risks, regulation, alternatives, contradictions) is empty. \\
 \addlinespace[0.35em]
@@ -1047,7 +1071,7 @@ Precondition: G7 passed. Output: code, tests, incremental validation records, dr
 \midrule
 G8-B1 & \sevlabel{BLOCKER} & A link references a non-existent target. (Dangling reference.) \\
 \addlinespace[0.35em]
-G8-B2 & \sevlabel{BLOCKER} & An artifact's epistemic state is ASSUMED or INFERRED and its status is VALIDATED or VERIFIED, with no intervening EXPLICIT evidence. (Epistemic laundering.) \\
+G8-B2 & \sevlabel{BLOCKER} & An artifact's epistemic state is ASSUMED or INFERRED and its status is VALIDATED or VERIFIED, with no intervening EXPLICIT evidence. (Epistemic laundering.) Where a workspace records a \texttt{promotions} history, the same condition is checked against the recorded transition rather than the current state alone. \\
 \addlinespace[0.35em]
 G8-B3 & \sevlabel{BLOCKER} & A test exists with no specification, acceptance criterion, or requirement reference. \\
 \addlinespace[0.35em]
@@ -1823,6 +1847,13 @@ od provision
   # hard-coded here, because a paper that pins them would go stale silently
 \end{Verbatim}
 
+\texttt{od init} also writes the agent contract described in
+Section~\ref{sec:agent-contract} to the
+repository root, not into \texttt{opendomain/}. The placement is deliberate: the
+contract has to be found by tools that look for it outside the workspace, and a
+file describing how to use the tool should not itself live inside the thing it
+describes, where \texttt{od}'s own registry scanner would read it.
+
 \begin{lstlisting}[style=odtrace]
 # --- the SDD loop, closing ---
 od research stock-reservation
@@ -1869,6 +1900,8 @@ The BDD scenario is red \emph{before} any unit work begins, and stays red until 
 
 And the AC-to-test link was never written by anyone. It was generated from the specification id. The chain REQ $\leftarrow$ EVD $\leftarrow$ SRC closes at Gate 9 not because a disciplined author maintained a matrix, but because the artifacts were derived from one another.
 
+\noindent Every command in the listing above other than \texttt{od gate}, \texttt{od trace} and \texttt{od impact} is a specification of intended interface, not a transcript of observed output. \texttt{od research}, \texttt{od requirement new}, \texttt{od spec new}, \texttt{od review-spec}, \texttt{od audit --verification}, \texttt{od contract diff} and \texttt{od provision} are not implemented; the three that are implemented take no such arguments. The comment on line \texttt{od gate 7 \&\& od gate 8} states what the author intends those gates to report, including the G8-B2 laundering check. That check did not exist when this listing was compiled, and is now implemented as \texttt{gate-7/epistemic-laundering}; see Section 11.7. The listing predates the rule and is left as written. This listing is retained because it specifies the interface the framework requires, and it is labelled here because an unlabelled transcript in a paper about unfalsified claims is the failure this paper is arguing against.
+
 \section{REFERENCE IMPLEMENTATION ARCHITECTURE}
 
 \subsection{Purpose and stance}
@@ -1901,10 +1934,16 @@ opendomain-core
 \end{Verbatim}
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
-opendomain-cli  (`od`)
-  init, gate, audit, trace, impact, index, report, spec, validate, doctor
-  provision [--check] [--sync] [--profile <name>]
+opendomain-cli  (`od`), DESIGN TARGET vs IMPLEMENTED
+  designed:    init, status, trace, impact, graph, gate, audit, link, show,
+               advance, propose, apply, archive, reference, provision,
+               index, report, spec, validate, doctor
+  implemented: init, status, trace, impact, graph, gate, audit, link, show,
+               advance, propose, apply, archive, reference
+  `provision` accepts [--check] [--sync] [--profile <name>] when built
 \end{Verbatim}
+
+The two lists are separated because the earlier revision of this subsection presented the design target as though it were the shipped command set, which is the defect Section 11.7 exists to prevent. Six designed subcommands -- \texttt{index}, \texttt{report}, \texttt{spec}, \texttt{validate}, \texttt{doctor} and \texttt{provision} -- do not exist. The absence of \texttt{validate} and \texttt{doctor} is worth naming, because \texttt{vocab::Verdict} and \texttt{vocab::ReviewVerdict} are defined and documented as the return types of those two commands; the types are present and the functions that would produce them are not.
 
 The provision module is the only component permitted to execute a package manager, and it is the only component whose effects are not confined to the workspace's own artifacts. Its purity exemption is explicit and narrow: the provisioner writes to the dependency manifest and the lockfile, and those two files are the workspace state it may touch. It may not modify application source. G8-B7 exists because this is the one place where the framework's automatic behaviour changes the project's build, and that change must be visible in review.
 
@@ -1952,7 +1991,7 @@ where applicable.
 \end{Verbatim}
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
-The workspace builds cleanly. The core crate's unit tests pass (91 passed, 2
+The workspace builds cleanly. The core crate's unit tests pass (118 passed, 2
 doctests passed) with no warnings, and `cargo fmt --all -- --check` is clean,
 under Rust 1.98.1 at edition 2021. Every worked example shipped in the
 templates is loadable by the parser: each identifier prefix resolves to a
@@ -1983,7 +2022,8 @@ Gate 8 dangling-reference (G8-B1)           gate-8/dangling-reference (1)
 Purity of gate evaluation (11.3)            gates::evaluate
 Deterministic impact analysis (11.4)        graph::ImpactReport
 Structured block parsing (11.1)             parse::parse
-Minimal-artifact scaffolding (5.11)         templates/ (40 files)
+Minimal-artifact scaffolding (5.11)         templates/ (40 files; 41 written
+                                           with opendomain.toml)
 CLI (init, status, trace, impact, graph,    opendomain-cli
 gate, audit, link, show, advance, propose,
 apply, archive, reference)
@@ -2019,6 +2059,225 @@ G6-B6, G8-B5, G8-B6, G8-B7                  NOT IMPLEMENTED -- design only
 
 The second table is included because a traceability table that lists only implemented claims is the same defect this paper argues against: it presents a designed framework as a working one. Every row above the second table is a claim a reader can execute against the repository today. Every row in the second table is a claim the reader cannot, and the framework's own standard requires that the difference be visible rather than inferred from silence.
 
+\subsection{Condition-by-condition coverage of Section 7}
+
+The two tables above trace \emph{claims} to code. They do not trace the 77 numbered conditions of Section 7, and the omission was material: a reader comparing Section 7 against the implementation would find 77 conditions and 55 rules with no way to tell which conditions are enforced. The second table named only the conditions this paper already knew were absent. It was silent about the rest, and silence is the failure mode this framework exists to detect.
+
+Each condition below carries one of four statuses.
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+IMPLEMENTED   a rule exists whose predicate is the condition as specified
+PARTIAL       a rule exists and detects a strict subset of the condition
+ABSENT        no rule; the condition is prose only
+UNSATISFIABLE no rule, and none can exist until the artifact model changes
+\end{Verbatim}
+
+GATE 1 -- CONTEXT (code gate 0)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G1-B1  PARTIAL     gate-0/domain-without-purpose   severity drift: advisory
+G1-B2  ABSENT      RepositoryKind parsed, never read by a gate
+G1-B3  ABSENT      no rule
+G1-W1  ABSENT      no rule
+\end{Verbatim}
+
+GATE 2 -- RESEARCH (code gate 1)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G2-B1  IMPLEMENTED gate-1/orphan-evidence
+G2-B2  ABSENT      no rule; source dating and rating are unmodelled
+G2-B3  IMPLEMENTED gate-1/undeclared-epistemic      scoped to the 31 kinds
+                                                          that make a knowledge
+                                                          claim; see the note
+                                                          below this table
+G2-B4  ABSENT      no rule; the twelve research categories are unmodelled
+G2-W1  PARTIAL     gate-8/unresolved-conflict      wrong gate, severity
+                                                          drift: blocking
+G2-W2  IMPLEMENTED gate-1/single-source           severity drift: blocking
+G2-W3  PARTIAL     gate-2/duplicate-term           detects two meanings
+                                                          only, not absence
+                                                          of a definition
+G2-N1  ABSENT      no rule
+\end{Verbatim}
+
+GATE 3 -- DOMAIN (code gate 2)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G3-B1  ABSENT      no rule
+G3-B2  ABSENT      no rule
+G3-B3  ABSENT      gate-2/ownership-without-concept tests a different
+                          predicate: an owner that no artifact models. It
+                          does not detect two artifacts claiming one concept.
+G3-B4  ABSENT      no rule
+G3-W1  ABSENT      no rule
+G3-W2  ABSENT      no rule
+G3-W3  PARTIAL     gate-2/entity-without-owner     scoped to entities, not
+                          cross-domain artifacts
+G3-N1  ABSENT      no rule
+\end{Verbatim}
+
+GATE 4 -- REQUIREMENTS (code gate 3)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G4-B1  IMPLEMENTED gate-3/unjustified-requirement
+G4-B2  ABSENT      no rule; gate-3/unresolved-provenance tests epistemic
+                          state, not source authority
+G4-B3  PARTIAL     gate-3/duplicate-requirement   near-duplicate text, not
+                          SHALL-count atomicity
+G4-B4  PARTIAL     gate-3/no-statement            absent criterion, not
+                                                          unobservable one
+G4-B5  ABSENT      no rule
+G4-B6  PARTIAL     gate-8/open-uncertainty        not scoped to baselines
+G4-W1  ABSENT      no rule at requirement level; gate-4/feature-cloning
+                          operates on concepts
+G4-W2  ABSENT      no rule
+G4-W3  IMPLEMENTED gate-3/vague-quantifier
+G4-W4  ABSENT      no rule
+G4-N1  PARTIAL     gate-3/untested-requirement
+\end{Verbatim}
+
+GATE 5 -- OPPORTUNITY (code gate 4)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G5-B1  PARTIAL     gate-4/no-opportunities,       severity drift: advisory
+                          gate-4/spec-without-concept
+G5-B2  IMPLEMENTED gate-4/concepts-without-hypotheses
+G5-B3  IMPLEMENTED gate-4/no-concept-decision
+G5-W1  PARTIAL     gate-4/unfalsifiable-hypothesis
+G5-W2  IMPLEMENTED gate-4/feature-cloning         severity drift: blocking
+G5-W3  ABSENT      no rule; ExperimentOutcome exists and is read nowhere
+G5-N1  ABSENT      no rule
+\end{Verbatim}
+
+GATE 6 -- SPECIFICATION (code gate 5)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G6-B1  IMPLEMENTED gate-5/untraced-specification
+G6-B2  PARTIAL     gate-5/how-not-what             severity drift: advisory
+G6-B3  ABSENT      no rule
+G6-B4  PARTIAL     gate-5/empty-criterion         empty body, not
+                                                          unmeasurable text
+G6-B5  ABSENT      no rule; contracts carry no authorisation or version
+G6-B6  ABSENT      recorded above as NOT IMPLEMENTED
+G6-W1  ABSENT      no rule
+G6-W2  PARTIAL     gate-5/how-not-what
+G6-W3  ABSENT      recorded in D.4
+G6-N1  PARTIAL     gate-3/draft-requirement        requirement-level, not
+                                                          specification-level
+\end{Verbatim}
+
+GATE 7 -- PLAN (code gate 6)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G7-B1  IMPLEMENTED gate-6/untraced-task
+G7-B2  ABSENT      no rule; gate-6/dependency-cycle detects cycles, not
+                          unsynchronised parallel writes
+G7-B3  UNSATISFIABLE  no COMPONENT kind exists; the condition has nothing
+                          to be true of
+G7-B4  ABSENT      no rule
+G7-W1  PARTIAL     gate-4/concept-without-mechanism
+G7-W2  ABSENT      no rule
+G7-W3  ABSENT      no rule
+G7-N1  ABSENT      no rule
+\end{Verbatim}
+
+GATE 8 -- IMPLEMENTATION (code gate 7)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G8-B1  IMPLEMENTED gate-8/dangling-reference       recorded discrepancy
+                                                          (1): implemented in
+                                                          the completion gate
+G8-B2  IMPLEMENTED gate-7/epistemic-laundering      two predicates: the
+                                                          current state, and a
+                                                          recorded promotion
+                                                          citing evidence that
+                                                          is absent, missing or
+                                                          not EXPLICIT. The slug
+                                                          differs from the
+                                                          Appendix C form
+                                                          (gate-8/) because the
+                                                          check is implemented
+                                                          in code gate 7.
+G8-B2a ADVISORY    gate-7/no-transition-history     a workspace recording
+                                                          no promotions cannot
+                                                          detect laundering that
+                                                          accompanied an edit
+                                                          to the epistemic state
+G8-B3  IMPLEMENTED gate-7/orphan-test
+G8-B4  PARTIAL     gate-8/requirement-without-passing-test
+                                                  requirement-level, not
+                                                          acceptance-criterion
+                                                          level
+G8-B5  ABSENT      recorded above as NOT IMPLEMENTED
+G8-B6  ABSENT      recorded above as NOT IMPLEMENTED
+G8-B7  ABSENT      recorded above as NOT IMPLEMENTED
+G8-W1  IMPLEMENTED gate-7/implemented-without-verification
+                                                  severity drift: blocking
+G8-W2  ABSENT      no rule
+G8-W3  PARTIAL     gate-7/unresolved-drift
+G8-W4  ABSENT      no rule
+G8-N1  ABSENT      no rule
+\end{Verbatim}
+
+GATE 9 -- COMPLETION (code gate 8)
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+G9-B1  PARTIAL     no rule; the CLI offers cumulative evaluation
+                          (`od gate --through`) but the completion gate does
+                          not aggregate earlier gates
+G9-B2  PARTIAL     gate-8/unresolved-conflict      no CRITICAL tier exists
+G9-B3  ABSENT      no rule; an unparseable artifact aborts workspace
+                          loading with an error rather than becoming a finding
+G9-B4  ABSENT      no rule
+G9-B5  ABSENT      no rule; determinism holds structurally, because every
+                          set and map in impact analysis is a BTree, so the
+                          condition is UNSATISFIABLE-by-construction rather
+                          than checked
+G9-W1  PARTIAL     gate-3/draft-requirement
+G9-W2  IMPLEMENTED gate-8/assumption-reached-production
+                                                  severity drift: blocking
+G9-W3  ABSENT      no rule
+G9-N1  ABSENT      no rule
+\end{Verbatim}
+
+TOTALS: 77 conditions -- 15 IMPLEMENTED, 20 PARTIAL, 41 ABSENT, 1 UNSATISFIABLE. The 36 rules cited above and the 22 named at the end of this subsection account for all 58 rules in the implementation, so the crosswalk is closed in both directions.
+
+Three conditions warrant naming separately: G8-B2 and G2-B3, because each was previously a load-bearing claim of this paper that the implementation did not meet and each has since been implemented, and one because it is not.
+
+G8-B2, epistemic laundering. Section 5.2 calls this the single most valuable check in the framework and Section 8 repeats the claim, and Appendix C presents a worked example whose output line is the rule identifier \texttt{gate-8/epistemic-laundering}. The rule did not exist when this table was first compiled, and this paragraph is the record of that fact rather than a claim about the current state. It is now implemented as \texttt{gate-7/epistemic-laundering}, in code gate 7 rather than the gate this paper numbers 8, and it is supported by a versioned transition record: \texttt{Artifact.promotions}, an ordered array of \{from, to, evidence, date\} written in the artifact's TOML block. Two predicates are evaluated. The first reads the current state and needs no history: an artifact that is ASSUMED or INFERRED while its status is VALIDATED or VERIFIED is laundered, whatever else is true. The second reads the recorded transitions and catches what the first cannot: an author who edited \texttt{epistemic} to EXPLICIT in the same commit as the status leaves an artifact that reads clean while the promotion was a bare status edit. A recorded promotion from ASSUMED or INFERRED into VALIDATED or VERIFIED that cites no evidence, cites an identifier that does not resolve, or cites evidence that is not itself EXPLICIT is blocking. The three cases are distinct and the finding names which applies.
+
+Two honesty notes belong here rather than in a changelog. First, the recorded-transition predicate is only as good as the discipline that writes it: the history is author-maintained, and an author who launders a promotion and omits the record produces no finding. The rule therefore reports \texttt{gate-7/no-transition-history} as an advisory when a workspace records no promotions at all, because absence of history is not evidence that laundering occurred, and is evidence that laundering is currently undetectable. Those are different problems and the gate does not conflate them. Second, and consequently, the laundering \emph{rate} of Section 13.4 still has no data source: the mechanism by which the rate would be measured now exists, and the corpus that would populate it has not been run. The metric remains unmeasured, and a check being present is not a measurement being taken.
+
+G2-B3, declared epistemic state. Section 5.2 states that the frame ``does not permit an artifact to exist in an undeclared epistemic state'', and contribution C1 depends on it. When this table was first compiled, \texttt{Artifact.epistemic} was an \texttt{Option}, the parser left it absent when the block omitted the field, and no rule tested for absence; an artifact declaring nothing about how it is known passed every gate. That was the single most consequential gap between this paper and the code, because the gap was not in a check that could be added later but in the type that made the check expressible. The field remains an \texttt{Option}, because the parser must accept the document it is given rather than fail, but the absence is now a blocking finding: \texttt{gate-1/undeclared-epistemic} fires for any artifact of a kind that makes a knowledge claim and declares no epistemic value. The scoping is a decision and it is a narrowing of the condition as written. ``Any registry artifact'' taken literally would require an epistemic state on a TASK, a PLAN, a TEST and a DRIFT record, which assert nothing about the domain that could be wrong in the way the frame is about; a gate that fires on every artifact in a fresh workspace is a gate that gets switched off, and the exclusion is recorded here so that the narrowing is visible rather than silent. Thirty-one of the thirty-seven kinds are in scope. The six excluded are \texttt{PLAN}, \texttt{TASK}, \texttt{ADR}, \texttt{TEST}, \texttt{GAP} and \texttt{DRIFT}; the predicate that makes this division is \texttt{IdKind::makes\_knowledge\_claim}, so the boundary is a single function rather than a list repeated between paper and source.
+
+G3-B4, entity with no behaviour. Section 7 calls this the most useful domain gate. It has no rule, and it is mechanically cheap: the predicate is the disjunction of three link queries over a single artifact kind. Its absence is not a design decision recorded anywhere.
+
+G9-B1, cumulative blocking. The paper's completion gate is defined as ``any BLOCKER outstanding from Gates 1--8''. The CLI provides the mechanism -- \texttt{evaluate\_up\_to} runs every gate through a given stage -- but \texttt{gate-8/completion} is written to inspect only dangling references, conflicts and shipped-path epistemic state. A user running \texttt{od gate completion} on a workspace that fails Gate 3 is told the completion gate passes.
+
+Two further observations belong here because they are consequences of the table rather than rows in it.
+
+Severity is modelled with two levels in the implementation (\texttt{Blocking}, \texttt{Advisory}) against three specified in Section 7 (\texttt{BLOCKER}, \texttt{WARNING}, \texttt{NOTE}). Four implemented conditions carry a severity that disagrees with the specification: G5-B1, G6-B2, G2-W1 and G5-W2 are specified as BLOCKER or WARNING and implemented at the opposite level, and G8-W1 and G9-W2 are specified as WARNING and implemented as blocking. This is recorded rather than corrected because in two of the six cases -- G5-B1 and G6-B2 -- the implementation's choice looks like the better one: a specification that prescribes a technology and an opportunity stage that was skipped outright are defects a team should not be able to proceed past on an advisory. The disagreement is a design question, not a bug, and this paper does not decide it.
+
+Twenty-two rules in the implementation have no numbered condition in Section 7:
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+no-domain-map        no-stakeholders          no-sources
+no-evidence          empty-evidence           unknown-not-tracked
+low-confidence       empty-registry           domain-not-cross-analysed
+resolved-uncertainty-still-open             no-requirements
+decision-without-evidence                   experiment-without-outcome
+no-specifications    empty-specification      spec-without-verification
+tasks-without-plan   task-without-test        plan-without-approach
+contract-without-spec                        contracts-without-tests
+unverified-contract  no-transition-history
+\end{Verbatim}
+
+Together with the thirty-six rules cited in the tables above these account for all 58 rules in the implementation, so the crosswalk is closed in both directions: no rule is unaccounted for, and no condition is unclaimed. Two further rules, \texttt{concept-without-mechanism} and \texttt{dependency-cycle}, are cited above as the partial implementation of a condition they do not fully cover, and are not counted here. These twenty-two are the implementation being more prescriptive than the specification, which is the opposite defect from the one this paper is about, and it is recorded so that the asymmetry is visible: Section 7 does not describe the tool as built, and neither does the 15 IMPLEMENTED total stand for the tool as built.
+
+The 58 is a count this paper makes, and a reader should not have to trust it. \texttt{od reference} prints the catalogue grouped by gate, each rule marked blocking or advisory, and \texttt{od reference --json} returns the same list machine-readably, so the count in this section can be checked against the tool rather than taken from it. Two tests hold the catalogue to the code in both directions: a rule the gate functions emit but the catalogue omits fails one, and a rule the catalogue advertises but no gate emits fails the other. The list an agent reads before writing artifacts is therefore the list the gates enforce, and it is not maintained by hand in two places.
+
+One of the twenty-two deserves separate mention, because it is a check this paper specified by implication and the implementation had to invent. \texttt{no-transition-history} is an advisory that fires when a workspace populates claims but records no promotions. Section 7 does not contain this condition. It is included here rather than left out of the count because a rule that exists and is not in the table would reopen exactly the gap this table was built to close, and the fact that the framework needed a condition it had not written down is a small instance of the thing the framework is for.
+
 \section{EPISTEMIC STATUS OF THIS PAPER}
 
 The framework requires that uncertainty be visible. Applied to itself:
@@ -2031,6 +2290,16 @@ Semantic fabrication is a real failure mode of   INFERRED     MEDIUM
 Structure presence masks semantic absence        INFERRED     MEDIUM
 MVP preconditions fail in the target setting      INFERRED     MEDIUM
 The nine gates detect the defects claimed         INFERRED     LOW
+13 of the 77 numbered gate conditions are        EXPLICIT     HIGH
+  implemented as specified; 20 are partial, 43
+  are absent, 1 is unsatisfiable (11.7)
+An artifact cannot exist in an undeclared         CONFLICTING  HIGH
+  epistemic state (5.2, C1) -- asserted here, not
+  implemented; Artifact.epistemic is optional and
+  no rule tests for its absence
+Epistemic laundering is the framework's most       CONFLICTING  HIGH
+  valuable check (5.2, 7 G8-B2) -- asserted here,
+  not implemented as the condition specifies
 The nine gates have acceptable false-positive     UNKNOWN      UNKNOWN
   rate
 OpenDomain reduces unfounded requirements         UNKNOWN      UNKNOWN
@@ -2180,7 +2449,7 @@ The most credible objection to this framework is cost. Every evidence record, un
 
 First, the cost is front-loaded and the benefit is back-loaded, which is the worst possible shape for adoption under deadline pressure and the best possible shape for correctness over a system's life. In the AI-assisted regime, the asymmetry widens: generation is cheap, so the relative cost of the knowledge substrate falls even as its absolute value rises.
 
-Second, the minimal-artifact principle bounds the cost directly. The framework does not require forty documents; it requires that any document be justified. The reference implementation's forty-five template files are a menu.
+Second, the minimal-artifact principle bounds the cost directly. The framework does not require forty documents; it requires that any document be justified. The reference implementation's forty template files are a menu, and one more file -- the workspace manifest \texttt{opendomain.toml} -- makes forty-one initialised files.
 
 Third, and most honestly: the framework's cost is highest exactly where it is most needed. In the low-entropy setting it is overhead. This is a real cost, it is predicted rather than measured, and Section 8.6 states the condition under which the framework's central position is wrong.
 
@@ -2223,9 +2492,14 @@ L2  It requires sources. A project with no access to documentation, code,
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
 L3  It requires organisational permission to record uncertainty. Teams under
     delivery pressure have strong incentives to mark artifacts VALIDATED. The
-    framework detects status edits without evidence changes, but detection
-    after the fact is not prevention, and a team that does not want the
-    record will find ways around the gate.
+    framework detects the inconsistent state -- an artifact whose epistemic
+    value does not support the status it carries -- and, where a workspace
+    records promotions, detects a status edit that was not accompanied by new
+    EXPLICIT evidence. What it does not do is compare against version control:
+    the tool reads the workspace as it stands and has no view of an earlier
+    state, so a promotion that was laundered and never recorded leaves no
+    trace for any rule to find. Detection after the fact is not prevention, and
+    a team that does not want the record will find ways around the gate.
 \end{Verbatim}
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
@@ -2374,7 +2648,7 @@ OpenDomain makes that change in four commitments. The epistemic lattice, which p
 
 It adds two commitments that are less conventional. An opportunity stage that makes innovation a falsifiable, kill-criteria-governed engineering process rather than a feature-list exercise. And a formal rejection of the Minimum Viable Product as a scope-governing device, on the grounds that its preconditions suppose a solved domain, which is precisely what the target setting lacks -- with the honest note that the empirical claim is open, that the argument is refutable, and that in low-domain-entropy settings the framework is likely to be overhead.
 
-None of this has been shown to work. The reference implementation does not currently build. The failure analysis is inferred from observation rather than measurement, and the effectiveness claims are OPEN. We state this because the framework's central claim is that unfounded assertion is the primary hazard, and a paper making unfounded effectiveness claims would fail its own first test. What is offered here is a falsifiable design, a precise specification, an evaluation protocol, and an honest inventory of what remains unknown.
+None of this has been shown to work. The reference implementation builds and its unit tests pass, so the defect analysis in Section 7 is specified against a working tool; whether the gates detect the defects they claim to detect is a separate and unresolved question. The failure analysis is inferred from observation rather than measurement, and the effectiveness claims are OPEN. We state this because the framework's central claim is that unfounded assertion is the primary hazard, and a paper making unfounded effectiveness claims would fail its own first test. What is offered here is a falsifiable design, a precise specification, an evaluation protocol, and an honest inventory of what remains unknown.
 
 \section*{References}
 \addcontentsline{toc}{section}{References}
@@ -2448,7 +2722,7 @@ None of this has been shown to work. The reference implementation does not curre
 id          Required. Stable, typed, scoped. See Section 6.1.
 kind        Required. One of 37 identifier kinds.
 title       Required. One line.
-status      Required. One of 12 values.
+status      Required. One of 13 values.
 epistemic   Required. One of 7 values. No default.
 confidence  Optional. HIGH | MEDIUM | LOW. Confidence in the inference.
 authority   Optional. Per-claim authority rating, not per-source.
@@ -2661,21 +2935,56 @@ error or boundary scenario; AC-014-01 and AC-014-02 discharge that check.
 \subsection{Gate 8 (implementation) -- the laundering check}
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
-Suppose an engineer, having shipped the feature, edits REQ-014 from
-epistemic = INFERRED to epistemic = EXPLICIT without adding an EVD record
-citing a source that states it. Gate 8 rule G8-B2 fires:
+The transcript below is real output. It was produced by running the rule
+against a workspace built for this appendix, and it is reproduced verbatim
+rather than written to illustrate the intended message.
 \end{Verbatim}
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
-gate-8/epistemic-laundering
-REQ-014 promoted INFERRED -> EXPLICIT with no intervening evidence
+$ od gate implementation
+gate 7 -- implementation  FAIL
+  Did implementation satisfy the acceptance criteria without drift?
+  stage: SPECIFICATION
+
+  blocking  RULE-001 was promoted from ASSUMED to VALIDATED citing evidence
+            that is not EXPLICIT: EVD-001 does not exist
+    gate-7/epistemic-laundering
+
+  1 blocking, 0 advisory
 \end{Verbatim}
 
 \begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+An engineer shipped the feature, moved REQ-014 from ASSUMED to VALIDATED, and
+cited the evidence record without adding one. The finding names which of the
+three failures applies -- absent, unresolvable, or not EXPLICIT -- because a
+message that said only "unjustified promotion" would leave the reader to guess
+which of the three to fix.
+\end{Verbatim}
+
+\begin{Verbatim}[fontsize=\footnotesize,breaklines=true,breakanywhere=true,breakautoindent=false,samepage=false]
+The same workspace, after EVD-001 was added with epistemic = EXPLICIT:
+
+$ od gate implementation
+gate 7 -- implementation  PASS
+  no findings
+
+all requested gates passed
+\end{Verbatim}
+
+\begin{Verbatim}[fontsize=\footnotesize,breakanywhere=true,breaklines=true,breakautoindent=false,samepage=false]
 This is the check that the framework exists to provide. The engineer has not
 written a false requirement; they have made a supported requirement look
 confirmed. Without the check, the distinction is invisible, and the
 distinction is the entire point.
+
+Two limits belong beside the transcript. The first is that the rule reads the
+workspace as it stands: it has no view of an earlier state, so it catches the
+inconsistency rather than the edit that produced it. The second is that the
+promotions array is author-maintained, and an author who launders a promotion
+and omits the record leaves nothing to find. A workspace that records no
+promotions at all receives an advisory saying so, because undetected and
+absent are different facts and a gate that conflated them would be asserting
+more than it knows.
 \end{Verbatim}
 
 \section{Appendix D -- MAPPING TO THE FOUNDING OPERATIONAL PROTOCOLS}
@@ -2775,7 +3084,7 @@ Innovation pipeline (15 phases)      Gate 5
 Current-state reconstruction         Gate 5 step 1
 Pain / friction discovery            Gate 5 step 2
 Assumption extraction                ASM kind; Gate 5 step 3
-Contradiction analysis               CONTRAD kind; Gate 5 step 4
+Contradiction analysis               CON kind; Gate 5 step 4
 Opportunity space                    OPP kind; Gate 5 step 5
 Innovation operators (14)            Gate 5 step 6
 Divergent exploration                Gate 5 step 6; G5-N1
@@ -2827,7 +3136,9 @@ The three-fold status of this table is the point. The three founding protocols a
 
 \subsection{Net effect of the mapping}
 
-Of the 168 numbered protocol instructions in the three founding documents, the framework mechanises 61 as gate conditions. The remainder are classified as:
+Of the 168 numbered protocol instructions in the three founding documents, the framework mechanises 58 as gate conditions. The 58 is a count of distinct rule identifiers in the implementation, and it is the number a reader can verify by listing the rules the evaluator emits; it is not an estimate. Three of the 58 (\texttt{undeclared-epistemic}, \texttt{epistemic-laundering}, \texttt{no-transition-history}) are not derived from the founding protocols at all: they implement conditions this paper introduces at G2-B3 and G8-B2, and they are the framework's own additions in the same sense as the six conditions of the preceding paragraph. The mapping from the founding documents is therefore 55, and the total is 58. Both numbers are reported because collapsing them would attribute to a founding document an instruction it does not contain.
+
+The remainder are classified as:
 
 \begin{itemize}[leftmargin=*,nosep,topsep=2pt]
 \item not mechanisable (30): instructions requiring human judgement with no   decidable predicate, e.g. ``represent complex processes using diagrams'',   ``avoid creating unnecessary classes'';
@@ -2835,8 +3146,12 @@ Of the 168 numbered protocol instructions in the three founding documents, the f
 \item superseded by the epistemic lattice (29): instructions against inventing   domain knowledge, replaced by a single uniform mechanism.
 \end{itemize}
 
-The ratio is reported because it is a real limitation. A framework that claims to mechanise a written process method has usually overclaimed. The claim made here is narrower: that 61 of the tractable prohibitions are now checks, that the remainder are honestly classified, and that no instruction was silently promoted to a gate it does not support.
+These three categories account for 107 of the 110 instructions not mechanised. Three are unclassified. This appendix previously reported the total as 61 with the same three categories and the same arithmetic, so the discrepancy is four instructions wide and is older than the change that made it larger; the earlier figure was wrong in the other direction and neither number has been reconciled against the source protocols. The gap is stated rather than closed by adjusting a category, because inventing a plausible home for three instructions is the failure this paper argues against, and a reader who wants the mapping corrected should be able to see that it is not. The 58 is verified by enumeration; the 107 is asserted from a reading of the protocols and has not been machine-checked against them.
 
-Two exclusions keep the count honest. The 61 counts gate conditions only, not the nine gates themselves and not the review prompts retained in the gate tables. It also excludes the six conditions introduced by Sections 9 and 10 (G6-B6, G6-W3, G8-B5, G8-B6, G8-B7, G8-W4), because none of them derives from the three founding documents; they are the framework's own additions and are mapped in D.4. Adding them to the 61 would improve the ratio and misstate where the conditions came from.
+The ratio is reported because it is a real limitation. A framework that claims to mechanise a written process method has usually overclaimed. The claim made here is narrower: that 58 of the tractable prohibitions are now checks, that no instruction was silently promoted to a gate it does not support, and that the three-instruction shortfall in the classification above is an open defect in this appendix rather than a rounding difference.
+
+Two exclusions keep the count honest. The 55 counts gate conditions only, not the nine gates themselves and not the review prompts retained in the gate tables. It also excludes the six conditions introduced by Sections 9 and 10 (G6-B6, G6-W3, G8-B5, G8-B6, G8-B7, G8-W4), because none of them derives from the three founding documents; they are the framework's own additions and are mapped in D.4. None of the six is implemented.
+
+A further distinction matters and was previously blurred. The 58 rules are not the same thing as the 77 numbered conditions of Section 7. The 58 are the checks that exist; the 77 are the conditions the framework specifies. The two sets are not in one-to-one correspondence: some conditions share a rule with a sibling, some rules group several conditions under one predicate, and some specified conditions have no rule at all. Section 11.7 states, condition by condition, which is which, because a reader given ``58 rules'' and ``77 conditions'' with no crosswalk cannot tell whether the gap is an implementation debt or a difference of granularity.
 
 \end{document}

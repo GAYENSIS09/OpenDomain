@@ -37,6 +37,8 @@ the *question* of whether the general form is the right interaction at all.
 `CPT-003` proposes a scanning-first interaction. `HYP-005` makes its benefit
 falsifiable. `EXP-002` measures the re-key rate before and after.
 
+-->
+
 ## Status values
 
 `OPEN` `INVESTIGATING` `VALIDATED` `REJECTED` `DEFERRED`

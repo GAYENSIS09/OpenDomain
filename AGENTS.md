@@ -67,7 +67,7 @@ artifact to silence a finding — that is the laundering the framework detects.
 ## Working on this repository
 
 ```bash
-cargo test --workspace      # 91 unit tests + 2 doctests
+cargo test --workspace      # 118 unit tests + 2 doctests
 cargo fmt --all -- --check
 pdflatex opendomain-paper.tex && pdflatex opendomain-paper.tex   # the paper
 ```

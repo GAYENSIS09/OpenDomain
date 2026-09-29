@@ -58,6 +58,8 @@ silently forever.
 Three-way match fails; invoices are not matched to receipts; the finance
 reconciliation reports unmatched invoices. Detected by `TEST-021`.
 
+-->
+
 ## Rules for this registry
 
 - Every integration needs a **failure mode**. An integration without one is not

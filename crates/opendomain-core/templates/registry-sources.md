@@ -40,6 +40,8 @@ epistemic = "EXPLICIT"
 Describes the general case worldwide. Does not describe any specific local
 practice, and does not address local customs declaration formats.
 
+-->
+
 ## Source types
 
 `STANDARD` `REGULATION` `LAW` `OFFICIAL_DOC` `ACADEMIC` `BOOK`

@@ -153,6 +153,59 @@ impl Relation {
     }
 }
 
+/// One recorded epistemic promotion.
+///
+/// A promotion is the moment an artifact's lifecycle status was advanced and
+/// the epistemic state it carried at the time. Recording it separately from the
+/// artifact's *current* state is what makes a provenance change distinguishable
+/// from a status edit: without a record, `epistemic = "EXPLICIT"` on a
+/// VALIDATED requirement and a genuine re-derivation from a new source are
+/// indistinguishable after the fact.
+///
+/// The field is optional in practice — a workspace that has never recorded a
+/// promotion has no history, and the absence is reported rather than inferred.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Promotion {
+    /// Epistemic state held immediately before the promotion.
+    ///
+    /// `None` means the artifact declared no epistemic state before the change,
+    /// which is itself a laundering risk rather than a clean baseline.
+    #[serde(default)]
+    pub from: Option<KnowledgeType>,
+    /// Status the artifact was promoted to.
+    pub to: ArtifactStatus,
+    /// Evidence cited *at the moment of promotion*.
+    ///
+    /// The gate requires these to resolve to `EXPLICIT` evidence items. An empty
+    /// list is a status edit with no provenance change.
+    #[serde(default)]
+    pub evidence: Vec<Id>,
+    /// Free-form date, as written. Not parsed: a knowledge record should not
+    /// depend on a date library to be legible.
+    #[serde(default)]
+    pub date: Option<String>,
+}
+
+impl Promotion {
+    /// `true` when this promotion advanced the artifact into a state that
+    /// asserts the claim holds.
+    pub fn asserts_validity(&self) -> bool {
+        matches!(
+            self.to,
+            ArtifactStatus::Validated | ArtifactStatus::Verified
+        )
+    }
+
+    /// `true` when the state being promoted *from* is one that does not yet
+    /// support an assertion.
+    pub fn from_unresolved(&self) -> bool {
+        matches!(
+            self.from,
+            Some(KnowledgeType::Assumed) | Some(KnowledgeType::Inferred)
+        )
+    }
+}
+
 /// A single loaded artifact: its identity, its machine-checked metadata, and
 /// the prose that accompanies it.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -175,6 +228,10 @@ pub struct Artifact {
     pub confidence: Option<Confidence>,
     /// Outgoing edges to other artifacts.
     pub links: BTreeMap<Relation, Vec<Id>>,
+    /// Recorded epistemic promotions, oldest first. Empty when the workspace
+    /// has never recorded one.
+    #[serde(default)]
+    pub promotions: Vec<Promotion>,
     /// Keys present in the TOML block that are not recognised.
     pub extra: BTreeMap<String, toml::Value>,
     /// The free-form body below the TOML block.
@@ -252,6 +309,45 @@ impl Artifact {
                 | Some(KnowledgeType::Conflicting)
         )
     }
+
+    /// `true` when the artifact *asserts* it is valid while still declaring an
+    /// epistemic state that does not support assertion.
+    ///
+    /// This is the laundering predicate G8-B2 names, evaluated on current state.
+    /// It needs no history, which is why it is decidable today: an artifact
+    /// that is `ASSUMED` and `VALIDATED` at the same moment was laundered
+    /// whatever else is true. History distinguishes the subtler case, where the
+    /// epistemic state was edited at the same time as the status; see
+    /// [`Artifact::promotions`].
+    pub fn asserts_beyond_its_provenance(&self) -> bool {
+        matches!(
+            self.epistemic,
+            Some(KnowledgeType::Assumed) | Some(KnowledgeType::Inferred)
+        ) && matches!(
+            self.status,
+            ArtifactStatus::Validated | ArtifactStatus::Verified
+        )
+    }
+
+    /// Promotions that assert validity from a state that did not support it.
+    ///
+    /// Each is a candidate laundering event. The caller decides whether the
+    /// cited evidence is `EXPLICIT`, which needs the index.
+    pub fn suspect_promotions(&self) -> impl Iterator<Item = &Promotion> {
+        self.promotions
+            .iter()
+            .filter(|p| p.asserts_validity() && p.from_unresolved())
+    }
+
+    /// `true` when the artifact declares no epistemic state at all.
+    ///
+    /// G2-B3 makes this blocking. It is a query on the model rather than a
+    /// derived property, which is why it was previously inexpressible: the
+    /// parser had to accept an absent `epistemic` before any rule could
+    /// object.
+    pub fn epistemic_undeclared(&self) -> bool {
+        self.epistemic.is_none()
+    }
 }
 
 /// A parsed Markdown file: its front-matter-free preamble plus its artifacts.
@@ -315,6 +411,7 @@ mod tests {
             epistemic: None,
             confidence: None,
             links,
+            promotions: Vec::new(),
             extra: BTreeMap::new(),
             body: String::new(),
         });
@@ -335,6 +432,7 @@ mod tests {
             epistemic: None,
             confidence: None,
             links: BTreeMap::new(),
+            promotions: Vec::new(),
             extra: BTreeMap::new(),
             body: String::new(),
         };
@@ -372,6 +470,7 @@ mod tests {
             epistemic: None,
             confidence: None,
             links: BTreeMap::new(),
+            promotions: Vec::new(),
             extra: BTreeMap::new(),
             body: String::new(),
         };

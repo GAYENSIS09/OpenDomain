@@ -41,8 +41,24 @@ od status
 ```
 
 `od init` creates an `opendomain/` directory: 41 files, one per registry, plus
-configuration and agent instructions. It is idempotent — re-running it reports
-what already exists and changes nothing.
+configuration. It is idempotent — re-running it reports what already exists and
+changes nothing.
+
+It also writes an **agent contract** to the project root, so the framework is
+usable by any coding agent rather than only by someone who has read the paper:
+
+```
+AGENTS.md                          # the rules, readable by any agent
+opendomain-agent/README.md         # what the file set is and how to use it
+.opencode/command/                 # /od-status, /od-gate, /od-trace, /od-impact,
+                                   # /od-audit, /od-record
+.opencode/agent/                   # domain-researcher, spec-implementer
+.opencode/skills/opendomain/       # SKILL.md
+```
+
+`AGENTS.md` is never overwritten, not even with `--force`: if you already keep
+your own, `od` does not claim it. The namespaced `.opencode/` files are written by
+`od` and are refreshed by `--force`.
 
 ```bash
 od init --profile lean      # start at Stage 3; the domain model exists elsewhere
@@ -207,7 +223,7 @@ RULE-001`.
 
 ## What gets enforced
 
-The nine gates carry 55 named rules, each identified by a stable slug such as
+The nine gates carry 58 named rules, each identified by a stable slug such as
 `gate-3/unjustified-requirement` so a failure can be cited rather than
 paraphrased. A representative selection:
 
@@ -223,9 +239,40 @@ paraphrased. A representative selection:
 | `gate-6/dependency-cycle` | Task dependencies forming a cycle |
 | `gate-8/requirement-without-passing-test` | A requirement marked `IMPLEMENTED` with no verified test downstream |
 | `gate-8/dangling-reference` | A link pointing at an identifier that does not exist |
+| `gate-1/undeclared-epistemic` | An artifact that makes a claim but declares no epistemic state |
+| `gate-7/epistemic-laundering` | An `ASSUMED` or `INFERRED` artifact marked `VALIDATED` or `VERIFIED`, with no intervening `EXPLICIT` evidence |
 
 `od audit` reports traceability health across the whole workspace, including
 coverage ratios, unjustified artifacts, dangling links, and open conflicts.
+
+## Recording how a claim got stronger
+
+An artifact's `epistemic` state is a claim about the present. A `promotions`
+array records how it got there:
+
+````markdown
+```toml
+status = "VALIDATED"
+epistemic = "EXPLICIT"
+promotions = [
+  { from = "ASSUMED", to = "VALIDATED", evidence = ["EVD-014"], date = "2026-04-10" }
+]
+```
+````
+
+Without that record, a change from `ASSUMED` to `EXPLICIT` and a change of
+status are indistinguishable from each other — which is precisely the edit the
+framework exists to catch. `gate-7/epistemic-laundering` blocks a promotion from
+`ASSUMED` or `INFERRED` into `VALIDATED` or `VERIFIED` that cites no evidence,
+cites evidence that does not exist, or cites evidence that is not itself
+`EXPLICIT`. It also blocks on the current state alone: an artifact that is
+`ASSUMED` and `VALIDATED` at once has been laundered whether or not it wrote
+anything down.
+
+A workspace that records no promotions at all gets an advisory, not a blocking
+finding. Absence of history is not evidence that laundering happened; it is
+evidence that laundering is currently undetectable, which is a smaller problem
+and a different one.
 
 ## Repository layout
 
@@ -245,7 +292,7 @@ opencode.json             opencode configuration for this repository
 ## Building and testing
 
 ```bash
-cargo test --workspace      # 91 unit tests + 2 doctests
+cargo test --workspace      # 118 unit tests + 2 doctests
 cargo fmt --all -- --check
 ```
 

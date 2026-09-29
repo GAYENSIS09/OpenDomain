@@ -60,6 +60,8 @@ None in the producing transaction. Consumers react in their own context.
 Decide deliberately: at-most-once, at-least-once or exactly-once, and whether
 consumers must be idempotent. "It depends on the broker" is not a decision.
 
+-->
+
 ## Rules for this registry
 
 - An event represents real domain meaning. "UserClicked" is an interaction, not

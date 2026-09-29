@@ -25,5 +25,6 @@ finding, do that as a separate, explicit step.
 because the work in front of you feels complete. The framework exists to catch
 exactly that error, and an agent that rationalises a gate result has defeated it.
 
-If the user wants every gate up to a stage, that is
-`od gate --through <gate-name>`.
+If the user wants every gate up to a stage, that is `od gate --through <n>`,
+where `n` is the gate number 0–8. `--through` takes the number, not the name;
+passing a name is an error.

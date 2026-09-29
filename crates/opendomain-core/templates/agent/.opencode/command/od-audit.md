@@ -9,7 +9,8 @@ anything complete.
 1. Run `od audit` and show the output verbatim.
 2. Run `od link --check` and show the result. Dangling references mean stated
    dependencies point at artifacts that do not exist.
-3. Run `od gate --through completion` and show which gates fail.
+3. Run `od gate --through 8` and show which gates fail. `--through` takes the
+   gate number 0–8, not the name; `completion` is gate 8.
 
 Then report, in this order:
 

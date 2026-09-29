@@ -63,6 +63,8 @@ state the system can show honestly.
 
 Data migration from the old spreadsheets, which `GAP-002` tracks separately.
 
+-->
+
 ## Rules for this registry
 
 - One plan per capability area, not one plan per project. A plan that covers

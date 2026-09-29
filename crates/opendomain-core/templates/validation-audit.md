@@ -44,6 +44,8 @@ gates-passed = ["context", "research", "domain", "requirements", "opportunity", 
 `PASS`, with two accepted unknowns recorded as risks. Neither affects the
 behaviour under review.
 
+-->
+
 ## What an audit is for
 
 An audit answers one question: **can you show that what was built is what was

@@ -101,6 +101,10 @@ pub struct Gate {
 
 impl Gate {
     /// All gates, in lifecycle order.
+    ///
+    /// The single source of truth for what a gate is. `RULES` names these by
+    /// number rather than by value so that adding a gate here cannot leave the
+    /// rule catalogue referring to a gate that does not exist.
     pub const ALL: &'static [Gate] = &[
         Gate {
             number: 0,
@@ -172,6 +176,337 @@ impl Gate {
             .find(|g| g.name == norm || g.number.to_string() == norm)
     }
 }
+
+/// One rule the gates can raise.
+///
+/// The rule slug is what an agent cites when it reports a finding, so the set of
+/// slugs is part of the tool's contract rather than an implementation detail. It
+/// used not to be enumerable: each gate function hardcoded its own slugs, which
+/// meant nothing outside `gates.rs` could list what would be checked. An agent
+/// could only learn the rules by tripping them.
+///
+/// This table is the declared catalogue. It duplicates the slugs in the gate
+/// functions, and a test fails if the two disagree in either direction, so the
+/// duplication cannot rot.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Rule {
+    /// The slug suffix, without the `gate-N/` prefix. `od gate` prints the full
+    /// slug; this is the part that says what the rule is about.
+    pub slug: &'static str,
+    /// The number of the gate that raises it.
+    pub gate: u8,
+    /// Whether finding it fails `od gate`.
+    pub severity: Severity,
+}
+
+impl Rule {
+    /// The slug as `od` prints it, e.g. `gate-1/no-sources`.
+    pub fn full_slug(&self) -> String {
+        format!("gate-{}/{}", self.gate, self.slug)
+    }
+
+    /// The gate this rule belongs to. Always resolves: a test asserts that every
+    /// catalogue entry names a gate that exists, so a number out of range fails
+    /// there rather than at some later point in a report.
+    pub fn gate(&self) -> Gate {
+        Gate::by_number(self.gate)
+            .unwrap_or_else(|| unreachable!("RULES names gate {}, which does not exist", self.gate))
+    }
+}
+
+/// Every rule the gates can raise, ordered by gate then slug.
+pub const RULES: &[Rule] = &[
+    Rule {
+        slug: "assumption-reached-production",
+        gate: 8,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "concept-without-mechanism",
+        gate: 4,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "concepts-without-hypotheses",
+        gate: 4,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "contract-without-spec",
+        gate: 7,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "contracts-without-tests",
+        gate: 7,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "dangling-reference",
+        gate: 8,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "decision-without-evidence",
+        gate: 4,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "dependency-cycle",
+        gate: 6,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "domain-not-cross-analysed",
+        gate: 2,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "domain-without-purpose",
+        gate: 0,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "draft-requirement",
+        gate: 3,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "duplicate-requirement",
+        gate: 3,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "duplicate-term",
+        gate: 2,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "empty-criterion",
+        gate: 5,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "empty-evidence",
+        gate: 1,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "empty-registry",
+        gate: 2,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "empty-specification",
+        gate: 5,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "entity-without-owner",
+        gate: 2,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "epistemic-laundering",
+        gate: 7,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "experiment-without-outcome",
+        gate: 4,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "feature-cloning",
+        gate: 4,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "how-not-what",
+        gate: 5,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "implemented-without-verification",
+        gate: 7,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "low-confidence",
+        gate: 1,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "no-concept-decision",
+        gate: 4,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-domain-map",
+        gate: 0,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-evidence",
+        gate: 1,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-opportunities",
+        gate: 4,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "no-requirements",
+        gate: 3,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-sources",
+        gate: 1,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-specifications",
+        gate: 5,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-stakeholders",
+        gate: 0,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-statement",
+        gate: 3,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "no-transition-history",
+        gate: 7,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "open-uncertainty",
+        gate: 8,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "orphan-evidence",
+        gate: 1,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "orphan-test",
+        gate: 7,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "ownership-without-concept",
+        gate: 2,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "plan-without-approach",
+        gate: 6,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "requirement-without-passing-test",
+        gate: 8,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "resolved-uncertainty-still-open",
+        gate: 2,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "single-source",
+        gate: 1,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "spec-without-concept",
+        gate: 4,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "spec-without-verification",
+        gate: 5,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "task-without-test",
+        gate: 6,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "tasks-without-plan",
+        gate: 6,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "undeclared-epistemic",
+        gate: 1,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "unfalsifiable-hypothesis",
+        gate: 4,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "unjustified-requirement",
+        gate: 3,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "unknown-not-tracked",
+        gate: 1,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "unresolved-conflict",
+        gate: 8,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "unresolved-drift",
+        gate: 7,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "unresolved-provenance",
+        gate: 3,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "untested-requirement",
+        gate: 3,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "untraced-specification",
+        gate: 5,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "untraced-task",
+        gate: 6,
+        severity: Severity::Blocking,
+    },
+    Rule {
+        slug: "unverified-contract",
+        gate: 8,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "vague-quantifier",
+        gate: 3,
+        severity: Severity::Advisory,
+    },
+];
 
 /// Evaluates one gate against a loaded workspace.
 pub fn evaluate(gate: Gate, index: &Index) -> GateReport {
@@ -272,6 +607,26 @@ fn gate_research(index: &Index, out: &mut Vec<Finding>) {
                 "gate-1/empty-evidence",
                 format!("{} has no quoted statement or context", e.id),
                 Some(&e.id),
+            ));
+        }
+    }
+
+    // G2-B3. An artifact that makes a claim but does not say how it is known is
+    // the condition the whole framework exists to prevent, and it is invisible
+    // downstream: every later gate reads `epistemic`, finds it absent, and has
+    // nothing to object to. Scoped to kinds that make knowledge claims — see
+    // `IdKind::makes_knowledge_claim` for why tasks and plans are excluded.
+    for a in index.by_id.values() {
+        if a.id.kind().makes_knowledge_claim() && a.epistemic_undeclared() {
+            out.push(blocking(
+                "gate-1/undeclared-epistemic",
+                format!(
+                    "{} is a {} that declares no epistemic state: it must say whether it is \
+                     EXPLICIT, TACIT, HYBRID, INFERRED, ASSUMED, UNKNOWN or CONFLICTING",
+                    a.id,
+                    a.id.kind().label()
+                ),
+                Some(&a.id),
             ));
         }
     }
@@ -857,9 +1212,127 @@ fn find_cycles(tasks: &[&Artifact]) -> Vec<Vec<String>> {
 // ── Gate 7: implementation ───────────────────────────────────────────────
 
 /// Gate 7 — what was built matches what was specified.
+// ── Gate 7: implementation ────────────────────────────────────────────────
+
+/// G8-B2, epistemic laundering.
+///
+/// A status change from a state that does not support assertion to one that
+/// does, with no intervening `EXPLICIT` evidence, is the framework's central
+/// failure mode: the artifact reads as validated because its status says so,
+/// while nothing about how it is known has changed.
+///
+/// Two predicates, because they answer different questions and have different
+/// false-positive profiles.
+///
+/// *Current state* — the artifact is `ASSUMED` or `INFERRED` and is
+/// `VALIDATED` or `VERIFIED` right now. This is decidable with no history at
+/// all, and it is unambiguous: whatever else is true, the artifact asserts more
+/// than its provenance supports.
+///
+/// *Recorded transition* — a promotion is recorded from `ASSUMED` or `INFERRED`
+/// into `VALIDATED` or `VERIFIED`, and the evidence cited at that moment is
+/// absent, dangling, or itself not `EXPLICIT`. This catches the subtler case
+/// the current-state test cannot: the author edited `epistemic` to `EXPLICIT`
+/// in the same commit as the status, so the artifact now reads clean while the
+/// promotion was a bare status edit.
+///
+/// The recorded-transition predicate needs a workspace that records promotions.
+/// A workspace that records none is reported as advisory, because the absence of
+/// history is not evidence of laundering — it is evidence that laundering is
+/// currently undetectable, which is a different and lesser problem.
+fn gate_epistemic_laundering(index: &Index, out: &mut Vec<Finding>) {
+    for a in index.by_id.values() {
+        if !a.id.kind().makes_knowledge_claim() {
+            continue;
+        }
+
+        if a.asserts_beyond_its_provenance() {
+            out.push(blocking(
+                "gate-7/epistemic-laundering",
+                format!(
+                    "{} is {} but its epistemic state is still {}: a status that asserts \
+                     validity cannot rest on a claim that was never established",
+                    a.id,
+                    a.status,
+                    a.epistemic.map(|k| k.as_str()).unwrap_or("undeclared")
+                ),
+                Some(&a.id),
+            ));
+            continue;
+        }
+
+        for p in a.suspect_promotions() {
+            let unexplained: Vec<String> = p
+                .evidence
+                .iter()
+                .filter(|id| match index.get(id) {
+                    Some(ev) => ev.epistemic != Some(KnowledgeType::Explicit),
+                    None => true,
+                })
+                .map(|id| match index.get(id) {
+                    Some(ev) => format!(
+                        "{id} is {}",
+                        ev.epistemic.map(|k| k.as_str()).unwrap_or("undeclared")
+                    ),
+                    None => format!("{id} does not exist"),
+                })
+                .collect();
+
+            if p.evidence.is_empty() {
+                out.push(blocking(
+                    "gate-7/epistemic-laundering",
+                    format!(
+                        "{} was promoted from {} to {} citing no evidence: the epistemic state \
+                         did not change, only the status did",
+                        a.id,
+                        p.from.map(|k| k.as_str()).unwrap_or("undeclared"),
+                        p.to
+                    ),
+                    Some(&a.id),
+                ));
+            } else if !unexplained.is_empty() {
+                out.push(blocking(
+                    "gate-7/epistemic-laundering",
+                    format!(
+                        "{} was promoted from {} to {} citing evidence that is not EXPLICIT: {}",
+                        a.id,
+                        p.from.map(|k| k.as_str()).unwrap_or("undeclared"),
+                        p.to,
+                        unexplained.join(", ")
+                    ),
+                    Some(&a.id),
+                ));
+            }
+        }
+    }
+
+    let claims = index
+        .by_id
+        .values()
+        .filter(|a| a.id.kind().makes_knowledge_claim())
+        .count();
+    if claims > 0
+        && !index
+            .by_id
+            .values()
+            .any(|a| a.id.kind().makes_knowledge_claim() && !a.promotions.is_empty())
+    {
+        out.push(advisory(
+            "gate-7/no-transition-history",
+            "no artifact records a `promotions` history, so a status change cannot be \
+             distinguished from a status edit: this workspace cannot currently detect \
+             laundering that was accompanied by an edit to the epistemic state",
+            None,
+        ));
+    }
+}
+
+/// Gate 7 — the work is implemented against a specification, and verified.
 fn gate_implementation(index: &Index, out: &mut Vec<Finding>) {
     let tests = index.of_kind(IdKind::Test);
     let contracts = index.of_kind(IdKind::Ctr);
+
+    gate_epistemic_laundering(index, out);
 
     for s in index.of_kind(IdKind::Spec) {
         if s.status == ArtifactStatus::Implemented || s.status == ArtifactStatus::Verified {
@@ -1104,18 +1577,18 @@ mod tests {
         index_from(&[
             (
                 "DOM-001",
-                "purpose = \"warehouse\"",
+                "purpose = \"warehouse\"\nepistemic = \"INFERRED\"",
                 "Warehouse management.",
             ),
-            ("STK-001", "", "Warehouse manager."),
+            ("STK-001", "epistemic = \"EXPLICIT\"", "Warehouse manager."),
             (
                 "SRC-001",
-                "type = \"STANDARD\"",
+                "type = \"STANDARD\"\nepistemic = \"EXPLICIT\"",
                 "Title: Warehouse management. URL: https://example.com",
             ),
             (
                 "SRC-002",
-                "type = \"BOOK\"",
+                "type = \"BOOK\"\nepistemic = \"EXPLICIT\"",
                 "Title: Logistics. URL: https://example.org",
             ),
             (
@@ -1128,10 +1601,26 @@ mod tests {
                 "derived-from = [\"SRC-002\"]\nepistemic = \"INFERRED\"\nconfidence = \"MEDIUM\"",
                 "Operators reconcile stock monthly.",
             ),
-            ("TERM-001", "owned-by = \"DOM-001\"", "Canonical term."),
-            ("ACT-001", "owned-by = \"DOM-001\"", "Warehouse operator."),
-            ("PROC-001", "derived-from = [\"EVD-001\"]", "Receive goods."),
-            ("ENT-001", "owned-by = \"DOM-001\"", "An item."),
+            (
+                "TERM-001",
+                "owned-by = \"DOM-001\"\nepistemic = \"EXPLICIT\"",
+                "Canonical term.",
+            ),
+            (
+                "ACT-001",
+                "owned-by = \"DOM-001\"\nepistemic = \"EXPLICIT\"",
+                "Warehouse operator.",
+            ),
+            (
+                "PROC-001",
+                "derived-from = [\"EVD-001\"]\nepistemic = \"EXPLICIT\"",
+                "Receive goods.",
+            ),
+            (
+                "ENT-001",
+                "owned-by = \"DOM-001\"\nepistemic = \"EXPLICIT\"",
+                "An item.",
+            ),
             (
                 "RULE-001",
                 "derived-from = [\"EVD-001\"]\nepistemic = \"EXPLICIT\"",
@@ -1144,12 +1633,12 @@ mod tests {
             ),
             (
                 "SPEC-001",
-                "derived-from = [\"REQ-001\"]\nverifies = [\"AC-001-01\"]\nstatus = \"APPROVED\"",
+                "derived-from = [\"REQ-001\"]\nverifies = [\"AC-001-01\"]\nstatus = \"APPROVED\"\nepistemic = \"EXPLICIT\"",
                 "Scenario: receive within remaining quantity. Then the stock increases.",
             ),
             (
                 "AC-001-01",
-                "derived-from = [\"SPEC-001\"]",
+                "derived-from = [\"SPEC-001\"]\nepistemic = \"EXPLICIT\"",
                 "When a valid receipt is confirmed, the stock increases by that quantity.",
             ),
             (
@@ -1168,6 +1657,194 @@ mod tests {
                 "Unit test for over-receipt rejection.",
             ),
         ])
+    }
+
+    #[test]
+    fn a_claim_without_an_epistemic_state_is_flagged() {
+        let index = index_from(&[(
+            "RULE-001",
+            "derived-from = [\"EVD-001\"]",
+            "Stock SHALL never go negative.",
+        )]);
+        let report = evaluate(Gate::by_name("research").unwrap(), &index);
+        assert!(
+            rules(&report).contains(&"gate-1/undeclared-epistemic"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_task_without_an_epistemic_state_is_not_flagged() {
+        // A task records work to be done, not a claim about the domain, so
+        // requiring an epistemic state of it would be a false positive on every
+        // workspace. This test pins that scoping decision.
+        let index = index_from(&[(
+            "TASK-001",
+            "derived-from = [\"SPEC-001\"]",
+            "Implement receipt validation.",
+        )]);
+        let report = evaluate(Gate::by_name("research").unwrap(), &index);
+        assert!(
+            !rules(&report).contains(&"gate-1/undeclared-epistemic"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_validated_assumption_is_laundering() {
+        let index = index_from(&[(
+            "RULE-001",
+            "epistemic = \"ASSUMED\"\nstatus = \"VALIDATED\"",
+            "Stock SHALL never go negative.",
+        )]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            rules(&report).contains(&"gate-7/epistemic-laundering"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_draft_assumption_is_not_laundering() {
+        // The same epistemic state is fine when the status does not yet claim
+        // the artifact holds. A gate that flagged this would push authors to
+        // declare EXPLICIT to silence it, which is the behaviour it exists to
+        // prevent.
+        let index = index_from(&[(
+            "RULE-001",
+            "epistemic = \"ASSUMED\"\nstatus = \"DRAFT\"",
+            "Stock SHALL never go negative.",
+        )]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            !rules(&report).contains(&"gate-7/epistemic-laundering"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_promotion_citing_no_evidence_is_laundering() {
+        // The case the current-state test cannot see: `epistemic` was edited to
+        // EXPLICIT in the same commit as the status, so the artifact reads clean
+        // while the promotion itself was a bare status edit.
+        let index = index_from(&[(
+            "RULE-001",
+            "epistemic = \"EXPLICIT\"\nstatus = \"VALIDATED\"\npromotions = [\n  { from = \"ASSUMED\", to = \"VALIDATED\" }\n]",
+            "Stock SHALL never go negative.",
+        )]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            rules(&report).contains(&"gate-7/epistemic-laundering"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_promotion_citing_non_explicit_evidence_is_laundering() {
+        let index = index_from(&[
+            (
+                "EVD-001",
+                "epistemic = \"INFERRED\"",
+                "Stock movements are recorded.",
+            ),
+            (
+                "RULE-001",
+                "epistemic = \"EXPLICIT\"\nstatus = \"VALIDATED\"\npromotions = [\n  { from = \"ASSUMED\", to = \"VALIDATED\", evidence = [\"EVD-001\"] }\n]",
+                "Stock SHALL never go negative.",
+            ),
+        ]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            rules(&report).contains(&"gate-7/epistemic-laundering"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_promotion_citing_missing_evidence_is_laundering() {
+        let index = index_from(&[(
+            "RULE-001",
+            "epistemic = \"EXPLICIT\"\nstatus = \"VALIDATED\"\npromotions = [\n  { from = \"ASSUMED\", to = \"VALIDATED\", evidence = [\"EVD-404\"] }\n]",
+            "Stock SHALL never go negative.",
+        )]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            rules(&report).contains(&"gate-7/epistemic-laundering"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_promotion_citing_explicit_evidence_is_accepted() {
+        let index = index_from(&[
+            (
+                "EVD-001",
+                "epistemic = \"EXPLICIT\"",
+                "Stock movements are recorded.",
+            ),
+            (
+                "RULE-001",
+                "epistemic = \"EXPLICIT\"\nstatus = \"VALIDATED\"\npromotions = [\n  { from = \"ASSUMED\", to = \"VALIDATED\", evidence = [\"EVD-001\"], date = \"2026-09-29\" }\n]",
+                "Stock SHALL never go negative.",
+            ),
+        ]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            !rules(&report).contains(&"gate-7/epistemic-laundering"),
+            "{:?}",
+            rules(&report)
+        );
+    }
+
+    #[test]
+    fn a_workspace_with_no_history_says_so_without_accusing_anyone() {
+        // Absence of history is not evidence of laundering. It is evidence that
+        // laundering is currently undetectable, which is a lesser and different
+        // problem, so it is advisory and names no artifact.
+        let index = index_from(&[(
+            "RULE-001",
+            "epistemic = \"EXPLICIT\"",
+            "Stock SHALL never go negative.",
+        )]);
+        let report = evaluate(Gate::by_name("implementation").unwrap(), &index);
+        assert!(
+            rules(&report).contains(&"gate-7/no-transition-history"),
+            "{:?}",
+            rules(&report)
+        );
+        let finding = report
+            .findings
+            .iter()
+            .find(|f| f.rule.as_str() == "gate-7/no-transition-history")
+            .unwrap();
+        assert_eq!(finding.severity, Severity::Advisory);
+        assert!(finding.id.is_none());
+    }
+
+    #[test]
+    fn a_malformed_promotion_is_an_error_rather_than_a_skipped_row() {
+        // A promotion record that silently fails to load is indistinguishable
+        // from no promotion having happened, which is the ambiguity the record
+        // exists to remove.
+        let text = "## RULE-001 - A rule\n\n```toml\nstatus = \"VALIDATED\"\npromotions = [\n  \"ASSUMED\"\n]\n```\n\nBody.\n";
+        let err =
+            parse::parse(std::path::Path::new("t.md"), PathBuf::from("t.md"), text).unwrap_err();
+        assert!(err.to_string().contains("promotions[0]"), "{err}");
+    }
+
+    #[test]
+    fn a_promotion_with_an_unknown_status_is_rejected() {
+        let text = "## RULE-001 - A rule\n\n```toml\npromotions = [\n  { from = \"ASSUMED\", to = \"LAUNDERED\" }\n]\n```\n\nBody.\n";
+        let err =
+            parse::parse(std::path::Path::new("t.md"), PathBuf::from("t.md"), text).unwrap_err();
+        assert!(err.to_string().contains("promotions[0].to"), "{err}");
     }
 
     #[test]
@@ -1213,10 +1890,18 @@ mod tests {
     #[test]
     fn gate_1_passes_with_two_independent_sources() {
         let index = index_from(&[
-            ("SRC-001", "", "A."),
-            ("SRC-002", "", "B."),
-            ("EVD-001", "derived-from = [\"SRC-001\"]", "A."),
-            ("EVD-002", "derived-from = [\"SRC-002\"]", "B."),
+            ("SRC-001", "epistemic = \"EXPLICIT\"", "A."),
+            ("SRC-002", "epistemic = \"EXPLICIT\"", "B."),
+            (
+                "EVD-001",
+                "derived-from = [\"SRC-001\"]\nepistemic = \"EXPLICIT\"",
+                "A.",
+            ),
+            (
+                "EVD-002",
+                "derived-from = [\"SRC-002\"]\nepistemic = \"EXPLICIT\"",
+                "B.",
+            ),
         ]);
         assert!(evaluate(Gate::by_name("research").unwrap(), &index).passed());
     }
@@ -1395,5 +2080,145 @@ mod tests {
             .rposition(|f| f.severity == Severity::Blocking)
             .unwrap_or(0);
         assert!(last_blocking < first_advisory);
+    }
+
+    /// Slugs the gate functions can actually emit, read from this file's source.
+    ///
+    /// The catalogue `RULES` and the `blocking`/`advisory` call sites are two
+    /// statements of the same fact, and either can drift from the other without
+    /// any compiler noticing. Scraping the source is blunt but it is the only
+    /// thing that sees a rule nobody put in the catalogue.
+    fn slugs_emitted_in_source() -> Vec<(String, String, String)> {
+        let lines: Vec<&str> = include_str!("gates.rs").lines().collect();
+        let mut found = Vec::new();
+        for (i, line) in lines.iter().enumerate() {
+            let t = line.trim();
+            // Only emission sites: a push whose constructor names a severity.
+            // Test assertions and the catalogue itself name slugs too, and
+            // picking those up would make every catalogue entry look
+            // self-confirming.
+            let sev = if t.starts_with("out.push(blocking(") {
+                "blocking"
+            } else if t.starts_with("out.push(advisory(") {
+                "advisory"
+            } else {
+                continue;
+            };
+            // The slug is the first string literal after the constructor: its
+            // first argument, which may be on the next line. Working in lines
+            // rather than byte offsets avoids cutting a multi-byte character in
+            // half, which is a panic rather than a wrong answer.
+            let after: String = lines[i + 1..]
+                .iter()
+                .take(4)
+                .copied()
+                .collect::<Vec<_>>()
+                .join(" ");
+            let Some(start) = after.find('"') else {
+                continue;
+            };
+            let rest = &after[start + 1..];
+            let Some(end) = rest.find('"') else { continue };
+            if let Some(rest) = rest[..end].strip_prefix("gate-") {
+                if let Some((num, name)) = rest.split_once('/') {
+                    found.push((num.to_string(), name.to_string(), sev.to_string()));
+                }
+            }
+        }
+        found
+    }
+
+    #[test]
+    fn the_rule_catalogue_lists_every_rule_the_gates_emit() {
+        let emitted = slugs_emitted_in_source();
+        assert!(
+            emitted.len() > 50,
+            "source scan found only {} emission sites; the scan is broken, not the catalogue",
+            emitted.len()
+        );
+        let mut catalogued: Vec<(String, String)> = RULES
+            .iter()
+            .map(|r| (r.gate.to_string(), r.slug.to_string()))
+            .collect();
+        catalogued.sort();
+
+        for (num, name, _) in &emitted {
+            let key = (num.clone(), name.clone());
+            assert!(
+                catalogued.contains(&key),
+                "the gates emit `gate-{num}/{name}` but it is missing from RULES; \
+                 `od reference` would not be able to list it"
+            );
+        }
+    }
+
+    #[test]
+    fn the_rule_catalogue_has_no_rule_the_gates_do_not_emit() {
+        let emitted = slugs_emitted_in_source();
+        for r in RULES {
+            let found = emitted
+                .iter()
+                .any(|(n, s, _)| *n == r.gate.to_string() && *s == r.slug);
+            assert!(
+                found,
+                "RULES lists `{}` but no gate function emits it; the catalogue is \
+                 advertising a rule that does not exist",
+                r.full_slug()
+            );
+        }
+    }
+
+    #[test]
+    fn the_rule_catalogue_has_no_duplicates() {
+        let mut slugs: Vec<String> = RULES.iter().map(|r| r.full_slug()).collect();
+        let before = slugs.len();
+        slugs.sort();
+        slugs.dedup();
+        assert_eq!(before, slugs.len(), "RULES contains a duplicate slug");
+    }
+
+    #[test]
+    fn every_catalogued_rule_names_a_gate_that_exists() {
+        for r in RULES {
+            assert!(
+                r.gate <= 8,
+                "{} names gate {}, and there are only nine gates (0-8)",
+                r.full_slug(),
+                r.gate
+            );
+            // Panics if the number is unknown, which is the point: a rule that
+            // cannot be traced to a gate cannot be run.
+            let _ = r.gate();
+        }
+    }
+
+    #[test]
+    fn the_catalogue_severity_matches_what_the_gate_constructs() {
+        // The catalogue says which rules block. If that is wrong, an agent
+        // deciding whether to fix a finding is being misled, and `od gate`'s
+        // exit code will not match the table `od reference` printed.
+        let mut emitted: Vec<(String, String, String)> = slugs_emitted_in_source();
+        emitted.sort();
+        emitted.dedup();
+        for r in RULES {
+            let key = (r.gate.to_string(), r.slug.to_string(), String::new());
+            let found = emitted
+                .iter()
+                .find(|(n, s, _)| *n == key.0 && *s == key.1)
+                .unwrap_or_else(|| panic!("{} is not emitted by any gate", r.full_slug()));
+            let want = if r.severity == Severity::Blocking {
+                "blocking"
+            } else {
+                "advisory"
+            };
+            assert_eq!(
+                found.2,
+                want,
+                "{} is listed as {} in RULES but the gate constructs it as {}",
+                r.full_slug(),
+                want,
+                found.2
+            );
+        }
     }
 }

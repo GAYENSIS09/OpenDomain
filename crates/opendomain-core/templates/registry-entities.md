@@ -68,6 +68,8 @@ DRAFT ──confirm──▶ CONFIRMED ──reverse──▶ REVERSED
 `DOM-002` Inventory owns this concept. `DOM-001` Procurement references it and
 must not redefine it.
 
+-->
+
 ## Rules for this registry
 
 - Distinguish entity, value object and aggregate root explicitly.

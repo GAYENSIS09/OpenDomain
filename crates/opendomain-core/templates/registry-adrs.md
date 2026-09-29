@@ -65,6 +65,8 @@ Bad:
 
 Concurrent users exceed 50, or a second region is confirmed.
 
+-->
+
 ## Rules for this registry
 
 - One decision, one ADR. Do not bundle.

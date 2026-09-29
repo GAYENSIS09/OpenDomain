@@ -38,6 +38,8 @@ exactly why it is written down now.
 
 Before `SPEC-002` is approved.
 
+-->
+
 ## Status values
 
 `OPEN` — unvalidated

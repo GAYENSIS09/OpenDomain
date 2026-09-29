@@ -6,7 +6,7 @@
 //! fallback — because a registry that quietly drops requirements is worse than
 //! one that refuses to load.
 
-use crate::artifact::{Artifact, Document, Relation};
+use crate::artifact::{Artifact, Document, Promotion, Relation};
 use crate::error::{OdError, Result};
 use crate::ids::{Id, IdKind};
 use crate::vocab::ArtifactStatus;
@@ -17,7 +17,7 @@ use std::path::{Path, PathBuf};
 ///
 /// Anything not in this list is preserved in [`Artifact::extra`] so a
 /// user-defined field never causes data loss.
-const TYPED_KEYS: &[&str] = &["status", "epistemic", "confidence"];
+const TYPED_KEYS: &[&str] = &["status", "epistemic", "confidence", "promotions"];
 
 /// Parses one registry file.
 pub fn parse(_path: &Path, relative: PathBuf, text: &str) -> Result<Document> {
@@ -241,6 +241,7 @@ fn build(id: Id, title: String, file: &Path, line: usize, block: Option<&str>) -
     let mut status = ArtifactStatus::Draft;
     let mut epistemic = None;
     let mut confidence = None;
+    let mut promotions: Vec<Promotion> = Vec::new();
 
     if let Some(text) = block {
         let value: toml::Value = toml::from_str(text).map_err(|e| {
@@ -287,6 +288,9 @@ fn build(id: Id, title: String, file: &Path, line: usize, block: Option<&str>) -
                         OdError::artifact(file, format!("line {line}: {e}"))
                     })?);
                 }
+                "promotions" => {
+                    promotions = parse_promotions(file, line, val)?;
+                }
                 _ => {
                     if let Some(rel) = Relation::parse(key) {
                         let ids = parse_id_list(file, line, key, val)?;
@@ -314,9 +318,83 @@ fn build(id: Id, title: String, file: &Path, line: usize, block: Option<&str>) -
         epistemic,
         confidence,
         links,
+        promotions,
         extra,
         body: String::new(),
     })
+}
+
+/// Reads the `promotions` array: an ordered list of epistemic promotions.
+///
+/// A malformed entry is an error rather than a skipped row. A promotion record
+/// that silently fails to load is indistinguishable from no promotion having
+/// happened, which is precisely the ambiguity the record exists to remove.
+fn parse_promotions(file: &Path, line: usize, val: &toml::Value) -> Result<Vec<Promotion>> {
+    let items = val.as_array().ok_or_else(|| {
+        OdError::artifact(
+            file,
+            format!(
+                "line {line}: `promotions` must be an array of tables, found {}",
+                val.type_str()
+            ),
+        )
+    })?;
+
+    let mut out = Vec::with_capacity(items.len());
+    for (n, item) in items.iter().enumerate() {
+        let at = line + 1;
+        let table = item.as_table().ok_or_else(|| {
+            OdError::artifact(
+                file,
+                format!("line {line}: `promotions[{n}]` must be a table"),
+            )
+        })?;
+
+        let from = match table.get("from") {
+            None => None,
+            Some(v) => {
+                let raw = expect_string(file, at, &format!("promotions[{n}].from"), v)?;
+                Some(raw.parse().map_err(|e: String| {
+                    OdError::artifact(file, format!("line {line}: `promotions[{n}].from`: {e}"))
+                })?)
+            }
+        };
+
+        let to_raw = table.get("to").ok_or_else(|| {
+            OdError::artifact(
+                file,
+                format!("line {line}: `promotions[{n}]` must declare `to`"),
+            )
+        })?;
+        let to: ArtifactStatus = expect_string(file, at, &format!("promotions[{n}].to"), to_raw)?
+            .parse()
+            .map_err(|e: String| {
+                OdError::artifact(file, format!("line {line}: `promotions[{n}].to`: {e}"))
+            })?;
+
+        let evidence = match table.get("evidence") {
+            None => Vec::new(),
+            Some(v) => parse_id_list(file, at, &format!("promotions[{n}].evidence"), v)?,
+        };
+
+        let date = match table.get("date") {
+            None => None,
+            Some(v) => Some(expect_string(
+                file,
+                at,
+                &format!("promotions[{n}].date"),
+                v,
+            )?),
+        };
+
+        out.push(Promotion {
+            from,
+            to,
+            evidence,
+            date,
+        });
+    }
+    Ok(out)
 }
 
 fn expect_string(file: &Path, line: usize, key: &str, val: &toml::Value) -> Result<String> {

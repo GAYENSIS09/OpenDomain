@@ -54,6 +54,8 @@ the scanner, not the hypothesis.
 
 *To be recorded.*
 
+-->
+
 ## Rules for this registry
 
 - State the success criteria before running. A result that is only interesting

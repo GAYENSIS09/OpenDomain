@@ -47,6 +47,8 @@ quantity would pass here and would not exercise `SPEC-004` at all.
 `TEST-031`, executed against staging with the ERP deliberately unavailable, so
 that the local-confirmation path in `CDR-002` is covered too.
 
+-->
+
 ## The three failure modes this registry exists for
 
 1. **Each unit is right, the flow is wrong.** Composition is where most defects
