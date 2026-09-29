@@ -20,9 +20,9 @@ Artifact role:this document is the authoritative specification of intent for the
 
 
                                                   Abstract
-         ——————————————————————————– We present OpenDomain, a
-     domain-first, evidence-driven software engineering framework for use with AI coding assistants
-     (“vibe coding”). The framework addresses a specific and increasingly common failure mode:
+         ——————————————————————————– 
+     We present OpenDomain, a domain-first, evidence-driven software engineering framework for use with AI coding 
+     assistants (“vibe coding”). The framework addresses a specific and increasingly common failure mode:
      an AI assistant can produce syntactically complete, internally consistent, test-passing software
      whose domain semantics are invented rather than known. The failure is not a modelling error; it
      is an epistemic error. The system has no representation of what is known, what is assumed, what

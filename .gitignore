@@ -39,3 +39,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+opendomain-paper.tex
+opendomain-paper.pdf
+examples-docs-formats-delete-after-usage

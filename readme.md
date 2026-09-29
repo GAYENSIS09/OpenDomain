@@ -40,9 +40,11 @@ od init --name my-project
 od status
 ```
 
-`od init` creates an `opendomain/` directory: 41 files, one per registry, plus
-configuration. It is idempotent — re-running it reports what already exists and
-changes nothing.
+`od init` creates an `opendomain/` directory of **41 files**: 33 registry files,
+seven explanatory files (`README.md`, `project.md`, the research protocol, the
+architecture overview, the specs and changes READMEs, the validation audit) and
+`opendomain.toml`. It is idempotent — re-running it reports what already exists
+and changes nothing.
 
 It also writes an **agent contract** to the project root, so the framework is
 usable by any coding agent rather than only by someone who has read the paper:
@@ -103,22 +105,27 @@ od archive tighten-reservation
 
 ### The nine gates
 
-| Gate | Question it asks |
-|---|---|
-| `context` | Do we know what we are building, and what is already true? |
-| `research` | Is the domain understood well enough to derive requirements? |
-| `domain` | Is the domain model coherent, owned and cross-linked? |
-| `requirements` | Is every requirement justified, testable and traced? |
-| `opportunity` | Has anything been challenged, and is the chosen concept earned? |
-| `specification` | Does the specification describe observable behaviour and nothing else? |
-| `plan` | Is there a bounded, ordered plan that can realise the specification? |
-| `implementation` | Did implementation satisfy the acceptance criteria without drift? |
-| `completion` | Is the whole chain coherent, tested and free of critical unknowns? |
+| Gate               | Question it asks                                                       |
+| ------------------ | ---------------------------------------------------------------------- |
+| `context`        | Do we know what we are building, and what is already true?             |
+| `research`       | Is the domain understood well enough to derive requirements?           |
+| `domain`         | Is the domain model coherent, owned and cross-linked?                  |
+| `requirements`   | Is every requirement justified, testable and traced?                   |
+| `opportunity`    | Has anything been challenged, and is the chosen concept earned?        |
+| `specification`  | Does the specification describe observable behaviour and nothing else? |
+| `plan`           | Is there a bounded, ordered plan that can realise the specification?   |
+| `implementation` | Did implementation satisfy the acceptance criteria without drift?      |
+| `completion`     | Is the whole chain coherent, tested and free of critical unknowns?     |
 
-`od reference` prints this list as JSON.
+`od reference` prints this list as a rendered report; `od reference --json`
+returns it machine-readably, grouped by gate, with each rule's severity.
 
-Findings carry one of three severities. `BLOCKER` prevents progression,
-`WARNING` requires a recorded decision, `NOTE` is advisory.
+Findings carry one of two severities. `Blocking` fails the command —
+`od` exits non-zero — and means the phase cannot be considered complete.
+`Advisory` is reported and does not fail the command. The paper specifies
+three levels (`BLOCKER`, `WARNING`, `NOTE`); the implementation has two,
+and the paper's Section 11.7 records the six conditions whose severity
+disagrees with its own specification.
 
 Gates are pure functions from the workspace to a report: they never mutate
 state, so running one twice gives the same answer, and a failure names the exact
@@ -133,8 +140,11 @@ so `od gate --through specification` works as a CI step.
 od gate --through specification --json > gate-report.json
 ```
 
-`--strict` treats advisories as failures. `--no-color` and `-C <dir>` are
-available everywhere.
+`--no-color` and `-C <dir>` are available everywhere. `--strict` is
+accepted for explicitness and currently changes nothing: blocking findings
+always fail the command and advisory ones never do. `advisory_gates` in
+`opendomain.toml` and the `[schemas]` section are likewise written by
+`od init` but not read by the CLI today.
 
 ## Using it with opencode
 
@@ -144,13 +154,13 @@ automatically.
 
 **Slash commands**
 
-| Command | What it does |
-|---|---|
-| `/od-status` | Where the project stands, and what is blocking |
-| `/od-gate <gate>` | Runs a gate and reports the findings verbatim |
-| `/od-trace <ID>` | Explains why an artifact exists, from its recorded links |
-| `/od-impact <ID>` | What a change to an artifact would break |
-| `/od-audit` | Traceability health before claiming work is done |
+| Command                | What it does                                                 |
+| ---------------------- | ------------------------------------------------------------ |
+| `/od-status`         | Where the project stands, and what is blocking               |
+| `/od-gate <gate>`    | Runs a gate and reports the findings verbatim                |
+| `/od-trace <ID>`     | Explains why an artifact exists, from its recorded links     |
+| `/od-impact <ID>`    | What a change to an artifact would break                     |
+| `/od-audit`          | Traceability health before claiming work is done             |
 | `/od-record <topic>` | Writes a domain artifact, keeping its epistemic state honest |
 
 **Subagents**
@@ -165,10 +175,10 @@ automatically.
 the artifact format and the epistemic discipline. `AGENTS.md` holds the short
 version that is always in context, so the skill does not have to be.
 
-To adopt this in your own project, copy `.opencode/` and `AGENTS.md` across and
-put the `od` binary on `PATH`. `opencode.json` allows `od *` and asks before the
-commands that write — `init`, `link`, `advance`, `apply`, `archive` — so reading
-the project is frictionless and mutating it still needs consent.
+To adopt this in your own project, run `od init` — it writes `AGENTS.md`,
+`opendomain-agent/README.md` and the nine `.opencode/` files for you — and put
+the `od` binary on `PATH`. It does **not** write `opencode.json`: the permission
+file below is this repository's own, and copying it is your decision.
 
 ```json
 {
@@ -176,11 +186,20 @@ the project is frictionless and mutating it still needs consent.
   "permission": {
     "bash": {
       "od *": "allow",
-      "od link *": "ask"
+      "od init *": "ask",
+      "od link *": "ask",
+      "od advance *": "ask",
+      "od apply *": "ask",
+      "od archive *": "ask"
     }
   }
 }
 ```
+
+`od *` is allowed and the five mutating subcommands are asked for, so reading
+the project is frictionless and changing it still needs consent. The
+`domain-researcher` subagent is stricter still: its own frontmatter denies all
+bash except `od *`, so it can check its work and can run nothing else.
 
 > opencode reads its configuration at startup. After adding or changing
 > `opencode.json`, agents, commands or skills, **restart opencode** or the new
@@ -218,8 +237,7 @@ deserves without risking a parse error.
 Identifiers carry their kind as a prefix — `REQ`, `EVD`, `SRC`, `RULE`, `AC`,
 `SPEC` and 31 others (`od reference` lists them all) — optionally scoped, as in
 `REQ-INVENTORY-014` and `AC-INVENTORY-014-01`. Links are declared by the
-artifact that depends on the other, not the reverse: `REQ-004 derived-from
-RULE-001`.
+artifact that depends on the other, not the reverse: `REQ-004 derived-from RULE-001`.
 
 ## What gets enforced
 
@@ -227,20 +245,20 @@ The nine gates carry 58 named rules, each identified by a stable slug such as
 `gate-3/unjustified-requirement` so a failure can be cited rather than
 paraphrased. A representative selection:
 
-| Rule | What it forbids |
-|---|---|
-| `gate-3/unjustified-requirement` | A requirement with no `derived-from` an evidence record or business rule |
-| `gate-1/orphan-evidence` | An evidence record not `derived-from` a source. An unsourced claim is not evidence |
-| `gate-1/single-source` | Three or more evidence records citing one source — that is a *single-source* failure, not corroboration |
-| `gate-8/assumption-reached-production` | A requirement whose `epistemic` is `ASSUMED`, `UNKNOWN` or `CONFLICTING` reaching the specification stage |
-| `gate-5/how-not-what` | A specification that states mechanism rather than observable behaviour |
-| `gate-4/unfalsifiable-hypothesis` | A hypothesis with no metric and no failure condition |
-| `gate-4/feature-cloning` | A concept justified only by competitor parity |
-| `gate-6/dependency-cycle` | Task dependencies forming a cycle |
-| `gate-8/requirement-without-passing-test` | A requirement marked `IMPLEMENTED` with no verified test downstream |
-| `gate-8/dangling-reference` | A link pointing at an identifier that does not exist |
-| `gate-1/undeclared-epistemic` | An artifact that makes a claim but declares no epistemic state |
-| `gate-7/epistemic-laundering` | An `ASSUMED` or `INFERRED` artifact marked `VALIDATED` or `VERIFIED`, with no intervening `EXPLICIT` evidence |
+| Rule                                        | What it forbids                                                                                                        |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `gate-3/unjustified-requirement`          | A requirement with no`derived-from` an evidence record or business rule                                              |
+| `gate-1/orphan-evidence`                  | An evidence record not`derived-from` a source. An unsourced claim is not evidence                                    |
+| `gate-1/single-source`                    | Every evidence record citing the same single source — a claim repeated by one origin is not corroborated              |
+| `gate-8/assumption-reached-production`    | A requirement whose`epistemic` is `ASSUMED`, `UNKNOWN` or `CONFLICTING` reaching the specification stage       |
+| `gate-5/how-not-what`                     | A specification that states mechanism rather than observable behaviour                                                 |
+| `gate-4/unfalsifiable-hypothesis`         | A hypothesis with no metric and no failure condition                                                                   |
+| `gate-4/feature-cloning`                  | A concept justified only by competitor parity                                                                          |
+| `gate-6/dependency-cycle`                 | Task dependencies forming a cycle                                                                                      |
+| `gate-8/requirement-without-passing-test` | A requirement marked`IMPLEMENTED` with no verified test downstream                                                   |
+| `gate-8/dangling-reference`               | A link pointing at an identifier that does not exist                                                                   |
+| `gate-1/undeclared-epistemic`             | An artifact that makes a claim but declares no epistemic state                                                         |
+| `gate-7/epistemic-laundering`             | An`ASSUMED` or `INFERRED` artifact marked `VALIDATED` or `VERIFIED`, with no intervening `EXPLICIT` evidence |
 
 `od audit` reports traceability health across the whole workspace, including
 coverage ratios, unjustified artifacts, dangling links, and open conflicts.
@@ -301,29 +319,6 @@ The paper is LaTeX and compiles with a stock TeX Live or MiKTeX:
 ```bash
 pdflatex opendomain-paper.tex && pdflatex opendomain-paper.tex
 ```
-
-## Current status
-
-The core and the CLI are implemented and tested. The verification subsystem of
-the paper (feature-file generation, contract testing, binding provenance) and
-the toolchain provisioner are **designed but not implemented** — the paper's
-Section 11.7 marks each unimplemented claim explicitly rather than leaving it to
-be inferred.
-
-Two known discrepancies between the paper and the implementation are recorded
-rather than papered over:
-
-- **Gate numbering.** The paper numbers the gates 1–9, the implementation 0–8.
-  The dangling-reference rule therefore sits in `gate-8` (completion) in code,
-  where the paper places it in Gate 8 (implementation).
-- **Condition count.** The paper defines 77 numbered conditions across its nine
-  gate tables; the implementation ships 55 rule slugs. The paper merges some
-  conditions into single checks (its four Gate 1 conditions map onto three
-  slugs, for instance), and it counts conditions that are designed but not
-  implemented, such as `G8-B5` through `G8-B7`.
-
-Neither is a documentation fix: reconciling the numbering, and deciding which
-designed conditions should be implemented, are design decisions.
 
 ## License
 
