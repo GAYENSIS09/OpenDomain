@@ -1,3 +1,5 @@
+<img position="center"  src="opendomain.svg" />
+
 # OpenDomain
 
 OpenDomain is a domain-first, evidence-driven software engineering framework that transforms real-world knowledge into validated software systems through traceable domain modeling, opportunity discovery, specification, behavioral verification, test-driven implementation, and continuous audit.
