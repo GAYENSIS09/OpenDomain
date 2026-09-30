@@ -190,7 +190,10 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .prose li::marker { color: var(--ink-faint); }
 .prose img { max-width: 100%; }
 .prose table {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   font-size: 14.5px;
   margin: 16px 0;
@@ -214,6 +217,12 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   padding: 1px 6px;
   border-radius: 6px;
   white-space: nowrap;
+}
+/* Le code inline doit pouvoir se couper : sinon une longue commande
+   ou URL élargit la page et casse le layout sur écran étroit. */
+.prose p code, .prose li code, .prose td code {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 pre {
   background: var(--code-bg);
@@ -306,11 +315,16 @@ pre .copy {
   .toc { display: none; }
 }
 @media (max-width: 800px) {
-  .layout { grid-template-columns: 1fr; gap: 0; }
+  .topbar-inner { padding: 0 16px; gap: 10px; }
+  .layout { grid-template-columns: 1fr; gap: 0; padding: 24px 16px 56px; }
+  .prose h1 { font-size: 26px; }
+  .prose h2 { font-size: 20px; }
+  .prose table { font-size: 13.5px; }
+  .prose th, .prose td { padding: 7px 8px; }
   .sidebar {
     position: fixed;
     top: 57px; left: 0; bottom: 0;
-    width: 270px;
+    width: min(270px, 85vw);
     background: var(--paper);
     border-right: 1px solid var(--line);
     padding: 20px;
@@ -321,6 +335,14 @@ pre .copy {
   }
   .sidebar.open { transform: none; box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
   .menu-btn { display: block; }
-  .search { display: none; }
+  /* La recherche reste accessible en icône : main.js ouvre le tiroir
+     et focalise le filtre depuis ce bouton, même sur mobile. */
+  .search { min-width: 0; padding: 5px 9px; }
+  .search span, .search kbd { display: none; }
+  .search::before { content: "\2315"; font-size: 16px; line-height: 1; }
   .top-links a.hide-mobile { display: none; }
+}
+@media (max-width: 480px) {
+  .top-links { display: none; }
+  .brand { font-size: 14px; }
 }
