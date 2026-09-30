@@ -1,16 +1,16 @@
 # Contradictions
 
-Places where the project contradicts itself, `CDR-###`. One artifact per
+Places where the project contradicts itself, `CON-###`. One artifact per
 contradiction.
 
 A contradiction is not a source conflict. `XCONF` is two sources disagreeing;
-`CDR` is the project asserting two incompatible things. The second is almost
+`CON` is the project asserting two incompatible things. The second is almost
 always more expensive.
 
 Required fields: `status`, `statement`, `side-a`, `side-b`.
 
 <!--
-## CDR-001 — Receipt must be fast and must be re-keyed to the ERP
+## CON-001 — Receipt must be fast and must be re-keyed to the ERP
 
 ```toml
 status = "OPEN"

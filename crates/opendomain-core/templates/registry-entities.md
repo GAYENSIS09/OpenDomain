@@ -58,9 +58,9 @@ purchase order line.
 **Lifecycle**
 
 ```text
-DRAFT ──confirm──▶ CONFIRMED ──reverse──▶ REVERSED
-  │                                     (terminal)
-  └──discard──▶ (none)
+DRAFT -confirm-> CONFIRMED -reverse-> REVERSED (terminal)
+  |
+  +-discard-> (none)
 ```
 
 **Ownership**

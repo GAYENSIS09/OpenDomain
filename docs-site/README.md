@@ -29,8 +29,9 @@ docs-site/
     cli-reference.html    # od reference (the only command-centered page)
     opencode.html         # commands, roles, permissions
     theory.html           # full specification (v0.20.26)
-  css/style.css           # restrained theme
-  js/main.js              # copy, mobile sidebar, on-this-page nav, filter, Ctrl+K
+  css/style.css           # restrained theme + dark mode + responsive details
+  js/main.js              # copy, theme toggle, skip link, scrim, mobile sidebar,
+                          # on-this-page nav with scroll-spy, filter, Ctrl+K, Escape
   assets/opendomain.svg   # logo
 ```
 

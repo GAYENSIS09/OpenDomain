@@ -65,15 +65,19 @@ od init --name my-project
 od status
 ```
 
-`od init` creates an `opendomain/` directory of **41 files**: 33 registry files, seven explanatory files (`README.md`, `project.md`, the research protocol, the architecture overview, the specs and changes READMEs, the validation audit) and `opendomain.toml`. It is idempotent — re-running it reports what already exists and changes nothing.
+`od init` **installs only** — registries + `opendomain.toml` + agent contract. It records no context: run `/od-project` afterwards to fill `project.md`, `[project]`, `DOM-001`/`STK-001` from the repository, external research, then user answers.
+
+It creates an `opendomain/` directory of **41 files**: 33 registry files, seven explanatory files (`README.md`, `project.md`, the research protocol, the architecture overview, the specs and changes READMEs, the validation audit) and `opendomain.toml`. It is idempotent — re-running it reports what already exists and changes nothing.
 
 It also writes an **agent contract** to the project root, so the framework is usable by any coding agent rather than only by someone who has read the paper:
 
 ```
 AGENTS.md                          # the rules, readable by any agent
 .opencode/command/                 # /od-status, /od-gate, /od-trace, /od-impact,
-                                   # /od-audit, /od-record
-.opencode/agent/                   # domain-researcher, spec-implementer
+                                   # /od-audit, /od-record, /od-project, /od-research,
+                                   # /od-domain, /od-requirements, /od-opportunity,
+                                   # /od-spec, /od-plan, /od-implement, /od-complete
+.opencode/agent/                   # domain-researcher, spec-implementer, context-completer
 .opencode/skills/opendomain/       # SKILL.md
 ```
 
@@ -164,16 +168,47 @@ This repository ships a working opencode integration. If you point opencode at a
 | `/od-impact <ID>` | What a change to an artifact would break |
 | `/od-audit` | Traceability health before claiming work is done |
 | `/od-record <topic>` | Writes a domain artifact, keeping its epistemic state honest |
+| `/od-project` | Completes Phase 0 context (repo scan + external research + user questions) |
+| `/od-research` | Gate 1 research, parallel keyword fan-out via `domain-researcher` |
+| `/od-domain` | Gate 2 domain model increment |
+| `/od-requirements` | Gate 3 justified, testable requirements |
+| `/od-opportunity` | Gate 4 challenged concept + falsifiable hypothesis |
+| `/od-spec` | Gate 5 observable-behaviour spec + acceptance criteria |
+| `/od-plan` | Gate 6 bounded, ordered plan |
+| `/od-implement <SPEC/TASK/AC>` | Gate 7, delegates to `spec-implementer` |
+| `/od-complete` | Gate 8 full alignment audit before release |
 
-**Subagents**
+One command per gate keeps usage simple: run the command for the stage you are in; it loads the skill, delegates to the right subagent, then shows `od gate` verbatim. No extra orchestration to learn.
 
-- `domain-researcher` — finds and records `SRC-`/`EVD-` artifacts. Its bash permission is `deny` by default with `od *` allowed, so it can check its own work but cannot run anything else.
-- `spec-implementer` — one scoped task against an existing specification, gated before and after.
-- `brownfield-discoverer` — inventories an existing codebase read-only and reports facts plus proposed `od init` flags; writes nothing, the human applies.
+**Subagents** (only 3 — one role each, calling each other)
+
+- `context-completer` — owns Phase 0 (`project.md` + `[project]` + `DOM-001`/`STK-001`). Reads the repo itself, **delegates external research to `domain-researcher`**, then asks human-only gaps. Called by `/od-project`.
+- `domain-researcher` — evidence specialist. Called by `context-completer`, `/od-research`, `/od-domain`, `/od-requirements`; fans out 3-6 axes in parallel itself. Bash `deny` by default with `od *` + read-only repo commands allowed.
+- `spec-implementer` — bounded build (one artifact, gates before/after). Called by `/od-implement` (always) and `/od-plan` (read-only spike).
+
+**Skills** (the framework's strength, loaded on demand by commands and agents)
+
+| Skill | Loads when |
+|---|---|
+| `opendomain` (index) | Always-available summary; points to the four below |
+| `opendomain-epistemics` | Choosing a value, recording a promotion, checking laundering |
+| `opendomain-artifacts` | Writing/repairing any artifact (format, ids, relations) |
+| `opendomain-research` | Gathering evidence (fan-out, triangulation, saturation) |
+| `opendomain-gates` | Reading any gate/status/audit output (slug → action) |
+
+```
+commands (thin, UX) → subagents (roles, call each other) → skills (know-how)
+readonly:  /od-status /od-gate /od-trace /od-impact /od-audit
+production:/od-project /od-research /od-record /od-domain /od-requirements
+           /od-opportunity /od-spec /od-plan /od-implement → /od-complete
+                         ↘ calls /od-audit for the diagnostic, then decides
+```
+
+Every command and agent renders **summary-first**: Verdict (1 line) → top-3 blockers (slug + 1 sentence) → one next action → verbatim appendix. No more wall-of-gates noise; fidelity kept in the appendix.
 
 **Skill.** `.opencode/skills/opendomain/SKILL.md` loads on demand and carries the artifact format and the epistemic discipline. `AGENTS.md` holds the short version that is always in context, so the skill does not have to be.
 
-To adopt this in your own project, run `od init` — it writes `AGENTS.md` and the ten `.opencode/` files for you — and put the `od` binary on `PATH`. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
+To adopt this in your own project, run `od init` — it writes `AGENTS.md` and the twenty-three `.opencode/` files (15 commands, 3 agents, 5 skills) for you — and put the `od` binary on `PATH`. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
 
 ```json
 {
@@ -270,8 +305,9 @@ docs-site/                static documentation, including the full specification
 note.txt                  original framework notes
 AGENTS.md                 agent orientation, loaded automatically by opencode
 opencode.json             opencode configuration for this repository
-.opencode/command/        slash commands (/od-status, /od-gate, ...)
-.opencode/agent/          subagents (domain-researcher, spec-implementer, brownfield-discoverer)
+.opencode/command/        slash commands (readonly + one per gate, thin routers)
+.opencode/agent/          subagents (context-completer, domain-researcher, spec-implementer)
+.opencode/skills/         skills (opendomain index + epistemics/artifacts/research/gates)
 .opencode/skills/         on-demand skill describing the artifact format
 ```
 

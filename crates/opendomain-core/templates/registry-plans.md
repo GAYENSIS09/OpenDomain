@@ -50,7 +50,7 @@ state the system can show honestly.
   single-region assumption is unvalidated, and distributed transactions would
   make `RULE-001`'s invariant depend on network partitions
 - **Synchronous write with retry** — rejected because it is exactly the
-  contradiction `CDR-002` records
+  contradiction `CON-001` records
 
 **Risks and mitigations**
 

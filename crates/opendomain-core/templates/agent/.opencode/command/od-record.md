@@ -1,48 +1,16 @@
 ---
-description: Write or strengthen a domain artifact, keeping its epistemic state honest.
+description: Write ONE artifact with honest epistemics. Transverse utility used by all production commands.
 agent: build
 ---
 
-The user asked to work on: "$ARGUMENTS"
+# Recording one artifact
 
-Before writing anything, establish what is actually known.
+Every production command ends up writing the same thing at some point: one well-formed artifact with an honest epistemic state. This command is that shared utility — a single artifact at a time, never a whole registry. Today's subject: "$ARGUMENTS".
 
-1. Run `od status` to see which stage the workspace is in, and which gate is
-   currently blocking.
-2. Read the relevant registry under `opendomain/` (for example
-   `opendomain/domain/business-rules.md`). Match the existing heading format
-   exactly: `## <PREFIX>-<NNN> — Title`, then a fenced `toml` block, then prose.
-   If the registry has no live `##` headings yet — only the commented example
-   and the Rules section — follow the commented example and the Rules section:
-   an empty registry is the normal starting state, not a reason to stop.
-3. Run `od reference` if you are unsure which prefix a kind uses, or which
-   relations exist.
-4. Allocate the identifier with `od new <KIND>` (for example `od new RULE`):
-   it prints the next free number for the kind, so two agents never claim the
-   same id. Do not guess the number by hand.
+## How it goes
 
-## The rule that matters
+1. I start with `od status` to see which stage we're at, then I read the target registry under `opendomain/` (for example `domain/business-rules.md`), matching its format exactly: a `## PREFIX-001 — Title` heading, then a machine-checked `toml` block, then free prose. When the registry is still empty — just the commented example and the Rules section — that's normal: I follow the example. Unsure about a prefix or a relation? `od reference` settles it. And the identifier? I ask `od new <KIND>` (for example `od new RULE`) for the next free number — never counted by hand.
+2. For the epistemic value, one golden rule: `EXPLICIT` only when a source I read states it directly, with the link recorded. Reasoning from evidence is `INFERRED`, with the chain written down. Nobody knows? `ASSUMED`, said out loud. A known hole? `UNKNOWN`, to track. Sources disagreeing? Both positions, no ruling. Writing `EXPLICIT` for something inferred is called epistemic laundering — the failure mode this entire framework exists to catch.
+3. I finish with `od link --check` and the current gate, answering summary-first: the **Verdict**, what got written and where, the epistemic value chosen and why — then detail in an appendix.
 
-Every artifact declares an `epistemic` value. Choose it honestly:
-
-| Value | Use when |
-|---|---|
-| `EXPLICIT` | A cited source states this directly. Record `derived-from`. |
-| `INFERRED` | Derived by reasoning from evidence. Record the chain and the `confidence`. |
-| `ASSUMED` | Nobody knows yet; this is a placeholder. Say so in the prose. |
-| `UNKNOWN` | A known gap. Must be tracked, not quietly filled in. |
-| `CONFLICTING` | Sources disagree. Record both, and do not resolve it yourself. |
-
-**Never write `EXPLICIT` for something you inferred.** That is epistemic
-laundering: the failure mode this whole framework exists to catch. If you
-believe a rule from general knowledge and no source, that is `ASSUMED` with the
-reasoning written down, not `EXPLICIT`.
-
-## After writing
-
-Run `od link --check` and `od gate <current-gate>`. Report what they say.
-
-If you could not find a source, say so explicitly to the user rather than
-producing a confident rule with a plausible citation-shaped artifact ID. A
-fabricated `SRC-` or `EVD-` identifier is worse than an honest gap, because it
-will propagate through every downstream gate.
+One last thing: when I can't find a source, I say so explicitly. I never invent a `SRC-` or `EVD-` identifier to make a claim look sourced — a fabricated citation is worse than an honest gap, because it propagates through every downstream gate with no way to tell it apart from a real one.

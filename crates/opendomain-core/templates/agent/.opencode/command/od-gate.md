@@ -1,30 +1,18 @@
 ---
-description: Run a quality gate and report blocking findings without working around them.
+description: Inspect ONE quality gate and report blockers without working around them.
 agent: build
 ---
 
-Run the gate: `od gate $ARGUMENTS` — with no argument, `od gate` runs `context`.
+# Putting one gate under the microscope
 
-Show the output verbatim. The gate's own words are the finding; do not
-summarise them away.
+Want to know whether a stage holds up? I run the requested gate — `od gate $ARGUMENTS` — and tell you exactly what is missing, without working around anything.
 
-Then:
+With no argument, I check the `context` gate. To sweep every gate up to a stage, the syntax is `od gate --through <n>`, where `n` is the number from 0 to 8 (a name won't work there — it's an error, not a silent no-op).
 
-- List every BLOCKER as a separate item, each with the rule slug the tool
-  printed (for example `gate-3/unjustified-requirement`). The slug is how the
-  finding gets cited later, so keep it.
-- List WARNING findings separately from BLOCKERs. A warning does not stop
-  progress but requires a recorded decision.
-- State plainly whether the gate passed or failed.
+## How it goes
 
-**Do not attempt to clear a finding by editing files.** The purpose of running a
-gate is to learn what is missing. If the user asks you to fix a specific
-finding, do that as a separate, explicit step.
+I answer summary-first: a clear **Verdict** (`PASS`, or `FAIL` with the blocking and advisory counts), then the blockers one by one — three at most — each with the stable identifier the tool printed (for example `gate-3/unjustified-requirement`, keep it verbatim for later), then exactly **one** next action. Advisories are listed separately: they ask for a recorded decision but don't stop progress. The tool's full report follows in an appendix, untouched.
 
-**Never** describe a failing gate as passing, or a blocking finding as advisory,
-because the work in front of you feels complete. The framework exists to catch
-exactly that error, and an agent that rationalises a gate result has defeated it.
+## What I don't do
 
-If the user wants every gate up to a stage, that is `od gate --through <n>`,
-where `n` is the gate number 0–8. `--through` takes the number, not the name;
-passing a name is an error.
+Running a gate means learning what is missing — not making it disappear. I touch no file to clear a finding, and I never describe a failing gate as passing because the work "looks done". That is precisely the mistake the framework exists to catch.

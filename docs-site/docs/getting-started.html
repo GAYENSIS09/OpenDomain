@@ -54,11 +54,14 @@ cargo build --release</pre>
       <p>Put the binary on your <code class="inline">PATH</code>, or call it by its full path.</p>
 
       <h2>Initialize a project</h2>
-      <p><code class="inline">od init</code> doesn't create code: it prepares a tidy workbench — an <code class="inline">opendomain/</code> folder of 41 files (33 registries, 7 explanatory documents, and <code class="inline">opendomain.toml</code> describing the project), plus an agent contract (<code class="inline">AGENTS.md</code> and the <code class="inline">.opencode/</code> files). Re-run, it reports what already exists without overwriting anything.</p>
+      <p><code class="inline">od init</code> doesn't create code — it prepares a tidy workbench and installs only: an <code class="inline">opendomain/</code> folder of 41 files (33 registries, 7 explanatory documents, and <code class="inline">opendomain.toml</code> describing the project), plus an agent contract (<code class="inline">AGENTS.md</code> and the <code class="inline">.opencode/</code> files). It records no project context; that comes next. Re-run, it reports what already exists without overwriting anything.</p>
 <pre>mkdir my-bookstore && cd my-bookstore
 od init --name my-bookstore
 od status</pre>
       <div class="tip"><strong class="label">Tip</strong>Three profiles cover common situations: <code class="inline">full</code> (everything, default), <code class="inline">core</code> (no innovation stage, for systems with an imposed scope), and <code class="inline">lean</code> (the domain model already lives elsewhere). <code class="inline">--dry-run</code> shows what would be created without writing anything. To take over an existing system, prefer <code class="inline">--repository brownfield</code>: current code is treated as a clue there, not a specification.</div>
+
+      <h2>Complete the context</h2>
+      <p>An empty workbench knows nothing about your project yet. In opencode, run <code class="inline">/od-project</code>: an agent reads the whole repository, researches the domain from the keywords it finds, fills in <code class="inline">project.md</code>, and asks you for whatever no reading could answer — jurisdiction, real users, constraints. Afterwards <code class="inline">od gate context</code> should turn green. See <a href="opencode.html">With opencode</a> for the full command map.</p>
 
       <h2>Read your first verdict</h2>
       <p>At first, gates fail — that's their job. <code class="inline">od status</code> gives the project weather (what is ready, what is blocked), <code class="inline">od gate context</code> returns the first gate's verdict with what's missing, and <code class="inline">od audit</code> reports traceability health. Every refusal cites the exact rule: read it as an instruction, not a reproach.</p>

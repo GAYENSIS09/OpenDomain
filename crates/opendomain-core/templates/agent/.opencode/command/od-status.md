@@ -1,20 +1,20 @@
 ---
-description: Show where the project actually stands, and what is blocking progress.
+description: Show where the project stands in 10 seconds. Orientation only, never fixes.
 agent: build
 ---
 
-Run the OpenDomain status report and summarise it. The user asked: "where are we?"
+# Where does the project stand?
 
-Do this:
+Wondering "where are we?" This command answers in ten seconds, without changing anything.
 
-1. Run `od status` and show the output verbatim. Do not paraphrase the gate lines.
-2. If any gate reports blocking findings, name the single most important one and
-   stop. Do not attempt to fix it — fixing is `/od-record` (or the
-   `brownfield-discoverer` agent on a repository with existing code), run as a
-   separate, explicit step after this report.
-3. If `od` reports the workspace is missing, say so and suggest `od init`.
+## How it goes
 
-Report faithfully. If a gate FAILS, say it FAILS. Do not soften a failure into
-"mostly ready", and do not describe an unresolved epistemic state as a minor gap.
+1. I run `od status`, which counts the artifacts and checks every gate.
+2. I give you the essentials, summary-first: a **Verdict** (the blocking gate plus the artifact count), then the top blockers with their identifiers (for example `gate-0/no-stakeholders`), then exactly **one** next action — `/od-project` when context is missing, `/od-research` when evidence is missing, `/od-record` for writing.
+3. The full detail stays available in an appendix, trimmed to failing gates and warnings.
+
+## What I don't do
+
+I don't fix anything myself. When something blocks, I tell you what to run next — the fix happens as a separate, explicit step. If no workspace exists yet, I suggest `od init` followed by `/od-project`. And when a gate fails, I say so plainly: a failure is never softened into "mostly ready".
 
 $ARGUMENTS

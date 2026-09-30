@@ -1,26 +1,15 @@
 ---
-description: Audit traceability health across the whole workspace before claiming work is done.
+description: Full traceability diagnostic. The ONLY command that renders the whole chain; od-complete calls it for the release decision.
 agent: build
 ---
 
-The user asked for a full audit. This is the check that runs before declaring
-anything complete.
+# Full health check
 
-1. Run `od audit` and show the output verbatim.
-2. Run `od link --check` and show the result. Dangling references mean stated
-   dependencies point at artifacts that do not exist.
-3. Run `od gate --through 8` and show which gates fail. `--through` takes the
-   gate number 0–8, not the name; `completion` is gate 8.
+Before declaring anything finished, you need an honest checkup. That's this command's job — and the only one to paint the whole picture. (`/od-complete` will reuse this checkup to make the release call, rather than recomputing it.)
 
-Then report, in this order:
+## How it goes
 
-- Dangling references, with the identifiers involved.
-- Requirements that are unjustified — no recorded origin.
-- Unresolved conflicts and unresolved uncertainties.
-- Coverage: how many requirements are specified, traced, and verified.
-- The highest gate reached, and the first gate that fails.
+1. I run `od audit` and `od link --check`. No need to add `od gate --through 8`: the audit already contains all 9 gates, from a clean PASS to a documented FAIL.
+2. I answer summary-first. The **Verdict** first: the highest gate reached and the first one failing. Then, in order: dangling references with the identifiers involved; unjustified requirements — with no recorded origin; open conflicts and uncertainties; coverage — how many requirements are specified, traced, verified.
 
-Be exact about the difference between "traced" and "verified". A requirement
-that is traced has a recorded origin; a verified one has a test that passes. A
-traced requirement is not a verified requirement, and conflating them is the
-specific overclaim this audit exists to prevent.
+On that last point, hold me to the same standard as yourself: "traced" means an origin is recorded, "verified" means a test passes. A traced requirement is not a verified requirement, and conflating them is exactly the kind of overclaim this audit exists to prevent. The full detail follows in an appendix, trimmed to failing gates.

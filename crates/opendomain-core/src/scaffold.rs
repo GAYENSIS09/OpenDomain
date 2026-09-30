@@ -8,7 +8,7 @@
 use crate::config::Config;
 use crate::error::{OdError, Result};
 use crate::ids::IdKind;
-use crate::vocab::{AuthorityModel, Profile, RepositoryKind};
+use crate::vocab::{AuthorityModel, Profile};
 use std::path::Path;
 
 /// Marker files or directories whose presence suggests the project already
@@ -45,78 +45,13 @@ pub fn brownfield_signals(root: &Path) -> Vec<String> {
         .collect()
 }
 
-/// Machine-harvested inventory lines for a brownfield/hybrid project.
-///
-/// Reads directory names and `^model ` declaration lines only — never file
-/// contents beyond that, and never code semantics. The output goes into
-/// `project.md` as a marked section for the human to verify, because an
-/// inventory nobody confirmed is a rumour with formatting.
-pub fn harvest_inventory(root: &Path) -> Vec<String> {
-    let mut lines = Vec::new();
-
-    if let Ok(entries) = std::fs::read_dir(root.join("services")) {
-        let mut services: Vec<String> = entries
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
-            .filter_map(|e| e.file_name().into_string().ok())
-            .collect();
-        services.sort();
-        if !services.is_empty() {
-            lines.push(format!("services: {}", join_capped(&services, 12)));
-        }
-    }
-
-    let schema = root.join("prisma/schema.prisma");
-    if let Ok(text) = std::fs::read_to_string(&schema) {
-        let mut models: Vec<String> = text
-            .lines()
-            .filter_map(|l| l.trim().strip_prefix("model "))
-            .filter_map(|rest| rest.split_whitespace().next())
-            .map(str::to_string)
-            .collect();
-        models.sort();
-        models.dedup();
-        if !models.is_empty() {
-            lines.push(format!(
-                "data models (prisma/schema.prisma, {} total): {}",
-                models.len(),
-                join_capped(&models, 15)
-            ));
-        }
-    }
-
-    let manifests: Vec<String> = [
-        "package.json",
-        "Cargo.toml",
-        "go.mod",
-        "pyproject.toml",
-        "pom.xml",
-        "docker-compose.yml",
-        "docker-compose.yaml",
-    ]
-    .iter()
-    .filter(|m| root.join(m).exists())
-    .map(|m| m.to_string())
-    .collect();
-    if !manifests.is_empty() {
-        lines.push(format!("manifests: {}", manifests.join(", ")));
-    }
-
-    lines
-}
-
-/// Joins up to `cap` names, noting how many more exist.
-fn join_capped(names: &[String], cap: usize) -> String {
-    if names.len() <= cap {
-        names.join(", ")
-    } else {
-        format!("{}, ... +{} more", names[..cap].join(", "), names.len() - cap)
-    }
-}
-
 /// Strips `<!-- ... -->` sections, mirroring the parser: template examples
 /// live inside comments and must not read as declared artifacts. An
 /// unterminated comment discards the tail, exactly as the parser does.
+///
+/// Used by tests to distinguish a live `## DOM-` heading from the template's
+/// commented example.
+#[allow(dead_code)]
 fn strip_html_comments(text: &str) -> String {
     let mut out = String::new();
     let mut rest = text;
@@ -133,134 +68,11 @@ fn strip_html_comments(text: &str) -> String {
 
 /// `true` when `text` declares a live (non-comment) heading with `prefix`,
 /// e.g. an actual `## DOM-001` rather than the template's commented example.
+#[allow(dead_code)]
 fn has_live_heading(text: &str, prefix: &str) -> bool {
     strip_html_comments(text)
         .lines()
         .any(|l| l.trim_start().starts_with(prefix))
-}
-
-/// Records init-time project context as initial artifacts.
-///
-/// Returns the ids recorded (`DOM-001` and/or `STK-001`), so the caller can
-/// report them instead of claiming "nothing to do".
-///
-/// `od init --purpose/--users/--orgs/--region` stores those values in
-/// `opendomain.toml [project]`. This function mirrors them into the
-/// registries gate 0 reads: `DOM-001` in `domain/domain-map.md` and `STK-001`
-/// in `domain/stakeholders.md`, both `ASSUMED` — declared at init, to be
-/// confirmed or corrected, never claimed as researched fact.
-///
-/// A registry that already declares any `## DOM-` / `## STK-` heading is left
-/// alone: re-running `od init` must not duplicate curated artifacts, with or
-/// without `--force`. When no context keys are present, nothing is written.
-fn append_init_context(opendomain_dir: &Path, config: &Config) -> Result<Vec<String>> {
-    let mut recorded = Vec::new();
-    let get = |key: &str| {
-        config
-            .project
-            .get(key)
-            .map(|v| v.trim().to_string())
-            .filter(|v| !v.is_empty())
-    };
-
-    if let Some(purpose) = get("purpose") {
-        let target = opendomain_dir.join("domain/domain-map.md");
-        if let Ok(text) = std::fs::read_to_string(&target) {
-            if !has_live_heading(&text, "## DOM-") {
-                let title = get("organizations").unwrap_or_else(|| {
-                    if config.name.trim().is_empty() {
-                        "Primary context".to_string()
-                    } else {
-                        config.name.trim().to_string()
-                    }
-                });
-                let region = get("region").map(|r| format!("\n**Region**\n\n{}\n", r)).unwrap_or_default();
-                let block = format!(
-                    "\n## DOM-001 — {}\n\n```toml\npurpose = \"{}\"\nstatus = \"DRAFT\"\n\
-                     epistemic = \"ASSUMED\"\nconfidence = \"LOW\"\n```\n\n\
-                     Declared at `od init`; confirm or correct during domain modelling.\n{region}",
-                    title.replace('"', "'"),
-                    purpose.replace('"', "'"),
-                );
-                let mut updated = text;
-                if !updated.ends_with('\n') {
-                    updated.push('\n');
-                }
-                updated.push_str(&block);
-                if !updated.ends_with('\n') {
-                    updated.push('\n');
-                }
-                write(&target, &updated)?;
-                recorded.push("DOM-001".to_string());
-            }
-        }
-    }
-
-    if let Some(users) = get("users") {
-        let target = opendomain_dir.join("domain/stakeholders.md");
-        if let Ok(text) = std::fs::read_to_string(&target) {
-            if !has_live_heading(&text, "## STK-") {
-                let block = format!(
-                    "\n## STK-001 — {}\n\n```toml\nstatus = \"DRAFT\"\n\
-                     epistemic = \"ASSUMED\"\nconfidence = \"LOW\"\n```\n\n\
-                     **Objectives**\n\n- Declared at `od init`; confirm or correct during domain modelling.\n",
-                    users.replace('"', "'"),
-                );
-                let mut updated = text;
-                if !updated.ends_with('\n') {
-                    updated.push('\n');
-                }
-                updated.push_str(&block);
-                if !updated.ends_with('\n') {
-                    updated.push('\n');
-                }
-                write(&target, &updated)?;
-                recorded.push("STK-001".to_string());
-            }
-        }
-    }
-
-    Ok(recorded)
-}
-
-/// Appends a machine-harvested inventory section to `project.md`.
-///
-/// Runs only for brownfield/hybrid workspaces with something to report, and
-/// only once: the `<!-- od-inventory -->` marker makes re-runs no-ops, so a
-/// human-edited `project.md` is never appended to twice.
-fn append_brownfield_inventory(opendomain_dir: &Path, config: &Config) -> Result<()> {
-    if config.repository == RepositoryKind::Greenfield {
-        return Ok(());
-    }
-    let target = opendomain_dir.join("project.md");
-    let Ok(text) = std::fs::read_to_string(&target) else {
-        return Ok(());
-    };
-    if text.contains("<!-- od-inventory -->") {
-        return Ok(());
-    }
-    let root = opendomain_dir.parent().unwrap_or_else(|| Path::new("."));
-    let lines = harvest_inventory(root);
-    if lines.is_empty() {
-        return Ok(());
-    }
-    let mut section = String::from(
-        "\n## Harvested inventory (od init — verify before trusting)\n\n<!-- od-inventory -->\n\n",
-    );
-    for line in &lines {
-        section.push_str(&format!("- {line}\n"));
-    }
-    section.push_str(
-        "\n_Machine-harvested from the repository: confirm each line or move it into the \
-         sections above. An inventory nobody confirmed is a rumour with formatting._\n",
-    );
-    let mut updated = text;
-    if !updated.ends_with('\n') {
-        updated.push('\n');
-    }
-    updated.push_str(&section);
-    write(&target, &updated)?;
-    Ok(())
 }
 
 /// One file in the scaffold.
@@ -330,6 +142,60 @@ pub mod agent_contract {
         contents: include_str!("../templates/agent/.opencode/command/od-record.md"),
     };
 
+    /// `.opencode/command/od-project.md`.
+    pub const OD_PROJECT: Template = Template {
+        path: ".opencode/command/od-project.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-project.md"),
+    };
+
+    /// `.opencode/command/od-research.md`.
+    pub const OD_RESEARCH: Template = Template {
+        path: ".opencode/command/od-research.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-research.md"),
+    };
+
+    /// `.opencode/command/od-domain.md`.
+    pub const OD_DOMAIN: Template = Template {
+        path: ".opencode/command/od-domain.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-domain.md"),
+    };
+
+    /// `.opencode/command/od-requirements.md`.
+    pub const OD_REQUIREMENTS: Template = Template {
+        path: ".opencode/command/od-requirements.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-requirements.md"),
+    };
+
+    /// `.opencode/command/od-opportunity.md`.
+    pub const OD_OPPORTUNITY: Template = Template {
+        path: ".opencode/command/od-opportunity.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-opportunity.md"),
+    };
+
+    /// `.opencode/command/od-spec.md`.
+    pub const OD_SPEC: Template = Template {
+        path: ".opencode/command/od-spec.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-spec.md"),
+    };
+
+    /// `.opencode/command/od-plan.md`.
+    pub const OD_PLAN: Template = Template {
+        path: ".opencode/command/od-plan.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-plan.md"),
+    };
+
+    /// `.opencode/command/od-implement.md`.
+    pub const OD_IMPLEMENT: Template = Template {
+        path: ".opencode/command/od-implement.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-implement.md"),
+    };
+
+    /// `.opencode/command/od-complete.md`.
+    pub const OD_COMPLETE: Template = Template {
+        path: ".opencode/command/od-complete.md",
+        contents: include_str!("../templates/agent/.opencode/command/od-complete.md"),
+    };
+
     /// `.opencode/agent/domain-researcher.md`.
     pub const DOMAIN_RESEARCHER: Template = Template {
         path: ".opencode/agent/domain-researcher.md",
@@ -342,16 +208,40 @@ pub mod agent_contract {
         contents: include_str!("../templates/agent/.opencode/agent/spec-implementer.md"),
     };
 
-    /// `.opencode/agent/brownfield-discoverer.md`.
-    pub const BROWNFIELD_DISCOVERER: Template = Template {
-        path: ".opencode/agent/brownfield-discoverer.md",
-        contents: include_str!("../templates/agent/.opencode/agent/brownfield-discoverer.md"),
+    /// `.opencode/agent/context-completer.md`.
+    pub const CONTEXT_COMPLETER: Template = Template {
+        path: ".opencode/agent/context-completer.md",
+        contents: include_str!("../templates/agent/.opencode/agent/context-completer.md"),
     };
 
-    /// `.opencode/skills/opendomain/SKILL.md`.
+    /// `.opencode/skills/opendomain/SKILL.md` — index.
     pub const SKILL: Template = Template {
         path: ".opencode/skills/opendomain/SKILL.md",
         contents: include_str!("../templates/agent/.opencode/skills/opendomain/SKILL.md"),
+    };
+
+    /// `.opencode/skills/opendomain-epistemics/SKILL.md` — les 7 valeurs + promotions.
+    pub const SKILL_EPISTEMICS: Template = Template {
+        path: ".opencode/skills/opendomain-epistemics/SKILL.md",
+        contents: include_str!("../templates/agent/.opencode/skills/opendomain-epistemics/SKILL.md"),
+    };
+
+    /// `.opencode/skills/opendomain-artifacts/SKILL.md` — format, ids, relations.
+    pub const SKILL_ARTIFACTS: Template = Template {
+        path: ".opencode/skills/opendomain-artifacts/SKILL.md",
+        contents: include_str!("../templates/agent/.opencode/skills/opendomain-artifacts/SKILL.md"),
+    };
+
+    /// `.opencode/skills/opendomain-research/SKILL.md` — fan-out, triangulation.
+    pub const SKILL_RESEARCH: Template = Template {
+        path: ".opencode/skills/opendomain-research/SKILL.md",
+        contents: include_str!("../templates/agent/.opencode/skills/opendomain-research/SKILL.md"),
+    };
+
+    /// `.opencode/skills/opendomain-gates/SKILL.md` — résumé-first, slug → action.
+    pub const SKILL_GATES: Template = Template {
+        path: ".opencode/skills/opendomain-gates/SKILL.md",
+        contents: include_str!("../templates/agent/.opencode/skills/opendomain-gates/SKILL.md"),
     };
 
     /// Every agent integration file.
@@ -364,10 +254,23 @@ pub mod agent_contract {
             OD_IMPACT,
             OD_AUDIT,
             OD_RECORD,
+            OD_PROJECT,
+            OD_RESEARCH,
+            OD_DOMAIN,
+            OD_REQUIREMENTS,
+            OD_OPPORTUNITY,
+            OD_SPEC,
+            OD_PLAN,
+            OD_IMPLEMENT,
+            OD_COMPLETE,
             DOMAIN_RESEARCHER,
             SPEC_IMPLEMENTER,
-            BROWNFIELD_DISCOVERER,
+            CONTEXT_COMPLETER,
             SKILL,
+            SKILL_EPISTEMICS,
+            SKILL_ARTIFACTS,
+            SKILL_RESEARCH,
+            SKILL_GATES,
         ]
     }
 
@@ -726,6 +629,10 @@ pub mod templates {
 }
 
 /// What `od init` wrote.
+///
+/// `od init` installs only: registries + `opendomain.toml` + agent contract.
+/// Context is completed afterwards by `/od-project` (context-completer agent),
+/// never at init time.
 #[derive(Debug, Default, Clone, serde::Serialize)]
 pub struct InitReport {
     /// Files created.
@@ -734,18 +641,12 @@ pub struct InitReport {
     pub skipped: Vec<String>,
     /// Agent instruction files created outside `opendomain/`.
     pub agent_files: Vec<String>,
-    /// Init-time context artifacts recorded (e.g. `DOM-001`, `STK-001`).
-    /// These are appended to existing registries, so they are neither
-    /// created files nor skipped ones — without this field a context-only
-    /// re-run would report "nothing to do" while having written artifacts.
-    #[serde(default)]
-    pub context: Vec<String>,
 }
 
 impl InitReport {
     /// `true` when nothing was written because the workspace already existed.
     pub fn is_noop(&self) -> bool {
-        self.created.is_empty() && self.agent_files.is_empty() && self.context.is_empty()
+        self.created.is_empty() && self.agent_files.is_empty()
     }
 }
 
@@ -776,18 +677,10 @@ pub fn scaffold(opendomain_dir: &Path, config: &Config, force: bool) -> Result<I
         report.created.push(template.path.to_string());
     }
 
-    // Context declared at init time (`od init --purpose ...`, stored in
-    // `opendomain.toml [project]`) is recorded as initial DOM-001/STK-001
-    // artifacts, so `od gate context` can pass without a second manual step.
-    // Existing artifacts are never touched: a re-run only fills registries
-    // that declare nothing yet.
-    report.context = append_init_context(opendomain_dir, config)?;
-
-    // Brownfield/hybrid projects start from code: record what was found so
-    // `project.md` describes the repository instead of staying fiction while
-    // code ships. Greenfield projects get nothing — there is nothing to find.
-    append_brownfield_inventory(opendomain_dir, config)?;
-
+    // No context recording here by design: `od init` installs the workspace
+    // and the agent contract, nothing more. `/od-project` (context-completer)
+    // fills `project.md`, `[project]`, `DOM-001`/`STK-001` from the repository,
+    // external research, then user answers.
     write_agent_contract(opendomain_dir, force, &mut report)?;
 
     Ok(report)
@@ -879,18 +772,6 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         dir
-    }
-
-    /// The repository root, used to compare the shipped agent contract against
-    /// this repository's own copy of it.
-    ///
-    /// `CARGO_MANIFEST_DIR` rather than a relative `../..`, so the path survives
-    /// the crate being moved.
-    fn templates_repo_root() -> std::path::PathBuf {
-        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("..")
-            .join("..")
-            .to_path_buf()
     }
 
     #[test]
@@ -1216,33 +1097,29 @@ mod tests {
     }
 
     #[test]
-    fn this_repository_uses_the_contract_it_ships() {
-        // This repository is itself a workspace, so it carries its own copy of
-        // the agent contract. The copy under `templates/agent/` is the one the
-        // binary emits, and the two drifting apart would mean the framework's
-        // own repository tells its agents something `od init` does not tell
-        // anyone else — the exact defect this file set exists to prevent.
+    fn emitted_agent_contract_matches_templates() {
+        // What `od init` writes must be byte-for-byte the shipped templates:
+        // otherwise the framework's own contract drifts from what every other
+        // project receives — the exact defect this file set exists to prevent.
         //
-        // `AGENTS.md` is excluded deliberately: it is written for
-        // contributors to the framework and legitimately says more than the
-        // generated one.
-        const NOT_LOCAL: [&str; 1] = ["AGENTS.md"];
+        // (An earlier version of this test compared against copies at the
+        // repository root, which were never committed, so it failed on every
+        // fresh clone. Comparing the emission round-trip instead keeps the
+        // invariant without requiring the repo to dogfood its own workspace.)
+        let dir = scratch("contract-roundtrip");
+        let od_dir = dir.join("opendomain");
+        let cfg = default_config("Acme", Profile::Full, AuthorityModel::SpecAsSource);
+        scaffold(&od_dir, &cfg, false).unwrap();
         for t in agent_contract::all() {
-            if NOT_LOCAL.contains(&t.path) {
-                continue;
+            if agent_contract::is_root_level(&t) {
+                continue; // `AGENTS.md` belongs to the project, not the tool.
             }
-            let local_path = templates_repo_root().join(t.path);
-            let local = fs::read_to_string(&local_path).unwrap_or_else(|e| {
-                panic!(
-                    "{} is shipped by `od init` but this repository has no copy of it ({e}); \
-                     run `od init --force` here to refresh it",
-                    t.path
-                )
+            let emitted = fs::read_to_string(dir.join(t.path)).unwrap_or_else(|e| {
+                panic!("`od init` did not emit {} ({e})", t.path);
             });
             assert_eq!(
-                local, t.contents,
-                "{} differs from the copy this repository uses; the shipped template is the \
-                 source and the local file should be refreshed with `od init --force`",
+                emitted, t.contents,
+                "{} as emitted differs from its shipped template",
                 t.path
             );
         }
@@ -1278,146 +1155,121 @@ mod tests {
     }
 
     #[test]
-    fn init_context_records_dom_and_stk() {
-        // `od init --purpose/--users` must leave gate 0 satisfiable: the
-        // context lands in [project] and is mirrored as ASSUMED artifacts,
-        // never as researched fact.
-        let dir = scratch("init-context");
-        let od = dir.join("opendomain");
-        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
-        cfg.project.insert("purpose".into(), "Coach sellers".into());
-        cfg.project.insert("users".into(), "Sellers, managers".into());
-        let report = scaffold(&od, &cfg, false).unwrap();
-        assert_eq!(report.context, vec!["DOM-001".to_string(), "STK-001".to_string()]);
-        assert!(!report.is_noop());
-
-        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
-        assert!(has_live_heading(&map, "## DOM-001"), "DOM-001 was not recorded");
-        assert!(map.contains("epistemic = \"ASSUMED\""));
-        assert!(map.contains("Coach sellers"));
-
-        let stk = fs::read_to_string(od.join("domain/stakeholders.md")).unwrap();
-        assert!(has_live_heading(&stk, "## STK-001"), "STK-001 was not recorded");
-        assert!(stk.contains("epistemic = \"ASSUMED\""));
-
-        // The toml itself carries the context: single source of truth.
-        let toml = fs::read_to_string(od.join("opendomain.toml")).unwrap();
-        let back = Config::parse(&toml).unwrap();
-        assert_eq!(
-            back.project.get("purpose").map(String::as_str),
-            Some("Coach sellers")
-        );
-    }
-
-    #[test]
-    fn init_context_never_duplicates_curated_artifacts() {
-        let dir = scratch("init-context-rerun");
-        let od = dir.join("opendomain");
-        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
-        cfg.project.insert("purpose".into(), "Coach sellers".into());
-        cfg.project.insert("users".into(), "Sellers".into());
-        scaffold(&od, &cfg, false).unwrap();
-
-        // A re-run must not duplicate: curated artifacts win over init flags.
-        // Without --force the first declaration stands; with --force the
-        // framework files are refreshed (pre-existing semantics) and the
-        // current flags are re-applied — still exactly one live artifact.
-        cfg.project.insert("purpose".into(), "Something else".into());
-
-        scaffold(&od, &cfg, false).unwrap();
-        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
-        assert_eq!(strip_html_comments(&map).matches("## DOM-").count(), 1);
-        assert!(map.contains("Coach sellers"));
-
-        scaffold(&od, &cfg, true).unwrap();
-        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
-        assert_eq!(strip_html_comments(&map).matches("## DOM-").count(), 1);
-        assert!(map.contains("Something else"));
-        let stk = fs::read_to_string(od.join("domain/stakeholders.md")).unwrap();
-        assert_eq!(
-            strip_html_comments(&stk).matches("## STK-").count(),
-            1
-        );
-    }
-
-    #[test]
-    fn init_without_context_writes_no_artifact() {
-        // No flags, no artifacts: a bare init must not invent DOM/STK entries
-        // that would read as "we have a domain" on day one.
+    fn init_installs_only_and_records_no_context() {
+        // `od init` installs the workspace + agent contract and records
+        // nothing: context is completed by `/od-project` (context-completer),
+        // never at init time. Even with `[project]` keys present, no DOM/STK
+        // artifact is invented.
         let dir = scratch("init-no-context");
         let od = dir.join("opendomain");
-        let cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        cfg.project.insert("purpose".into(), "Coach sellers".into());
         scaffold(&od, &cfg, false).unwrap();
         let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
         assert!(!has_live_heading(&map, "## DOM-"));
         let stk = fs::read_to_string(od.join("domain/stakeholders.md")).unwrap();
         assert!(!has_live_heading(&stk, "## STK-"));
-    }
-
-    #[test]
-    fn brownfield_init_harvests_inventory_into_project_md() {
-        // Phase 0 must describe the repository instead of staying fiction
-        // while code ships: services, data models and manifests land in
-        // project.md, marked as machine-harvested to verify.
-        let dir = scratch("inventory");
-        fs::create_dir_all(dir.join("services/api-core")).unwrap();
-        fs::create_dir_all(dir.join("services/frontend")).unwrap();
-        fs::create_dir_all(dir.join("prisma")).unwrap();
-        fs::write(
-            dir.join("prisma/schema.prisma"),
-            "model User {\n  id String @id\n}\n\nmodel Workspace {\n  id String @id\n}\n",
-        )
-        .unwrap();
-        fs::write(dir.join("package.json"), "{}").unwrap();
-
-        let od = dir.join("opendomain");
-        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
-        cfg.repository = RepositoryKind::Brownfield;
-        scaffold(&od, &cfg, false).unwrap();
-
-        let project = fs::read_to_string(od.join("project.md")).unwrap();
-        assert!(project.contains("<!-- od-inventory -->"));
-        assert!(project.contains("api-core"));
-        assert!(project.contains("User"));
-        assert!(project.contains("package.json"));
-
-        // Re-runs never append twice, with or without --force: a human-edited
-        // project.md must not accumulate harvest sections.
-        for force in [false, true] {
-            scaffold(&od, &cfg, force).unwrap();
-            let project = fs::read_to_string(od.join("project.md")).unwrap();
-            assert_eq!(project.matches("<!-- od-inventory -->").count(), 1);
-        }
-    }
-
-    #[test]
-    fn greenfield_init_harvests_nothing() {
-        let dir = scratch("inventory-green");
-        fs::write(dir.join("package.json"), "{}").unwrap();
-        let od = dir.join("opendomain");
-        let cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
-        scaffold(&od, &cfg, false).unwrap();
         let project = fs::read_to_string(od.join("project.md")).unwrap();
         assert!(!project.contains("<!-- od-inventory -->"));
     }
 
     #[test]
-    fn brownfield_discoverer_is_read_only_and_report_bound() {
-        // The discoverer inventories; it never writes. Its frontmatter must
-        // deny edits, and its body must bind it to the three-section report
-        // with INFERRED-at-best findings — otherwise it is a second researcher
-        // with a broader bash allowance, which is exactly the exfiltration and
-        // laundering risk this file set exists to prevent.
-        let body = agent_contract::BROWNFIELD_DISCOVERER.contents;
-        assert!(body.contains("edit: deny"), "discoverer must deny edits");
-        assert!(body.contains("\"*\": deny"), "discoverer must deny bash by default");
-        assert!(body.contains("**Facts**"), "report contract: facts section");
-        assert!(body.contains("**Proposed context**"), "report contract: context section");
+    fn context_completer_is_report_bound_and_writes_context() {
+        // The context-completer fills project.md + [project] + DOM/STK and
+        // asks the user for the rest. Its body must bind it to repo reading,
+        // keyword-driven external research, and human-only gaps — otherwise it
+        // is a second researcher with no completion contract.
+        let body = agent_contract::CONTEXT_COMPLETER.contents;
+        assert!(body.contains("Phase 1"), "must read the repository first");
+        assert!(body.contains("Phase 2"), "must run external research from keywords");
+        assert!(body.contains("Phase 4"), "must ask the user for the rest");
         assert!(body.contains("**Human-only gaps**"), "report contract: gaps section");
         assert!(body.contains("INFERRED"), "code findings are INFERRED at best");
         assert!(
-            agent_contract::all().iter().any(|t| t.path.ends_with("brownfield-discoverer.md")),
-            "discoverer must be emitted by `od init`"
+            agent_contract::all().iter().any(|t| t.path.ends_with("context-completer.md")),
+            "context-completer must be emitted by `od init`"
         );
+        assert!(
+            !agent_contract::all().iter().any(|t| t.path.ends_with("brownfield-discoverer.md")),
+            "brownfield-discoverer must be gone"
+        );
+    }
+
+    #[test]
+    fn gate_commands_cover_all_nine_gates() {
+        // One useful command per gate stage: project(0), research(1),
+        // domain(2), requirements(3), opportunity(4), spec(5), plan(6),
+        // implement(7), complete(8). A missing stage command means the
+        // framework's full potential is undiscoverable from slash commands.
+        for path in [
+            ".opencode/command/od-project.md",
+            ".opencode/command/od-research.md",
+            ".opencode/command/od-domain.md",
+            ".opencode/command/od-requirements.md",
+            ".opencode/command/od-opportunity.md",
+            ".opencode/command/od-spec.md",
+            ".opencode/command/od-plan.md",
+            ".opencode/command/od-implement.md",
+            ".opencode/command/od-complete.md",
+        ] {
+            assert!(
+                agent_contract::all().iter().any(|t| t.path == path),
+                "{path} must be emitted by `od init`"
+            );
+        }
+    }
+
+    #[test]
+    fn domain_researcher_fans_out_by_keyword_cluster() {
+        // The researcher must delegate in parallel by keyword cluster and
+        // triangulate: single-source restatement is not corroboration.
+        let body = agent_contract::DOMAIN_RESEARCHER.contents;
+        assert!(body.contains("Fan out"), "must fan out in parallel");
+        assert!(body.contains("keyword"), "must work from keyword clusters");
+        assert!(body.contains("single-source") || body.contains("Single-source"));
+        assert!(body.contains("Not claimed"));
+    }
+
+    #[test]
+    fn focused_skills_exist_and_are_called() {
+        // The framework's strength lives in callable skills, not in one
+        // generic file nobody loads: epistemics, artifacts, research, gates.
+        // Each command/agent states what it calls, so the call graph is
+        // reviewable rather than aspirational.
+        for path in [
+            ".opencode/skills/opendomain-epistemics/SKILL.md",
+            ".opencode/skills/opendomain-artifacts/SKILL.md",
+            ".opencode/skills/opendomain-research/SKILL.md",
+            ".opencode/skills/opendomain-gates/SKILL.md",
+        ] {
+            assert!(
+                agent_contract::all().iter().any(|t| t.path == path),
+                "{path} must be emitted by `od init`"
+            );
+        }
+        let index = agent_contract::SKILL.contents;
+        assert!(index.contains("opendomain-epistemics"));
+        assert!(index.contains("opendomain-artifacts"));
+        assert!(index.contains("opendomain-research"));
+        assert!(index.contains("opendomain-gates"));
+
+        // Inter-agent calls are declared, not implied.
+        assert!(agent_contract::CONTEXT_COMPLETER.contents.contains("domain-researcher"));
+        assert!(agent_contract::SPEC_IMPLEMENTER.contents.contains("Called by"));
+
+        // Summary-first kills the verbatim-noise: every command states it.
+        for t in agent_contract::all() {
+            if t.path.starts_with(".opencode/command/") {
+                assert!(
+                    t.contents.contains("résumé-first") || t.contents.contains("Verdict"),
+                    "{} must render summary-first, not verbatim-noise",
+                    t.path
+                );
+            }
+        }
+
+        // od-complete routes to od-audit instead of re-rendering the chain.
+        assert!(agent_contract::OD_COMPLETE.contents.contains("/od-audit"));
+        assert!(agent_contract::OD_AUDIT.contents.contains("PAS"));
     }
 }

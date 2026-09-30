@@ -41,20 +41,48 @@
 
       <p>Point opencode at a project containing an <code class="inline">opendomain/</code> folder: it inherits commands, roles, and a discipline of evidence. You keep the AI's creativity; the framework imposes honesty on it — when it doesn't know, it writes <code class="inline">UNKNOWN</code> instead of inventing.</p>
 
-      <h2>The six commands</h2>
+      <h2>Reading commands</h2>
       <table>
         <tr><th>Command</th><th>Role</th></tr>
-        <tr><td><code class="inline">/od-status</code></td><td>Where the project stands, and what is blocking.</td></tr>
-        <tr><td><code class="inline">/od-gate</code></td><td>Runs a gate and reports the verdict as is, without softening it.</td></tr>
+        <tr><td><code class="inline">/od-status</code></td><td>Where the project stands, and what is blocking — in ten seconds.</td></tr>
+        <tr><td><code class="inline">/od-gate</code></td><td>Runs one gate and reports the verdict as is, without softening it.</td></tr>
         <tr><td><code class="inline">/od-trace</code></td><td>Tells a record's origin from its recorded links.</td></tr>
         <tr><td><code class="inline">/od-impact</code></td><td>Lists what a change would invalidate, before touching code.</td></tr>
-        <tr><td><code class="inline">/od-audit</code></td><td>Health report before declaring "done".</td></tr>
-        <tr><td><code class="inline">/od-record</code></td><td>Writes a record while staying epistemically honest.</td></tr>
+        <tr><td><code class="inline">/od-audit</code></td><td>Full health report before declaring "done".</td></tr>
       </table>
 
-      <h2>Two roles</h2>
-      <p><strong>domain-researcher, the investigator.</strong> It reads, interviews, and reports only dated sources and evidence. By default it can hardly execute anything — except <code class="inline">od *</code> to check its own work.</p>
-      <p><strong>spec-implementer, the craftsperson.</strong> One scoped task against an existing specification, with a gate check before and after. If it steps out of scope, the gate catches it.</p>
+      <h2>One command per stage</h2>
+      <table>
+        <tr><th>Command</th><th>Stage</th><th>What it does</th></tr>
+        <tr><td><code class="inline">/od-project</code></td><td>Context</td><td>Reads the repo, researches the domain, fills in the context, asks you the rest.</td></tr>
+        <tr><td><code class="inline">/od-research</code></td><td>Research</td><td>Fans out parallel research and merges corroborated evidence.</td></tr>
+        <tr><td><code class="inline">/od-record</code></td><td>Any</td><td>Writes one record while staying epistemically honest.</td></tr>
+        <tr><td><code class="inline">/od-domain</code></td><td>Domain</td><td>Grows the model by one bounded increment.</td></tr>
+        <tr><td><code class="inline">/od-requirements</code></td><td>Requirements</td><td>Derives a small batch of justified, testable requirements.</td></tr>
+        <tr><td><code class="inline">/od-opportunity</code></td><td>Opportunity</td><td>Challenges the design, earns one falsifiable concept.</td></tr>
+        <tr><td><code class="inline">/od-spec</code></td><td>Specification</td><td>Specifies one capability as observable behaviour.</td></tr>
+        <tr><td><code class="inline">/od-plan</code></td><td>Plan</td><td>Produces one bounded, ordered plan with decisions.</td></tr>
+        <tr><td><code class="inline">/od-implement</code></td><td>Implementation</td><td>Builds one scoped artifact through the craftsperson.</td></tr>
+        <tr><td><code class="inline">/od-complete</code></td><td>Completion</td><td>Reuses the audit, then calls the release: ship or stop.</td></tr>
+      </table>
+      <p>Every command answers summary-first — verdict, top blockers, one next action — with the tool's full output in an appendix. No wall-of-gates noise.</p>
+
+      <h2>Three roles</h2>
+      <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/od-project</code>.</p>
+      <p><strong>domain-researcher, the investigator.</strong> It reads, searches, and reports only dated sources and evidence, fanning out in parallel by keyword. Called by the interviewer, <code class="inline">/od-research</code>, <code class="inline">/od-domain</code>, and <code class="inline">/od-requirements</code>. By default it can hardly execute anything — except <code class="inline">od *</code> to check its own work.</p>
+      <p><strong>spec-implementer, the craftsperson.</strong> One scoped task against an existing specification, with a gate check before and after. If it steps out of scope, the gate catches it. Called by <code class="inline">/od-implement</code>.</p>
+
+      <h2>Five skills</h2>
+      <p>The framework's know-how, loaded on demand by commands and roles:</p>
+      <table>
+        <tr><th>Skill</th><th>Load it when…</th></tr>
+        <tr><td><code class="inline">opendomain</code></td><td>You need the shared discipline and the map to the other four.</td></tr>
+        <tr><td><code class="inline">opendomain-epistemics</code></td><td>Choosing a knowledge value, recording a promotion, checking laundering.</td></tr>
+        <tr><td><code class="inline">opendomain-artifacts</code></td><td>Writing or repairing any record — format, ids, relations.</td></tr>
+        <tr><td><code class="inline">opendomain-research</code></td><td>Gathering evidence — parallel search, triangulation, saturation.</td></tr>
+        <tr><td><code class="inline">opendomain-gates</code></td><td>Reading any gate, status, or audit output — identifier to action.</td></tr>
+      </table>
+      <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator → craftsperson), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role.</div>
 
       <h2>Permissions: read freely, change by agreement</h2>
 <pre>{

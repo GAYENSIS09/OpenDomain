@@ -86,22 +86,6 @@ struct InitArgs {
     /// Project name. Defaults to the directory name.
     #[arg(long)]
     name: Option<String>,
-    /// One-line description of the project.
-    #[arg(long, default_value = "")]
-    description: String,
-    /// What the system does and for whom. Stored in opendomain.toml [project]
-    /// and recorded as initial DOM-001 (ASSUMED) so gate 0 can pass.
-    #[arg(long, default_value = "")]
-    purpose: String,
-    /// Who uses it. Stored in [project] and recorded as initial STK-001 (ASSUMED).
-    #[arg(long, default_value = "")]
-    users: String,
-    /// Which kind of organisation deploys this.
-    #[arg(long, default_value = "")]
-    orgs: String,
-    /// Where it operates (regulatory and terminology assumptions are local).
-    #[arg(long, default_value = "")]
-    region: String,
     /// Which parts of the framework to scaffold.
     #[arg(long, value_enum, default_value_t = ProfileArg::Full)]
     profile: ProfileArg,
@@ -430,25 +414,13 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         })
         .unwrap_or_else(|| "opendomain-project".into());
 
+    // `od init` installs only: registries + opendomain.toml + agent contract.
+    // Phase-0 context is never recorded here. Run `/od-project`
+    // (context-completer agent) afterwards to fill `project.md`,
+    // `opendomain.toml [project]`, `DOM-001`/`STK-001` from the repository,
+    // external research, then user questions for the rest.
     let mut config = scaffold::default_config(&name, args.profile.into(), args.authority.into());
     config.repository = args.repository.into();
-    if !args.description.is_empty() {
-        config
-            .project
-            .insert("description".into(), args.description.clone());
-    }
-    // Phase-0 context lives in opendomain.toml [project]: one source of truth,
-    // no second intake file. `scaffold` mirrors purpose/users into DOM-001/STK-001.
-    for (key, value) in [
-        ("purpose", &args.purpose),
-        ("users", &args.users),
-        ("organizations", &args.orgs),
-        ("region", &args.region),
-    ] {
-        if !value.trim().is_empty() {
-            config.project.insert(key.into(), value.trim().to_string());
-        }
-    }
 
     let od_dir = start.join("opendomain");
     // A greenfield declaration next to an existing implementation is the
@@ -492,18 +464,6 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         }
         for t in templates {
             println!("  {}", t.path);
-        }
-        // Init-time context is mirrored into DOM-001/STK-001 by `scaffold`,
-        // so the preview states what the flags would record.
-        for (key, value) in [
-            ("purpose", &args.purpose),
-            ("users", &args.users),
-            ("organizations", &args.orgs),
-            ("region", &args.region),
-        ] {
-            if !value.trim().is_empty() {
-                println!("  [project] {key} = \"{}\"", value.trim());
-            }
         }
         // The agent files go to the project root and follow different rules from
         // the registries, so the preview has to follow them too. Listing all
@@ -566,22 +526,13 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
     for p in &report.skipped {
         println!("  = {p} (unchanged)");
     }
-    if !report.context.is_empty() {
-        println!("context recorded (ASSUMED — confirm or correct):");
-        for id in &report.context {
-            println!("  + {id}");
-        }
-    }
     if !report.agent_files.is_empty() {
         println!("\nagent instructions:");
         for p in &report.agent_files {
             println!("  + {p}");
         }
     }
-    println!("\nnext: od status");
-    if !report.context.is_empty() {
-        println!("context recorded in opendomain.toml [project]; confirm {}, then `od gate context`", report.context.join("/"));
-    }
+    println!("\nnext: run /od-project to complete context, then `od status` + `od gate context`");
     Ok(())
 }
 

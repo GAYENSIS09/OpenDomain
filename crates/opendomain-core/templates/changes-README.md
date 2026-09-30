@@ -28,9 +28,9 @@ changes/
 ## Lifecycle
 
 ```text
-PROPOSED ──apply──▶ APPLIED ──archive──▶ ARCHIVED
-    │                                      │
-    └──reject──▶ REJECTED                  └── superseded by a later change
+PROPOSED -apply-> APPLIED -archive-> ARCHIVED
+    |                                      |
+    +-reject-> REJECTED                     +- superseded by a later change
 ```
 
 A change is never edited in place after it is applied. Correcting an applied

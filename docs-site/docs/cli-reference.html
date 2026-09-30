@@ -42,7 +42,7 @@
       <h2>Locate — where do we stand?</h2>
 <pre>od status                 # project weather: real progress + blockers
 od gate context           # verdict of one specific gate
-od gate --through domain  # every gate up to the domain model
+od gate --through 3       # every gate up to requirements (--through takes 0-8)
 od audit                  # traceability health report
 od reference              # dictionary: gates + 37 record kinds</pre>
       <p><code class="inline">status</code> every morning, <code class="inline">gate</code> before each stage, <code class="inline">audit</code> before saying "done".</p>
@@ -70,7 +70,7 @@ od archive tighter-reservation</pre>
       <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">od gate --through specification --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
 
       <h2>Check the workshop itself</h2>
-<pre>cargo test --workspace      # 118 unit tests + 2 doctests
+<pre>cargo test --workspace      # 129 unit tests + 2 doctests
 cargo fmt --all -- --check</pre>
       <p>The workshop: <code class="inline">crates/opendomain-core/</code> (model, parser, index, graph, gates) and <code class="inline">crates/opendomain-cli/</code> (the <code class="inline">od</code> binary).</p>
     </article>

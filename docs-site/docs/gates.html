@@ -58,10 +58,10 @@
 
       <h2>Two possible verdicts</h2>
       <p><strong>Blocking</strong>: you don't pass — the command fails, which makes a natural CI step. <strong>Advisory</strong>: reported without blocking. The paper specified three levels, the tool has two today, and the gap is documented in the paper itself: the framework applies its honesty requirements to itself.</p>
-      <p>To run a gate: <code class="inline">od gate context</code>, or <code class="inline">od gate --through domain</code> to chain every gate up to the domain model. <code class="inline">od reference</code> prints the full dictionary of gates and record kinds.</p>
+      <p>To run a gate: <code class="inline">od gate context</code>, or <code class="inline">od gate --through 3</code> to chain every gate up to requirements (<code class="inline">--through</code> takes the number 0–8, never the name). <code class="inline">od reference</code> prints the full dictionary of gates and record kinds.</p>
 
       <h2>The rules that tell the philosophy</h2>
-      <p>The nine gates carry 58 named rules. Eight of them sum up the spirit:</p>
+      <p>The nine gates carry 63 named rules — 35 blocking, 28 advisory. Eight of them sum up the spirit:</p>
       <table>
         <tr><th>Rule</th><th>What it prevents</th></tr>
         <tr><td><code class="inline">gate-3/unjustified-requirement</code></td><td>A requirement out of nowhere: each one must cite its evidence.</td></tr>

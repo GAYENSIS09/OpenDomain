@@ -346,3 +346,82 @@ pre .copy {
   .top-links { display: none; }
   .brand { font-size: 14px; }
 }
+
+/* ---------- ancres : ne pas glisser sous la barre fixe ---------- */
+.prose h2, .prose h3 { scroll-margin-top: 76px; }
+
+/* ---------- accessibilité ---------- */
+.skip-link {
+  position: absolute;
+  left: 12px; top: -48px;
+  background: var(--black);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  z-index: 100;
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: 8px; color: #fff; }
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; }
+}
+
+/* ---------- voile mobile + bouton thème (injectés par main.js) ---------- */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 14, 12, 0.38);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 35;
+}
+body.sidebar-open .scrim { opacity: 1; pointer-events: auto; }
+@media (min-width: 801px) { .scrim { display: none; } }
+.theme-btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink-soft);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.theme-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+/* ---------- sommaire droit : section active ---------- */
+.toc nav a.active {
+  color: var(--red);
+  border-left-color: var(--red);
+  font-weight: 600;
+}
+
+/* ---------- tableaux : lisibilité ---------- */
+.prose tbody tr:hover { background: var(--red-soft); }
+
+/* ---------- thème sombre ---------- */
+html[data-theme="dark"] {
+  --paper: #151310;
+  --paper-2: #221E18;
+  --sand: #3A342A;
+  --ink: #EDE5D3;
+  --ink-soft: #BCAF9C;
+  --ink-faint: #877E6E;
+  --black: #000;
+  --red: #E0603F;
+  --red-soft: rgba(224, 96, 63, 0.13);
+  --line: rgba(237, 229, 211, 0.14);
+  --card: #1D1915;
+  --code-bg: #0D0C0A;
+  color-scheme: dark;
+}
+html[data-theme="dark"] .brand img { background: var(--paper-2); }
+html[data-theme="dark"] pre { color: #EDE5D3; }
+html[data-theme="dark"] .sidebar.open { box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
