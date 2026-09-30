@@ -7,7 +7,7 @@ version = "0.20.26"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
-repository = "https://github.com/opendomain/opendomain"
+repository = "https://github.com/GAYENSIS09/OpenDomain"
 description = "Domain-first, evidence-driven software engineering framework"
 
 [workspace.dependencies]

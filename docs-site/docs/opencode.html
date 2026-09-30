@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>With opencode — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>With opencode</h1>
+      <p class="subtitle">The same assistant, with a work contract.</p>
+
+      <p>Point opencode at a project containing an <code class="inline">opendomain/</code> folder: it inherits commands, roles, and a discipline of evidence. You keep the AI's creativity; the framework imposes honesty on it — when it doesn't know, it writes <code class="inline">UNKNOWN</code> instead of inventing.</p>
+
+      <h2>The six commands</h2>
+      <table>
+        <tr><th>Command</th><th>Role</th></tr>
+        <tr><td><code class="inline">/od-status</code></td><td>Where the project stands, and what is blocking.</td></tr>
+        <tr><td><code class="inline">/od-gate</code></td><td>Runs a gate and reports the verdict as is, without softening it.</td></tr>
+        <tr><td><code class="inline">/od-trace</code></td><td>Tells a record's origin from its recorded links.</td></tr>
+        <tr><td><code class="inline">/od-impact</code></td><td>Lists what a change would invalidate, before touching code.</td></tr>
+        <tr><td><code class="inline">/od-audit</code></td><td>Health report before declaring "done".</td></tr>
+        <tr><td><code class="inline">/od-record</code></td><td>Writes a record while staying epistemically honest.</td></tr>
+      </table>
+
+      <h2>Two roles</h2>
+      <p><strong>domain-researcher, the investigator.</strong> It reads, interviews, and reports only dated sources and evidence. By default it can hardly execute anything — except <code class="inline">od *</code> to check its own work.</p>
+      <p><strong>spec-implementer, the craftsperson.</strong> One scoped task against an existing specification, with a gate check before and after. If it steps out of scope, the gate catches it.</p>
+
+      <h2>Permissions: read freely, change by agreement</h2>
+<pre>{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "od *": "allow",
+      "od init *": "ask",
+      "od link *": "ask",
+      "od advance *": "ask",
+      "od apply *": "ask",
+      "od archive *": "ask"
+    }
+  }
+}</pre>
+      <div class="note"><strong class="label">Note</strong>opencode reads its configuration at startup: restart it after any addition. <code class="inline">AGENTS.md</code> is never overwritten, even with <code class="inline">--force</code>. <code class="inline">od init</code> never writes <code class="inline">opencode.json</code>: copying the permission above remains your decision.</div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/opencode.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concepts — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>Concepts</h1>
+      <p class="subtitle">The three ideas everything else follows from.</p>
+
+      <h2>Say how you know</h2>
+      <p>"In Senegal, a standardized invoice must carry a NINEA" can be checked in the General Tax Code. "Invoices probably need an approval status" is a guess. Once copied into requirements, nothing distinguishes these two sentences anymore — and that is how clean-but-wrong software is born.</p>
+      <p>OpenDomain therefore requires every record to carry a knowledge label, with no default value:</p>
+      <table>
+        <tr><th>State</th><th>Meaning</th><th>Example</th></tr>
+        <tr><td><code class="inline">EXPLICIT</code></td><td>Observed in an authoritative source.</td><td>The mandatory NINEA, Tax Code article.</td></tr>
+        <tr><td><code class="inline">TACIT</code></td><td>Known through practice, never written down.</td><td>The cashier eyeballs stock before validating.</td></tr>
+        <tr><td><code class="inline">HYBRID</code></td><td>Official source combined with experience, reasoning recorded.</td><td>Delivery lead time: written rule + observed traffic.</td></tr>
+        <tr><td><code class="inline">INFERRED</code></td><td>Deduced, to be confirmed, derivation recorded.</td><td>Returns seem to spike on Mondays.</td></tr>
+        <tr><td><code class="inline">ASSUMED</code></td><td>Temporary position to move forward, with an expiry.</td><td>Twenty concurrent users max, to revalidate.</td></tr>
+        <tr><td><code class="inline">UNKNOWN</code></td><td>Acknowledged as unknown.</td><td>Rate for digital services: not established.</td></tr>
+        <tr><td><code class="inline">CONFLICTING</code></td><td>Two serious sources disagree.</td><td>The accountant says "monthly", the text says "quarterly".</td></tr>
+      </table>
+      <div class="note"><strong class="label">Note</strong><code class="inline">TACIT</code> is not inferior to <code class="inline">EXPLICIT</code>. The unwritten know-how of the people doing the work is often more decisive than the official procedure. The framework records both and flags their divergence instead of burying it.</div>
+
+      <h2>Link everything to its evidence</h2>
+      <p>The framework forbids promoting an outside statement directly into a requirement. The permitted path always goes through the same stations:</p>
+      <ol>
+        <li><strong>Source</strong> — the page, the law, the interview, dated and recorded.</li>
+        <li><strong>Finding</strong> — what the source literally says.</li>
+        <li><strong>Interpretation</strong> — what that means in our situation.</li>
+        <li><strong>Candidate need</strong> — the problem this might answer.</li>
+        <li><strong>Requirement</strong> — the "the system SHALL…", only once the need is confirmed.</li>
+      </ol>
+      <p>The classic example: a competitor writes "our software handles stock reservations", and the assistant infers "the system SHALL handle reservations". But the page says neither why, nor whether it is an obligation or a comfort, nor where reservation sits relative to payment. Until field evidence confirms the need, the requirement stays a visible hypothesis — the leap is blocked.</p>
+      <p>When this path is honored everywhere, all records form a single genealogy (source, evidence, business rule, requirement, specification, test). You can then walk back to the source (<code class="inline">od trace</code>) or list a change's downstream (<code class="inline">od impact</code>) as plain graph traversals.</p>
+
+      <h2>Refuse whitewashing</h2>
+      <p>The most ordinary cheating: assumed in January, forgotten in March, marked "validated" in June. OpenDomain calls this epistemic laundering. Moving from <code class="inline">ASSUMED</code> or <code class="inline">INFERRED</code> to "validated" without bringing genuinely <code class="inline">EXPLICIT</code> evidence is blocked by the <code class="inline">gate-7/epistemic-laundering</code> rule. Changing the label is not evidence.</p>
+      <p>To progress honestly, you keep a promotion journal — where from, where to, on which evidence, on what date:</p>
+<pre>```toml
+status = "VALIDATED"
+epistemic = "EXPLICIT"
+promotions = [
+  { from = "ASSUMED", to = "VALIDATED",
+    evidence = ["EVD-014"], date = "2026-04-10" }
+]
+```</pre>
+      <p>A project with no journal at all gets a mere warning: missing history doesn't prove cheating, but it makes cheating undetectable.</p>
+
+      <h2>The rest of the picture</h2>
+      <p>Three choices complete the frame. The <strong>opportunity stage</strong> frames innovation: formulate falsifiable, testable hypotheses instead of copying competitors — and "no opportunity" is an honorable conclusion. The <strong>rejection of MVP as a compass</strong> prefers vertical increments that are complete in evidence. <strong>Three-loop verification</strong> nests specification, behavior, and tests, with rigor chosen per requirement type rather than imposed globally. The spirit stays the same: first understand the world as it is, then improve it — proving each step.</p>
+
+      <div class="next-links">Next: <a href="artifacts.html">Artifacts</a> — the exact record format.</div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/concepts.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

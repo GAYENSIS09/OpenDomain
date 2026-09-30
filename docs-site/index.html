@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Introduction — OpenDomain</title>
+  <meta name="description" content="OpenDomain: understand the domain before coding, and prove every rule. Introduction." />
+  <link rel="icon" href="assets/opendomain.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="index.html"><img src="assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="index.html">Introduction</a>
+      <a href="docs/getting-started.html">Getting started</a>
+      <a href="docs/concepts.html">Concepts</a>
+      <a href="docs/artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="docs/gates.html">The 9 gates</a>
+      <a href="docs/cli-reference.html">CLI reference</a>
+      <a href="docs/opencode.html">With opencode</a>
+      <a href="docs/theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>Introduction</h1>
+      <p class="subtitle">Understand the domain before coding, and prove every rule.</p>
+
+      <p><strong>OpenDomain</strong> is a domain-driven, evidence-driven development framework designed for working with AI assistants. It turns real-world domain knowledge into validated software: domain modeling, requirements, specifications, test-driven implementation — every step linked to its evidence and checked by quality gates.</p>
+
+      <h2>The problem</h2>
+      <p>Ask an AI assistant to add invoice management: within seconds you get entities, an API, migrations, and passing tests. The result can still be entirely wrong — wrong tax rate, invented approval workflow, invoice not compliant with the General Tax Code (in Senegal, a standardized invoice must carry a NINEA).</p>
+      <p>Each generated sentence is plausible in isolation. The defect is not in the code, it is upstream: <strong>the assistant cannot tell a reconstructed rule apart from a plausible hallucination</strong>, because nothing in the project records what is known, assumed, inferred, or unknown. A human developer hesitates and asks questions when they don't know; the AI's ignorance is syntactically indistinguishable from its competence.</p>
+
+      <h2>The answer, in three ideas</h2>
+      <h3>Say how you know</h3>
+      <p>Every working record declares its knowledge status: observed in an authoritative source (<code class="inline">EXPLICIT</code>), known through practice (<code class="inline">TACIT</code>), inferred (<code class="inline">INFERRED</code>), assumed (<code class="inline">ASSUMED</code>), unknown (<code class="inline">UNKNOWN</code>), or disputed (<code class="inline">CONFLICTING</code>). Seven values, no default. Not knowing becomes a written fact instead of a silence.</p>
+      <h3>Link everything to its evidence</h3>
+      <p>Sources, evidence, business rules, requirements, specifications, tests: all form a single traceability chain. Two questions then become mechanical — <em>why does this code exist?</em> (<code class="inline">od trace</code>) and <em>what would this change break?</em> (<code class="inline">od impact</code>). It is no longer your memory that answers, it is the graph.</p>
+      <h3>Verify before moving on</h3>
+      <p>Nine quality gates check the work at every stage. The most important one forbids "whitewashing": turning an assumption into a certainty by changing a label, without bringing evidence, is blocked. See <a href="docs/gates.html">The 9 gates</a>.</p>
+
+      <h2>What the tool does, and doesn't do</h2>
+      <p>The <code class="inline">od</code> command reads and checks; it never writes for you. You write the records in Markdown, it tells you whether they hold together — with the exact name of the violated rule and the offending line, never guessing the fix. A demanding reviewer, not an author.</p>
+
+      <div class="tip"><strong class="label">Tip</strong>Start with <a href="docs/getting-started.html">Getting started</a> to install the tool and get your first gate verdict, then read <a href="docs/concepts.html">Concepts</a> for the substance. The <a href="docs/cli-reference.html">CLI reference</a> and <a href="docs/opencode.html">With opencode</a> pages serve daily use.</div>
+
+      <h2>Going further</h2>
+      <p>The complete specification of the framework is written online in <a href="docs/theory.html">Theory</a>. Its status is owned: a design document, not an empirical result.</p>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/index.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="docs/theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="js/main.js"></script>
+</body>
+</html>

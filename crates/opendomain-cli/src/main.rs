@@ -385,7 +385,7 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         }
         // The agent files go to the project root and follow different rules from
         // the registries, so the preview has to follow them too. Listing all
-        // eleven as "would create" would be wrong twice over: a fresh run does
+        // ten as "would create" would be wrong twice over: a fresh run does
         // not create them all, and an existing `AGENTS.md` is never replaced
         // even under `--force`.
         let root = start.clone();

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Theory — OpenDomain</title>
+  <meta name="description" content="The complete OpenDomain framework specification: problem, contributions, pipeline, evidence, opportunity, MVP, verification, evaluation, limits." />
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>Theory</h1>
+      <p class="subtitle">The complete framework specification · v0.20.26.</p>
+
+      <h2>Abstract</h2>
+      <p>AI assistants have democratized building software, not understanding it. Software development is first about answering "what should exist, and why?". OpenDomain addresses a specific and increasingly common failure mode: <strong>semantic fabrication under plausible presentation</strong> — syntactically complete, coherent, tested software whose domain semantics were invented rather than known.</p>
+      <p>Eight design contributions: a closed epistemic lattice attached to every artifact (C1), a derivation gate forbidding the promotion of an outside statement directly into a requirement (C2), a single ordered traceability spine (C3), nine deterministic, side-effect-free quality gates (C4), an opportunity stage formalizing innovation as a falsifiable process (C5), the argued rejection of MVP as a scoping device (C6), three nested verification loops with rigor chosen per requirement type (C7), and a subsystem that provisions the verification toolchain and refuses to proceed when the declared rigor cannot be honored (C8).</p>
+
+      <h2>The problem, formally</h2>
+      <p>Let D be a real-world domain and K the knowledge a process holds about D. Standard practice produces software S as a function of K without requiring K to be complete, explicit, or consistent. Four questions then become undecidable at any point in the lifecycle: <strong>provenance</strong> (which observation justifies this element?), <strong>necessity</strong> (does the domain require it, or does it come from convention, a competitor, an agent prior?), <strong>blast radius</strong> (what becomes invalid if this requirement changes?), and <strong>trust</strong> (confirmed, inferred, assumed, or unknown?). They are undecidable not because the information is unavailable, but because the process has no representation to hold it.</p>
+      <p>The agentic setting sharpens the problem. A human engineer has at least tacit access to the surrounding organization; an AI assistant has only its training distribution plus whatever the user supplies. Hence a dangerous asymmetry: <strong>the agent is maximally fluent precisely where it is maximally ignorant</strong>, and its fluency makes that ignorance invisible. Two instances illustrate it: sales tax implemented where a differently-structured VAT applies (clean, tested, wrong implementation), and an approval workflow copied from competitor documentation where the organization requires a named signature with legal obligation. In both cases, "write better requirements" fixes nothing: the requirement wasn't ambiguous, it was unfounded — and nothing in its form revealed that.</p>
+
+      <h2>Goals: first understand, then discover</h2>
+      <p>Two sequential goals, never merged. First, help a practitioner — including one with no domain training — build an accurate, evidenced understanding of an unfamiliar domain, through systematic outside research rather than the assistant's priors. Then, from that understanding, identify problems the actors themselves never articulated — structural, latent, outside their frame — and answer them with technology. The first yields a validated domain model; the second operates on that model and produces falsifiable hypotheses, not a feature list.</p>
+
+      <h2>Why existing knowledge falls short</h2>
+      <p>The domain and requirements literatures already hold most of the conceptual apparatus. What they lack is a mechanism that is simultaneously <strong>machine-enforceable</strong> (an autonomous agent cannot bypass it by omission), <strong>cheap enough</strong> to apply per change, <strong>explicit about ignorance</strong>, and <strong>author-agnostic</strong>. The missing piece is not a new stage but a new representational substrate: an machine-checkable artifact model where epistemic state is part of the data.</p>
+      <p>Positioning: specification-driven development adopted and extended upstream toward evidence (with three authority regimes — spec-first, spec-anchored by default, spec-as-source); domain modeling languages complemented by the evidence substrate (notation doesn't carry knowledge); the strategic core of domain-driven design adopted, while noting that an agent on a poorly understood domain produces a <strong>deficient yet structurally present</strong> model, whose deficiency is invisible precisely because the structure is there.</p>
+
+      <h2>The nine-gate pipeline</h2>
+      <p>Each gate has a precondition and produces the artifacts the next one consumes:</p>
+      <table>
+        <tr><th>Gate</th><th>Precondition</th><th>Produces</th></tr>
+        <tr><td><code class="inline">context</code></td><td>none</td><td>project context, stakeholders, constraints, greenfield / brownfield / hybrid classification</td></tr>
+        <tr><td><code class="inline">research</code></td><td>G1 passed</td><td>sources, evidence, glossary, uncertainties, conflicts, research log</td></tr>
+        <tr><td><code class="inline">domain</code></td><td>G2 passed</td><td>actors, entities, events, processes, rules, domain map, ownership</td></tr>
+        <tr><td><code class="inline">requirements</code></td><td>G3 passed</td><td>requirements, non-functional requirements, constraints, baseline</td></tr>
+        <tr><td><code class="inline">opportunity</code></td><td>G4 passed</td><td>opportunities, assumptions, contradictions, concepts, experiments, decision</td></tr>
+        <tr><td><code class="inline">specification</code></td><td>G5 passed</td><td>specifications, acceptance criteria, contracts</td></tr>
+        <tr><td><code class="inline">plan</code></td><td>G6 passed</td><td>architecture, components, decisions, plan, tasks</td></tr>
+        <tr><td><code class="inline">implementation</code></td><td>G7 passed</td><td>code, tests, drift records</td></tr>
+        <tr><td><code class="inline">completion</code></td><td>G8 passed</td><td>audit report, final validation</td></tr>
+      </table>
+      <p>Opportunity follows requirements rather than preceding them: analyzed against an unvalidated model, it would produce attractive, unfounded concepts. The cost is real — an exploratory project must baseline before exploring — and it is recorded, not hidden: classification admits <code class="inline">OUT_OF_SCOPE</code>, and a project may baseline "the current state" and move on. Rule details live in <a href="gates.html">The 9 gates</a>.</p>
+
+      <h2>The epistemic lattice</h2>
+      <p>Seven values: <code class="inline">EXPLICIT</code> (authoritative source), <code class="inline">TACIT</code> (undocumented expertise), <code class="inline">HYBRID</code> (combination with recorded reasoning), <code class="inline">INFERRED</code> (recorded derivation), <code class="inline">ASSUMED</code> (temporary position with expiry), <code class="inline">UNKNOWN</code> (insufficient evidence), <code class="inline">CONFLICTING</code> (reliable sources disagree). Three deliberate properties: a <strong>closed set with no default</strong> (an artifact with no declared state is invalid); a <strong>non-ordered</strong> lattice (tacit is not lesser than explicit, it sits elsewhere); <strong>mutable state with no monotonic promotion</strong> (you may fall back to unknown when a source is retracted — except the forbidden laundering transition).</p>
+
+      <h2>The evidence gate</h2>
+      <p>Source, finding (what the source literally says), interpretation (what it means here), candidate need, requirement. The intermediate steps turn an illegitimate leap — from a competitor's product page to "the system SHALL handle reservations" — into a visible, closable question. See <a href="concepts.html">Concepts</a> for the full example.</p>
+
+      <h2>The traceability spine</h2>
+      <p>Source, evidence, domain knowledge, requirement, use case, specification, acceptance criterion, contract, plan, task, code, test, validation result — with thirteen closed relations: supports, derived-from, implements, depends-on, constrains, verifies, supersedes, conflicts-with, affected-by, owned-by, contains, answers, tests. A verification artifact's link to its criterion is expressed as <em>tests</em>, never inferred: a test asserts a falsifiable proposition, it doesn't establish it as true. Two queries ground the operational value: walk back to a rated source (the "why") and enumerate a change's downstream (the impact) — plain graph walks, no interpretation. The backward direction is the binding constraint: it is where the agent generates content with no provenance.</p>
+      <p>Beyond one module, every significant shared concept has exactly one owning context, and cross-context references are explicit: this prevents fragmentation (three incompatible "Customers" for one real-world party).</p>
+
+      <h2>Artifact model and identifiers</h2>
+      <p>37 identifier kinds with stable prefixes — the prefix encoding the kind, a requirement citing a test as its justification becomes a detectable error instead of an invisible one. Knowledge substrate (<code class="inline">SRC EVD RES TERM CONFLICT DEC</code>), domain model (<code class="inline">DOM STK ACT PROC ENT EVT RULE INT UNC</code>), opportunity (<code class="inline">OPP ASM CONTRAD CPT HYP EXP CDR</code>), requirements (<code class="inline">REQ NFR CNST BAS UC</code>), specification (<code class="inline">SPEC AC CTR SCN</code>), delivery (<code class="inline">PLAN TASK ADR TEST GAP DRIFT</code>).</p>
+      <p>Thirteen lifecycle statuses, in order: drafted, researched, supported, validated, approved, implementing, implemented, verified, blocked, open, conflicting, deprecated, superseded. The ordering is partial and two axes overlap: validated is an epistemic claim, implementing a lifecycle claim — an artifact may be implemented while remaining assumed, and gates check exactly that.</p>
+      <p>Every record carries: identifier, kind, title, status, epistemic state, confidence, authority, owner, scope, dates, version, relations, and free prose. Authority is rated per claim (a manufacturer is authoritative for its product, a regulator for compliance) and confidence applies to the inference — it shrinks, never grows, when several derived sources rest on one original assertion. Deliberately absent: delivery priority, story points, "percent complete" — letting delivery pressure write into the knowledge substrate would let it rewrite findings.</p>
+
+      <h2>Required fields per record kind</h2>
+      <table>
+        <tr><th>Kind</th><th>Required fields</th></tr>
+        <tr><td><code class="inline">SRC</code></td><td>url, access date, source type, authority, coverage</td></tr>
+        <tr><td><code class="inline">EVD</code></td><td>claim, source (must resolve to a SRC), exact context, interpretation</td></tr>
+        <tr><td><code class="inline">TERM</code></td><td>definition</td></tr>
+        <tr><td><code class="inline">RULE</code></td><td>statement, type, scope</td></tr>
+        <tr><td><code class="inline">REQ</code></td><td>statement, rationale, actor, derived-from (at least one evidence, rule, or explicit assumed marking)</td></tr>
+        <tr><td><code class="inline">NFR</code></td><td>quality attribute, measure, threshold — no threshold, invalid</td></tr>
+        <tr><td><code class="inline">UC</code></td><td>primary actor, goal, main scenario</td></tr>
+        <tr><td><code class="inline">SPEC</code></td><td>main scenario, criteria, contracts</td></tr>
+        <tr><td><code class="inline">AC</code></td><td>measurable criterion, as given / when / then</td></tr>
+        <tr><td><code class="inline">CTR</code></td><td>protocol, request, response, errors, versioning, idempotency</td></tr>
+        <tr><td><code class="inline">TASK</code></td><td>objective, source specs, dependencies, criteria, required tests</td></tr>
+        <tr><td><code class="inline">ADR</code></td><td>context, problem, options, decision, consequences</td></tr>
+        <tr><td><code class="inline">HYP</code></td><td>statement, target population, metric, threshold, failure condition</td></tr>
+        <tr><td><code class="inline">EXP</code></td><td>question, hypothesis, method, metric, result, decision</td></tr>
+        <tr><td><code class="inline">UNC</code></td><td>question, why-unknown, available evidence, impacts, required validation</td></tr>
+        <tr><td><code class="inline">XCONF</code></td><td>topic, source A, source B, difference, project decision, status</td></tr>
+      </table>
+
+      <h2>The opportunity stage</h2>
+      <p>Reconstruct the current state (actor, action, information, decision, outcome); hunt frictions, waste, and invisible work; extract each step's assumptions; analyze contradictions; frame opportunity spaces; explore with fixed operators (remove, automate, delegate, merge, split, invert, predict, personalize…) generating at least three materially different concepts; attack each concept (necessity, novelty, value, feasibility, evidence, risks, adoption, complexity, side effects, failure modes); convert survivors into falsifiable hypotheses; experiment as cheaply as possible (interview, Wizard-of-Oz, spike, concierge, vertical slice); converge against an explicit checklist with a decision record. An anti-pattern check sends back to assumptions any proposal amounting to a competitor list justified by "everybody does it". Legitimate outcomes: no material opportunity, or a refuted hypothesis with a recorded pivot.</p>
+
+      <h2>Uncertainty, managed not smothered</h2>
+      <p>A first-class registry: question, why-unknown, available evidence, possible readings, impacts, required validation. Uncertainty closes through research, not preference — the human is asked only for project decisions, unresearchable answers, diverging consequences, or authorizations, always with the question, its stakes, the alternatives, and their impacts. Regional and organizational context (regulation, terminology, payments, tax, procedures) demands its own evidence: no generic international workflow ever substitutes for it.</p>
+
+      <h2>Derived architecture, existing code as evidence</h2>
+      <p>Architecture follows the domain and justifies itself through its boundaries, consistency, scale, or security — never fashion; microservices, event sourcing, CQRS, and distributed caches each demand a concrete need that pays for them, the modular monolith being the default posture. For existing systems, observed behavior is classified (documented, inferred, observed, legacy-accidental, intentional, compatibility-preserving, unknown) before any change: nothing deleted for being undocumented, nothing kept for being implemented.</p>
+
+      <h2>Rejecting MVP</h2>
+      <p>MVP couples scope to learning and assumes fast, representative feedback with low error cost — conditions violated in the regulated or high-consequence settings targeted here. Three mechanisms replace it. <strong>Evidence-bounded capability classification</strong>: <code class="inline">CORE</code> (required by a validated rule — omitting it yields a defective system), <code class="inline">IMPORTANT</code> (evidenced, validated need, not required for correctness), <code class="inline">OPTIONAL</code> (plausible, weak evidence), <code class="inline">FUTURE</code> (justified in principle, not now), <code class="inline">OUT_OF_SCOPE</code> (excluded with recorded reason), <code class="inline">EXPERIMENTAL</code> (exists to answer a question, marked non-production). The <strong>evidence-complete increment</strong>: a vertical slice carrying one business rule plus its epistemic state, its specification with error and boundary scenarios, its criteria, its verification mechanism, and its impact record — complete when the rule-requirement-specification-criterion-test chain is closed and declared, not when it compiles. The <strong>experiment</strong>, finally, keeps the MVP technique where it is valid: producing knowledge, inside the opportunity stage, with validated / partial / rejected / inconclusive outcomes — an inconclusive may never be recorded as validated.</p>
+      <p>Accepted costs: slower first deliverable, reduced early parallelism, need for source access or a decider (without which the framework honestly reports a large unknown registry and few requirements — a worse plan and a better project), and the social discipline of recording "no opportunity". Falsification condition: if a controlled comparison shows MVP-scoped systems reaching equal or better correctness at lower cost where domain knowledge is not the constraint, the position is wrong — expected in low-domain-entropy settings.</p>
+
+      <h2>Three-loop verification</h2>
+      <p>Specification, behavior, and unit tests are not successive phases but <strong>concurrent concentric loops</strong>, each with its artifacts, verification unit, and definition of done — the specification loop being the only one continuing after code is written, as the authority against which drift is detected. Rigor is chosen per requirement and recorded: acceptance behavior in BDD, unit contracts in TDD, REST interfaces in OpenAPI, compatibility in Pact, lifecycles as state machines, invariants as property-based tests, performance envelopes as benchmarks, security properties as adversarial tests — and uncertain or disputed rules as scenarios named as such, not tests (writing a test asserts the rule; a test may never justify a requirement, on pain of a closed loop caught at gate 8). Three misuses carry detectable signatures: BDD testing internal structures, TDD standing in for acceptance (green suite, no scenarios), specifications rewritten after the code (spec and implementation files changed in the same commit — a blocker). Where practical, specifications are executable — remembering that no green scenario ever validates a specification's correctness against the domain.</p>
+
+      <h2>Provisioning the verification toolchain</h2>
+      <p>Stack detection, deterministic tooling selection (a judgment matrix kept as data, outside gate logic), local install at pinned versions, wiring generation, binding of each verification artifact to its criterion with recorded provenance — and refusal to proceed when the declared rigor cannot be honored. Every specification records whether it was actually executed, merely discovered, or only declared.</p>
+
+      <h2>Worked micro-example: stock reservation</h2>
+      <p>Request: "add stock reservation to stop overselling". Research: three sources — generic warehouse documentation (strong for generic flow), the internal purchasing procedure (strong for this organization), a competitor's product page (medium for the market, weak for our requirements). Two findings: systems commonly distinguish available from reserved stock (<code class="inline">EXPLICIT</code>); reservation's position relative to payment is disputed between the first two sources (<code class="inline">CONFLICTING</code>, recorded unresolved conflict). Without this work, the agent would have produced a confident lifecycle with a silently fixed ordering.</p>
+      <p>Requirements: the direct promotion "the competitor does it so the system SHALL do it" is <strong>rejected</strong> — no candidate need; a competitor's capability informs about the market, not our problem. Successful derivation: the need to tell allocatable apart from physically present stock yields an explicit requirement derived from the finding and a rule; the hold-until-shipment requirement stays <strong>blocked</strong> on the unresolved conflict, awaiting a business decision. A rule inferred from the finding passes the gate because it is marked inferred rather than asserted — later reconciliation may promote it.</p>
+      <p>Specification: three criteria — rejection beyond availability, boundary case at zero availability, release with allocatable climbing back and history recorded — covering nominal, bound, and reversal paths. Implementation: if an engineer flips the requirement from inferred to explicit with no added evidence, the anti-laundering check fires. The requirement wasn't false; it was made to look confirmed. Without the check, the distinction is invisible — and the distinction is the entire point of the framework.</p>
+
+      <h2>Epistemic status of this specification</h2>
+      <p>The frame applies to itself. Semantic fabrication as a real failure mode, structure masking absence, MVP preconditions failing: inferred, medium confidence. Effective detection by the nine gates: inferred, low confidence. Acceptable false-positive rate, fewer unfounded requirements, fewer defects or rework, efficiency versus MVP: <strong>unknown</strong>. Established with high confidence: the significance of domain knowledge and its maintenance, specification authority tiered by consequence, the limits of unanchored approaches. No empirical result is claimed.</p>
+
+      <h2>Evaluation protocol</h2>
+      <p>Four studies, two primary. <strong>S1</strong>, longitudinal case (one greenfield, one brownfield project, 3–6 months, 60+ change sets): provenance completeness, epistemic accuracy (confusion matrix over the seven values), unfounded-requirement rate, overhead measured as with/without difference. <strong>S2</strong>, controlled crossover comparison between evidence-complete increments, MVP scoping, and unstructured assisted development — primary endpoint: correctness against independently validated requirements, never the system's self-measurement (the false-confidence error raised into a measurement constraint); an MVP win would refute the MVP section and be published as such. <strong>S3</strong>, mechanical audit of state transitions: promotion-with-new-evidence rate (the "laundering rate", key metric), time-to-close for unknowns and conflicts. <strong>S4</strong>, adversarial corpus of seeded defects: true and false positives per gate — a gate set blocking on non-defects gets disabled, and a disabled gate set is worse than none because it simulates rigor; target stated upfront: under 5% false positives per condition. Since every gate run emits a machine report, telemetry is a by-product of operation.</p>
+
+      <h2>Threats to validity</h2>
+      <p>Construct: the practitioner's judgment as ground truth is itself fallible (blind review, full matrix); overhead mixes in tool learning (time series, not means); gate coverage outside the unknown corpus is unestablished. Internal: novelty and training dominate any process intervention; declarative measures suffer social desirability (prefer mechanical measures); adopting projects differ systematically from the rest. External: the predicted advantage grows with domain entropy — for low-entropy work the frame risks being cost without benefit; single context untested; no evaluation with an expert in the loop, yet the expected best-ratio setting. Conclusion: S2's primary endpoint designated upfront against selective reporting; the author being also the evaluator, only independent replication answers.</p>
+
+      <h2>Discussion</h2>
+      <p>The frame doesn't make the agent more capable of generating code: it makes its assertions checkable. Saying "I don't know" moves things forward, because unknown is a valid state blocking a specific gate — hence actionable. The question is no longer "did the model hallucinate?" but "which claims stand unsupported, and do we know which?". Side effect: adopting the frame yields otherwise-unavailable data on assisted engineering. The cost objection, taken seriously: front-loaded cost against back-loaded benefit — worst shape for deadline adoption, best for lifetime correctness; the minimal-artifact principle bounds the cost (templates are a menu, not a mandate); and cost peaks exactly where need peaks. On MVP: the contestable position states itself refutably — MVP assumes a solved domain, the frame targets an unsolved one; where the unknown is user response, MVP is the correct instrument and this frame overhead. Preserved separation: discover what is true, challenge what could be better (with what would falsify it), specify, build, validate — collapsing discover into specify, the agents' default, becomes inadmissible as a first act.</p>
+
+      <h2>Limitations</h2>
+      <p>Untested: every performance claim is open. Without sources — no documents, code, data, or knowledgeable people — the frame returns a large unknown registry and few requirements: it manufactures no knowledge. It requires organizational permission to record uncertainty: after-the-fact detection is not prevention. Unjustified overhead at low entropy: predicted, unmeasured. Propositional gate set, unknown coverage and false positives. Notation-agnosticism: projecting into a formal language stays with the project. Brownfield path least tooled. No multi-agent coordination protocol. Author and proponent confounded. Verification subsystem specified but unimplemented, perishable selection matrix to maintain, supply-chain surface to watch.</p>
+
+      <h2>Ethics</h2>
+      <p>In regulated, safety, or fiduciary domains, a system of unfounded assertions is a harm mechanism: the profession's duty extends to making the unfounded visible. The frame doesn't first make software more correct — it makes incorrectness identifiable, which in a regulated setting separates the defect from the unknowable defect. Misuses: ceremonial adoption (artifacts without thinking — caught by the epistemic-accuracy measure, since artifacts wrong about their own state are worse than absent); weaponized uncertainty to avoid building (classification demands a derivation path, dodging stays visible); manufactured authority (the source must be rated authoritative <em>for the claim</em>, a judgment hard to fake at scale). Sustainability: plain-text artifacts, in the repo, under the project's license — knowledge outlives the tool. And the scarcest resource remaining expert attention, it is spent only on decisions requiring it.</p>
+
+      <h2>Future work</h2>
+      <p>Independent replication of the MVP comparison; gate coverage mapping; automated epistemic-accuracy estimation; multi-agent protocol; automated brownfield support; measurable domain-entropy estimation to decide when the frame pays; formalization of gate conditions toward mechanical proof; export to domain modeling languages; multi-year longitudinal outcome data — the only timescale on which the central bet (epistemic closure compounds) can be judged; implementation of the verification subsystem in order; rigor ablation study; provisioning-failure corpus; binding-inference measurement.</p>
+
+      <h2>Conclusion</h2>
+      <p>Assistants made producing code cheap without easing the determination of what to produce — and by lowering the cost of the first, they raised the expected cost of the second: a wrong system is now cheap to build and expensive to discover. The binding problem is not that models fabricate, but that fabrication is indistinguishable from competence in the output, because the output carries no record of how anything is known. The proposed remedy is neither a better prompt nor a longer process document: it is a representational change — epistemic state in the data, provenance on every claim, a structure checkable by pure function over a versioned workspace.</p>
+      <p>Four commitments: the lattice, which lets ignorance be recorded and forbids it from staying implicit; the evidence gate, which bars an outside statement from becoming a requirement without crossing finding, interpretation, and candidate need; the spine, which makes "why does it exist?" and "what breaks if it changes?" graph walks; and the nine gates, which turn writable prohibitions into blocking checks. Two less conventional commitments: an opportunity stage making innovation a falsifiable process, and the formal rejection of MVP as a scoping device — with the honest note that the empirical claim is open, the argument refutable, and the frame likely overhead at low entropy. None of this has been shown to work. What is offered: a falsifiable design, a precise specification, an evaluation protocol, and an honest inventory of what remains unknown.</p>
+
+      <h2>Key references</h2>
+      <p>[1] Araujo et al., domain knowledge in requirements engineering (mapping study). [2] Piskala, specification-driven development in the age of AI coding assistants. [3] Beers et al., domain-specific modeling language for production systems. [4] Evans, Domain-Driven Design; [7] Fowler, anemic domain model. [10] North, specification by example; [11] Beck, test-driven development. [13][14] Boehm, spiral model and balancing agility with discipline (agile/MVP foundations). [24] Yin, case study research.</p>
+
+      <div class="next-links">Go deeper: <a href="gates.html">The 9 gates</a> · <a href="concepts.html">Concepts</a> · <a href="cli-reference.html">CLI reference</a></div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/theory.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

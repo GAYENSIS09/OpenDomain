@@ -42,12 +42,6 @@ pub mod agent_contract {
         contents: include_str!("../templates/agent/AGENTS.md"),
     };
 
-    /// `README.md` next to the agent files, explaining what they are and why.
-    pub const README: Template = Template {
-        path: "opendomain-agent/README.md",
-        contents: include_str!("../templates/agent/README.md"),
-    };
-
     /// `.opencode/command/od-status.md`.
     pub const OD_STATUS: Template = Template {
         path: ".opencode/command/od-status.md",
@@ -106,7 +100,6 @@ pub mod agent_contract {
     pub fn all() -> Vec<Template> {
         vec![
             AGENTS,
-            README,
             OD_STATUS,
             OD_GATE,
             OD_TRACE,
@@ -125,7 +118,7 @@ pub mod agent_contract {
     /// `AGENTS.md` has instructions this tool did not write, and silently
     /// replacing them with framework boilerplate would discard whatever the
     /// project had already told its agents. The other files are namespaced under
-    /// `.opencode/` or `opendomain-agent/`, so writing them cannot collide with
+    /// `.opencode/`, so writing them cannot collide with
     /// anything the project owns.
     pub fn is_root_level(t: &Template) -> bool {
         !t.path.contains('/')
@@ -953,13 +946,10 @@ mod tests {
         // own repository tells its agents something `od init` does not tell
         // anyone else — the exact defect this file set exists to prevent.
         //
-        // Two files are excluded, both deliberately. `AGENTS.md` is written for
+        // `AGENTS.md` is excluded deliberately: it is written for
         // contributors to the framework and legitimately says more than the
-        // generated one. `opendomain-agent/README.md` explains the file set to
-        // a project that received it from `od init`; this repository did not
-        // receive it that way, it authored it, and its own explanation belongs
-        // in the templates directory where the question is asked.
-        const NOT_LOCAL: [&str; 2] = ["AGENTS.md", "opendomain-agent/README.md"];
+        // generated one.
+        const NOT_LOCAL: [&str; 1] = ["AGENTS.md"];
         for t in agent_contract::all() {
             if NOT_LOCAL.contains(&t.path) {
                 continue;

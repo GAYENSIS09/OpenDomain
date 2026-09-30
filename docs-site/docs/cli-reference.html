@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CLI reference — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>CLI reference</h1>
+      <p class="subtitle">Four intents: locate, link, ask, evolve.</p>
+
+      <h2>Locate — where do we stand?</h2>
+<pre>od status                 # project weather: real progress + blockers
+od gate context           # verdict of one specific gate
+od gate --through domain  # every gate up to the domain model
+od audit                  # traceability health report
+od reference              # dictionary: gates + 37 record kinds</pre>
+      <p><code class="inline">status</code> every morning, <code class="inline">gate</code> before each stage, <code class="inline">audit</code> before saying "done".</p>
+
+      <h2>Link — declare dependencies</h2>
+<pre>od link --check                         # does every link point to something real?
+od link REQ-012 derived-from EVD-014    # this requirement comes from this evidence
+od advance REQ-012 VALIDATED            # move a record to validated state
+od show REQ-012                         # full record of one artifact</pre>
+      <p>Whoever depends always declares the link.</p>
+
+      <h2>Ask — why, and what if it changes?</h2>
+<pre>od trace REQ-012                    # walk back to the source: the "why"
+od trace --forward REQ-012          # walk down: who implements and verifies it
+od impact RULE-007                  # what a change would invalidate
+od graph --root REQ-012 --depth 3   # the neighborhood, to see the web</pre>
+
+      <h2>Evolve — change without rewriting history</h2>
+<pre>od propose tighter-reservation --summary "Tighten the reservation window"
+od apply tighter-reservation
+od archive tighter-reservation</pre>
+      <p>Propose, apply, archive. Even refuted hypotheses are kept: a deleted failure gets re-derived, an archived failure teaches.</p>
+
+      <h2>Global options and CI</h2>
+      <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">od gate --through specification --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
+
+      <h2>Check the workshop itself</h2>
+<pre>cargo test --workspace      # 118 unit tests + 2 doctests
+cargo fmt --all -- --check</pre>
+      <p>The workshop: <code class="inline">crates/opendomain-core/</code> (model, parser, index, graph, gates) and <code class="inline">crates/opendomain-cli/</code> (the <code class="inline">od</code> binary).</p>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/cli-reference.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

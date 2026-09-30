@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Getting started — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>Getting started</h1>
+      <p class="subtitle">Install the tool, create a project, get your first verdict.</p>
+
+      <h2>Prerequisites</h2>
+      <p>You need Rust 1.75 or newer. A single build is enough; afterwards the binary is self-contained.</p>
+
+      <h2>Install</h2>
+      <p>The recommended way, with Rust installed:</p>
+<pre>cargo install --git https://github.com/GAYENSIS09/OpenDomain --locked opendomain-cli
+od --version</pre>
+      <p>Prefer building from source? That works too — the binary lands at <code class="inline">target/release/od.exe</code> (Windows) or <code class="inline">target/release/od</code> (Unix):</p>
+<pre>git clone https://github.com/GAYENSIS09/OpenDomain
+cd OpenDomain
+cargo build --release</pre>
+      <p>Put the binary on your <code class="inline">PATH</code>, or call it by its full path.</p>
+
+      <h2>Initialize a project</h2>
+      <p><code class="inline">od init</code> doesn't create code: it prepares a tidy workbench — an <code class="inline">opendomain/</code> folder of 41 files (33 registries, 7 explanatory documents, and <code class="inline">opendomain.toml</code> describing the project), plus an agent contract (<code class="inline">AGENTS.md</code> and the <code class="inline">.opencode/</code> files). Re-run, it reports what already exists without overwriting anything.</p>
+<pre>mkdir my-bookstore && cd my-bookstore
+od init --name my-bookstore
+od status</pre>
+      <div class="tip"><strong class="label">Tip</strong>Three profiles cover common situations: <code class="inline">full</code> (everything, default), <code class="inline">core</code> (no innovation stage, for systems with an imposed scope), and <code class="inline">lean</code> (the domain model already lives elsewhere). <code class="inline">--dry-run</code> shows what would be created without writing anything. To take over an existing system, prefer <code class="inline">--repository brownfield</code>: current code is treated as a clue there, not a specification.</div>
+
+      <h2>Read your first verdict</h2>
+      <p>At first, gates fail — that's their job. <code class="inline">od status</code> gives the project weather (what is ready, what is blocked), <code class="inline">od gate context</code> returns the first gate's verdict with what's missing, and <code class="inline">od audit</code> reports traceability health. Every refusal cites the exact rule: read it as an instruction, not a reproach.</p>
+      <p>Once two records are linked, try <code class="inline">od trace</code> (why does this requirement exist?) and <code class="inline">od impact</code> (what would need revisiting if this rule changed?). That's the moment the framework "clicks". Command details live in the <a href="cli-reference.html">CLI reference</a>.</p>
+
+      <h2>Next</h2>
+      <p>Read <a href="concepts.html">Concepts</a> for the substance — knowledge statuses, the evidence chain, anti-whitewashing — then <a href="artifacts.html">Artifacts</a> for the exact record format.</p>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/getting-started.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

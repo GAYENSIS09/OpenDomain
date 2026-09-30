@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artifacts — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>Artifacts</h1>
+      <p class="subtitle">Text for humans, evidence for the machine.</p>
+
+      <h2>Anatomy of a record</h2>
+      <p>Each registry is a Markdown file cut into sections (one per record). The <code class="inline">toml</code> block carries machine-checked fields; the prose below is free and never parsed. Here is a complete record, annotated:</p>
+<pre>## REQ-012 — Look up an item's movement history
+
+```toml
+type = "FUNCTIONAL"        # kind of need
+status = "DRAFT"           # progress state: work in progress
+epistemic = "INFERRED"     # knowledge status: inferred, to confirm
+confidence = "MEDIUM"      # confidence level
+actor = ["ACT-002"]        # for whom: actor #2
+derived-from = ["EVD-014"] # originating evidence — mandatory
+rules = ["RULE-007"]       # the business rule concerned
+```
+
+**Statement**
+
+The system SHALL let authorized users
+look up an item's chronological movements.</pre>
+      <p>The contract is simple: everything asserted in prose must have its counterpart in the TOML block. If the block says <code class="inline">INFERRED</code>, the prose may not speak as if it were certain. And if the TOML is malformed, the tool reports the line number instead of guessing.</p>
+
+      <h2>Naming and linking</h2>
+      <p>The prefix says what it is: <code class="inline">REQ</code> for a requirement, <code class="inline">EVD</code> for evidence, <code class="inline">SRC</code> for a source, <code class="inline">RULE</code> for a business rule, <code class="inline">AC</code> for an acceptance criterion, <code class="inline">SPEC</code> for a specification — 37 kinds in all, listed by <code class="inline">od reference</code>. Scope can be qualified (<code class="inline">REQ-INVENTORY-014</code>, <code class="inline">AC-INVENTORY-014-01</code>).</p>
+      <p>Links are declared by whoever depends on the other: you write <code class="inline">REQ-004 derived-from RULE-001</code> on the requirement's record, never the reverse. Like citing sources at the bottom of a page, this makes walking back to the origin infallible.</p>
+
+      <h2>A record's life, end to end</h2>
+      <p>Take a bookstore trying to understand its returns:</p>
+      <ol>
+        <li><strong>Source</strong> (<code class="inline">SRC-003</code>): interview with Mariam, the manager, notes and date.</li>
+        <li><strong>Finding</strong> (<code class="inline">EVD-014</code>, <code class="inline">EXPLICIT</code>): "30% of Monday returns come from picking errors".</li>
+        <li><strong>Requirement</strong> (<code class="inline">REQ-012</code>, <code class="inline">INFERRED</code>): look up movement history — the inference is recorded, not hidden.</li>
+        <li><strong>Confirmation</strong> (<code class="inline">EVD-021</code>): register exports confirm the Monday spike, and the record is promoted to <code class="inline">EXPLICIT</code> with its promotion journal.</li>
+        <li><strong>Specification and test</strong> (<code class="inline">SPEC-008</code>, <code class="inline">AC-008-01</code>): what will be observed, and how it will be verified.</li>
+      </ol>
+      <p>At every step, gates verify: does the evidence cite a source? Does the requirement cite evidence? Does the test really cover the requirement marked "implemented"? Nothing passes by force — everything passes by evidence.</p>
+
+      <div class="next-links">Next: <a href="gates.html">The 9 gates</a> — the questions guarding each stage.</div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/artifacts.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

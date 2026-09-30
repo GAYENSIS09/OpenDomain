@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The 9 gates — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>The 9 gates</h1>
+      <p class="subtitle">Nine questions you no longer get to forget.</p>
+
+      <p>A gate is not a form: it is a question asked at the right moment, with a machine-checkable answer. Each gate is a pure function — it reads the project, returns its verdict, touches nothing. Run it twice: same answer. And when it refuses, it cites the exact rule rather than a vague paraphrase.</p>
+
+      <h2>The journey in nine stages</h2>
+      <table>
+        <tr><th>Gate</th><th>Question</th><th>What's at stake</th></tr>
+        <tr><td><code class="inline">context</code></td><td>What are we building, for whom, under which constraints?</td><td>The foundation: without it, everything else floats.</td></tr>
+        <tr><td><code class="inline">research</code></td><td>Did we really listen to the field?</td><td>Dated, rated evidence, spotted contradictions, explicit end of research.</td></tr>
+        <tr><td><code class="inline">domain</code></td><td>Does the domain model hold together?</td><td>Actors, rules, and processes coherent, each with an owner.</td></tr>
+        <tr><td><code class="inline">requirements</code></td><td>Is every requirement justified and testable?</td><td>No requirement without upstream evidence or business rule.</td></tr>
+        <tr><td><code class="inline">opportunity</code></td><td>Did we look for better than copying?</td><td>Falsifiable, tested hypotheses; "no opportunity" is honorable.</td></tr>
+        <tr><td><code class="inline">specification</code></td><td>Do we describe the observable outcome, not the machinery?</td><td>Behavior, acceptance criteria, error and boundary cases.</td></tr>
+        <tr><td><code class="inline">plan</code></td><td>Is the path bounded and ordered?</td><td>Domain-derived architecture, sliced tasks, no cycles.</td></tr>
+        <tr><td><code class="inline">implementation</code></td><td>Does the code do what was promised?</td><td>Vertical slices, tests first, no assumption disguised as certainty.</td></tr>
+        <tr><td><code class="inline">completion</code></td><td>Is the whole chain coherent and tested?</td><td>End-to-end final audit, plus simplification.</td></tr>
+      </table>
+      <div class="note"><strong class="label">Note</strong>The opportunity stage deliberately comes after requirements: innovating before understanding the world produces feature lists. After, on a validated model of reality, you can tell "what the domain does" from "what we believe we can change". A regulated project may conclude no innovation is required.</div>
+
+      <h2>Two possible verdicts</h2>
+      <p><strong>Blocking</strong>: you don't pass — the command fails, which makes a natural CI step. <strong>Advisory</strong>: reported without blocking. The paper specified three levels, the tool has two today, and the gap is documented in the paper itself: the framework applies its honesty requirements to itself.</p>
+      <p>To run a gate: <code class="inline">od gate context</code>, or <code class="inline">od gate --through domain</code> to chain every gate up to the domain model. <code class="inline">od reference</code> prints the full dictionary of gates and record kinds.</p>
+
+      <h2>The rules that tell the philosophy</h2>
+      <p>The nine gates carry 58 named rules. Eight of them sum up the spirit:</p>
+      <table>
+        <tr><th>Rule</th><th>What it prevents</th></tr>
+        <tr><td><code class="inline">gate-3/unjustified-requirement</code></td><td>A requirement out of nowhere: each one must cite its evidence.</td></tr>
+        <tr><td><code class="inline">gate-1/orphan-evidence</code></td><td>An assertion with no author: evidence without a source is not evidence.</td></tr>
+        <tr><td><code class="inline">gate-1/single-source</code></td><td>Fake corroboration: a single origin, however repeated, proves nothing.</td></tr>
+        <tr><td><code class="inline">gate-8/assumption-reached-production</code></td><td>An assumption shipped to users.</td></tr>
+        <tr><td><code class="inline">gate-5/how-not-what</code></td><td>A specification narrating machinery instead of outcome.</td></tr>
+        <tr><td><code class="inline">gate-4/unfalsifiable-hypothesis</code></td><td>A hypothesis that can never be settled: metric and threshold required.</td></tr>
+        <tr><td><code class="inline">gate-4/feature-cloning</code></td><td>"We're doing it because others do it."</td></tr>
+        <tr><td><code class="inline">gate-7/epistemic-laundering</code></td><td>Repainting doubt as certainty — the queen rule, see <a href="concepts.html">Concepts</a>.</td></tr>
+      </table>
+
+      <div class="next-links">Next: <a href="cli-reference.html">CLI reference</a> — the tool in daily use.</div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/gates.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Sept. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>
