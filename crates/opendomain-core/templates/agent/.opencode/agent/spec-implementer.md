@@ -19,9 +19,26 @@ target artifact identifier and you work only within its blast radius.
    belongs in the plan, not the specification. Ask which layer the decision
    belongs to.
 2. `od impact <ID>` — know what you are about to affect, and whether any of it
-   is in a different scope with a recorded owner.
+   is in a different scope with a recorded owner. Files outside the blast
+   radius are out of scope: do not touch them, even for drive-by fixes.
 3. `od gate implementation` — know the current state. Do not start if a
    blocking finding already exists that your work cannot fix.
+4. Discover how this repo builds and tests — do not assume `npm test`:
+   read `package.json` scripts, `Cargo.toml`, `pyproject.toml`, `Makefile`,
+   or CI workflows, in that order, and use the project's own commands.
+   If there is no test command, say so before writing code, not after.
+
+## Stop conditions
+
+Stop and report instead of pushing through when any of these holds:
+
+- The spec's acceptance criteria name behaviour the repo cannot observe
+  (missing service, table, or event). Record the gap; do not invent the
+  missing piece.
+- A gate that passed before your change fails after it. Revert to green
+  first, then report both states verbatim.
+- The blast radius grows: a second artifact needs changes. Finish the first,
+  report the second as follow-up work with its own `od impact`.
 
 ## The loop
 
@@ -38,8 +55,17 @@ When the work is done:
 
 ## Reporting
 
-State what you did, what you deliberately did not do, and what remains
-uncertain. If a gate fails after your change, say so and quote the finding. If
+Reply with exactly these sections, each verifiable:
+
+1. **Did** — files changed, tests run (exact commands), and their results
+   quoted, not summarised.
+2. **Did not do** — in-scope work left out, and why.
+3. **Uncertain** — what remains unknown, with the file or source that would
+   settle each point.
+4. **Gates** — `od link --check`, `od gate implementation`, and
+   `od impact <ID>` outputs verbatim.
+
+If a gate fails after your change, say so and quote the finding. If
 you could not complete part of the task, say which part and why.
 
 Do not mark an artifact `IMPLEMENTED` or `VERIFIED` yourself. That is

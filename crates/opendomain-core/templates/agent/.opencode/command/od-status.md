@@ -9,8 +9,9 @@ Do this:
 
 1. Run `od status` and show the output verbatim. Do not paraphrase the gate lines.
 2. If any gate reports blocking findings, name the single most important one and
-   stop. Do not attempt to fix it — that is what `/od-context` and the other
-   commands are for.
+   stop. Do not attempt to fix it — fixing is `/od-record` (or the
+   `brownfield-discoverer` agent on a repository with existing code), run as a
+   separate, explicit step after this report.
 3. If `od` reports the workspace is missing, say so and suggest `od init`.
 
 Report faithfully. If a gate FAILS, say it FAILS. Do not soften a failure into

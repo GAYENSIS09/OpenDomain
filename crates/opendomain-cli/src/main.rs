@@ -66,6 +66,9 @@ enum Command {
     Link(LinkArgs),
     /// Show one artifact's full record.
     Show(ShowArgs),
+    /// Print the next free identifier of a kind. Read-only: reserves nothing,
+    /// so confirm the id is still free if the registry changed since.
+    New(NewArgs),
     /// Move an artifact along its lifecycle.
     Advance(AdvanceArgs),
     /// Start a change proposal, following the OpenSpec layout.
@@ -86,6 +89,19 @@ struct InitArgs {
     /// One-line description of the project.
     #[arg(long, default_value = "")]
     description: String,
+    /// What the system does and for whom. Stored in opendomain.toml [project]
+    /// and recorded as initial DOM-001 (ASSUMED) so gate 0 can pass.
+    #[arg(long, default_value = "")]
+    purpose: String,
+    /// Who uses it. Stored in [project] and recorded as initial STK-001 (ASSUMED).
+    #[arg(long, default_value = "")]
+    users: String,
+    /// Which kind of organisation deploys this.
+    #[arg(long, default_value = "")]
+    orgs: String,
+    /// Where it operates (regulatory and terminology assumptions are local).
+    #[arg(long, default_value = "")]
+    region: String,
     /// Which parts of the framework to scaffold.
     #[arg(long, value_enum, default_value_t = ProfileArg::Full)]
     profile: ProfileArg,
@@ -171,6 +187,15 @@ struct LinkArgs {
 struct ShowArgs {
     /// Artifact identifier to print.
     id: String,
+}
+
+#[derive(Args)]
+struct NewArgs {
+    /// Artifact kind prefix, for example REQ, EVD or RULE.
+    kind: String,
+    /// Scope for scoped identifiers, for example INVENTORY in REQ-INVENTORY-014.
+    #[arg(long)]
+    scope: Option<String>,
 }
 
 #[derive(Args)]
@@ -275,6 +300,9 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
                 println!("{}", to_json(&report)?);
             } else {
                 println!("{}", report::render_status(&report, style));
+                if let Some(step) = next_step(index, &report) {
+                    println!("\nnext smallest step: {step}");
+                }
             }
             Ok(())
         }),
@@ -295,6 +323,9 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
         Command::Show(args) => with_index(cli, style, |_ws, index, _| {
             cmd_show(args, index, style, cli)
         }),
+        Command::New(args) => with_index(cli, style, |_ws, index, _| {
+            cmd_new(args, index, cli)
+        }),
         Command::Advance(args) => with_index(cli, style, |ws, index, _| {
             cmd_advance(args, ws, index, style)
         }),
@@ -305,6 +336,46 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
         Command::Archive(args) => {
             with_index(cli, style, |ws, _index, _| cmd_archive(args, ws, style))
         }
+    }
+}
+
+/// The smallest next step: the first blocked gate plus the registries that
+/// are still empty for it. A gate blocked by five empty registries at once
+/// tells the user where to look, not where to start; this names the files.
+fn next_step(index: &Index, report: &report::StatusReport) -> Option<String> {
+    let gate = report.blocking_gate?;
+    let kinds: &[IdKind] = match gate {
+        "context" => &[IdKind::Dom, IdKind::Stk],
+        "research" => &[IdKind::Src, IdKind::Evd],
+        "domain" => &[
+            IdKind::Term,
+            IdKind::Act,
+            IdKind::Proc,
+            IdKind::Ent,
+            IdKind::Rule,
+        ],
+        "requirements" => &[IdKind::Req],
+        "opportunity" => &[IdKind::Cpt, IdKind::Hyp],
+        "specification" => &[IdKind::Spec, IdKind::Ac],
+        "plan" => &[IdKind::Plan, IdKind::Task],
+        "implementation" => &[IdKind::Test],
+        "completion" => &[IdKind::Req, IdKind::Test],
+        _ => &[],
+    };
+    let missing: Vec<String> = kinds
+        .iter()
+        .filter(|k| index.ids(**k).is_empty())
+        .map(|k| format!("{}-### in {}", k.prefix(), k.default_path()))
+        .collect();
+    if missing.is_empty() {
+        Some(format!(
+            "gate `{gate}` is blocked but its registries are non-empty — run `od gate {gate}` for the findings"
+        ))
+    } else {
+        Some(format!(
+            "gate `{gate}` is blocked — record {} (start with the first)",
+            missing.join(", ")
+        ))
     }
 }
 
@@ -366,8 +437,47 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
             .project
             .insert("description".into(), args.description.clone());
     }
+    // Phase-0 context lives in opendomain.toml [project]: one source of truth,
+    // no second intake file. `scaffold` mirrors purpose/users into DOM-001/STK-001.
+    for (key, value) in [
+        ("purpose", &args.purpose),
+        ("users", &args.users),
+        ("organizations", &args.orgs),
+        ("region", &args.region),
+    ] {
+        if !value.trim().is_empty() {
+            config.project.insert(key.into(), value.trim().to_string());
+        }
+    }
 
     let od_dir = start.join("opendomain");
+    // A greenfield declaration next to an existing implementation is the
+    // Thinkell-class mistake: the workspace then claims nothing exists while
+    // the repo proves otherwise. Warn, do not silently switch — the caller
+    // decides what the project is, `od` only reports what it sees. An existing
+    // workspace that already declares brownfield/hybrid is not a mistake, so
+    // the recorded classification wins over the flag default.
+    let signals = scaffold::brownfield_signals(&start);
+    let looks_brownfield = !signals.is_empty();
+    let disk = opendomain_core::config::Config::load(&od_dir).ok();
+    let already_classified = disk
+        .as_ref()
+        .is_some_and(|c| c.repository != RepositoryKind::Greenfield);
+    if already_classified && config.repository == RepositoryKind::Greenfield {
+        // On a re-run the recorded file is the truth: flags only take effect
+        // with --force (which rewrites the file), so without it the flag
+        // default must not silently downgrade the workspace.
+        if let Some(recorded) = disk {
+            config.repository = recorded.repository;
+        }
+    }
+    if config.repository == RepositoryKind::Greenfield && looks_brownfield && !already_classified {
+        eprintln!(
+            "warning: found existing implementation signals ({}) but --repository greenfield was requested; \
+             prefer --repository brownfield so `od` treats code as a clue, not a specification",
+            signals.join(", ")
+        );
+    }
     if args.dry_run {
         let templates = scaffold::templates::for_profile(config.profile);
         // `opendomain.toml` is written by `scaffold` itself rather than by a
@@ -383,9 +493,21 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         for t in templates {
             println!("  {}", t.path);
         }
+        // Init-time context is mirrored into DOM-001/STK-001 by `scaffold`,
+        // so the preview states what the flags would record.
+        for (key, value) in [
+            ("purpose", &args.purpose),
+            ("users", &args.users),
+            ("organizations", &args.orgs),
+            ("region", &args.region),
+        ] {
+            if !value.trim().is_empty() {
+                println!("  [project] {key} = \"{}\"", value.trim());
+            }
+        }
         // The agent files go to the project root and follow different rules from
         // the registries, so the preview has to follow them too. Listing all
-        // ten as "would create" would be wrong twice over: a fresh run does
+        // eleven as "would create" would be wrong twice over: a fresh run does
         // not create them all, and an existing `AGENTS.md` is never replaced
         // even under `--force`.
         let root = start.clone();
@@ -444,6 +566,12 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
     for p in &report.skipped {
         println!("  = {p} (unchanged)");
     }
+    if !report.context.is_empty() {
+        println!("context recorded (ASSUMED — confirm or correct):");
+        for id in &report.context {
+            println!("  + {id}");
+        }
+    }
     if !report.agent_files.is_empty() {
         println!("\nagent instructions:");
         for p in &report.agent_files {
@@ -451,6 +579,9 @@ fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         }
     }
     println!("\nnext: od status");
+    if !report.context.is_empty() {
+        println!("context recorded in opendomain.toml [project]; confirm {}, then `od gate context`", report.context.join("/"));
+    }
     Ok(())
 }
 
@@ -549,18 +680,16 @@ fn cmd_trace(args: &TraceArgs, index: &Index, style: Style, cli: &Cli) -> Result
         bail!("{} is not defined in this workspace", id);
     }
     let graph = Graph::build(index);
+    // Provenance is a backward walk (nearest source first), like the default.
+    let direction = if args.forward {
+        Direction::Forward
+    } else {
+        Direction::Backward
+    };
     let steps = if args.provenance {
         graph.provenance_chain(&id, index)
     } else {
-        graph.reachable(
-            &id,
-            index,
-            if args.forward {
-                Direction::Forward
-            } else {
-                Direction::Backward
-            },
-        )
+        graph.reachable(&id, index, direction)
     };
     if steps.is_empty() {
         bail!("{} has no links in that direction", id);
@@ -568,7 +697,7 @@ fn cmd_trace(args: &TraceArgs, index: &Index, style: Style, cli: &Cli) -> Result
     if cli.json {
         println!("{}", to_json(&steps)?);
     } else {
-        println!("{}", report::render_trace(&id, &steps, style));
+        println!("{}", report::render_trace(&id, &steps, direction, style));
     }
     Ok(())
 }
@@ -879,6 +1008,27 @@ fn append_link(text: &mut String, id: &Id, line: &str) -> Option<bool> {
             Some(true)
         }
     }
+}
+
+/// Prints the next free identifier of a kind, so two writers never claim the
+/// same id by hand-counting headings. Read-only: it reserves nothing, and a
+/// registry edited since still wins — re-run before writing, not after.
+fn cmd_new(args: &NewArgs, index: &Index, cli: &Cli) -> Result<()> {
+    let kind = IdKind::from_prefix(&args.kind)
+        .map_err(|e| anyhow!("{e}; run `od reference` for the known prefixes"))?;
+    let next = match &args.scope {
+        Some(scope) => {
+            let norm = scope.trim().to_ascii_uppercase();
+            Id::next_scoped(kind, Some(norm.as_str()), index.ids(kind))
+        }
+        None => Id::next_flat(kind, index.ids(kind)),
+    };
+    if cli.json {
+        println!("{}", to_json(&serde_json::json!({ "id": next.to_string() }))?);
+    } else {
+        println!("{next}");
+    }
+    Ok(())
 }
 
 fn cmd_show(args: &ShowArgs, index: &Index, style: Style, cli: &Cli) -> Result<()> {

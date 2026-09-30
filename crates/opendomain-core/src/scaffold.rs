@@ -8,8 +8,260 @@
 use crate::config::Config;
 use crate::error::{OdError, Result};
 use crate::ids::IdKind;
-use crate::vocab::{AuthorityModel, Profile};
+use crate::vocab::{AuthorityModel, Profile, RepositoryKind};
 use std::path::Path;
+
+/// Marker files or directories whose presence suggests the project already
+/// has an implementation, so `--repository greenfield` is probably wrong.
+///
+/// Checked by name only, never by content: `od init` must stay fast and
+/// must not parse user code to decide what the project is.
+const BROWNFIELD_MARKERS: &[&str] = &[
+    "package.json",
+    "Cargo.toml",
+    "go.mod",
+    "pyproject.toml",
+    "pom.xml",
+    "build.gradle",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "prisma/schema.prisma",
+    "services",
+    "src",
+    "docs",
+];
+
+/// Names of brownfield markers found under `root`.
+///
+/// Empty means no implementation signal was detected. Non-empty does not
+/// prove the project is brownfield — it only means `od init --repository
+/// greenfield` deserves a warning pointing at `--repository brownfield`.
+/// The caller decides; this function only reports what exists.
+pub fn brownfield_signals(root: &Path) -> Vec<String> {
+    BROWNFIELD_MARKERS
+        .iter()
+        .filter(|m| root.join(m).exists())
+        .map(|m| m.to_string())
+        .collect()
+}
+
+/// Machine-harvested inventory lines for a brownfield/hybrid project.
+///
+/// Reads directory names and `^model ` declaration lines only — never file
+/// contents beyond that, and never code semantics. The output goes into
+/// `project.md` as a marked section for the human to verify, because an
+/// inventory nobody confirmed is a rumour with formatting.
+pub fn harvest_inventory(root: &Path) -> Vec<String> {
+    let mut lines = Vec::new();
+
+    if let Ok(entries) = std::fs::read_dir(root.join("services")) {
+        let mut services: Vec<String> = entries
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+            .filter_map(|e| e.file_name().into_string().ok())
+            .collect();
+        services.sort();
+        if !services.is_empty() {
+            lines.push(format!("services: {}", join_capped(&services, 12)));
+        }
+    }
+
+    let schema = root.join("prisma/schema.prisma");
+    if let Ok(text) = std::fs::read_to_string(&schema) {
+        let mut models: Vec<String> = text
+            .lines()
+            .filter_map(|l| l.trim().strip_prefix("model "))
+            .filter_map(|rest| rest.split_whitespace().next())
+            .map(str::to_string)
+            .collect();
+        models.sort();
+        models.dedup();
+        if !models.is_empty() {
+            lines.push(format!(
+                "data models (prisma/schema.prisma, {} total): {}",
+                models.len(),
+                join_capped(&models, 15)
+            ));
+        }
+    }
+
+    let manifests: Vec<String> = [
+        "package.json",
+        "Cargo.toml",
+        "go.mod",
+        "pyproject.toml",
+        "pom.xml",
+        "docker-compose.yml",
+        "docker-compose.yaml",
+    ]
+    .iter()
+    .filter(|m| root.join(m).exists())
+    .map(|m| m.to_string())
+    .collect();
+    if !manifests.is_empty() {
+        lines.push(format!("manifests: {}", manifests.join(", ")));
+    }
+
+    lines
+}
+
+/// Joins up to `cap` names, noting how many more exist.
+fn join_capped(names: &[String], cap: usize) -> String {
+    if names.len() <= cap {
+        names.join(", ")
+    } else {
+        format!("{}, ... +{} more", names[..cap].join(", "), names.len() - cap)
+    }
+}
+
+/// Strips `<!-- ... -->` sections, mirroring the parser: template examples
+/// live inside comments and must not read as declared artifacts. An
+/// unterminated comment discards the tail, exactly as the parser does.
+fn strip_html_comments(text: &str) -> String {
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find("<!--") {
+        out.push_str(&rest[..start]);
+        match rest[start..].find("-->") {
+            Some(end) => rest = &rest[start + end + 3..],
+            None => return out,
+        }
+    }
+    out.push_str(rest);
+    out
+}
+
+/// `true` when `text` declares a live (non-comment) heading with `prefix`,
+/// e.g. an actual `## DOM-001` rather than the template's commented example.
+fn has_live_heading(text: &str, prefix: &str) -> bool {
+    strip_html_comments(text)
+        .lines()
+        .any(|l| l.trim_start().starts_with(prefix))
+}
+
+/// Records init-time project context as initial artifacts.
+///
+/// Returns the ids recorded (`DOM-001` and/or `STK-001`), so the caller can
+/// report them instead of claiming "nothing to do".
+///
+/// `od init --purpose/--users/--orgs/--region` stores those values in
+/// `opendomain.toml [project]`. This function mirrors them into the
+/// registries gate 0 reads: `DOM-001` in `domain/domain-map.md` and `STK-001`
+/// in `domain/stakeholders.md`, both `ASSUMED` — declared at init, to be
+/// confirmed or corrected, never claimed as researched fact.
+///
+/// A registry that already declares any `## DOM-` / `## STK-` heading is left
+/// alone: re-running `od init` must not duplicate curated artifacts, with or
+/// without `--force`. When no context keys are present, nothing is written.
+fn append_init_context(opendomain_dir: &Path, config: &Config) -> Result<Vec<String>> {
+    let mut recorded = Vec::new();
+    let get = |key: &str| {
+        config
+            .project
+            .get(key)
+            .map(|v| v.trim().to_string())
+            .filter(|v| !v.is_empty())
+    };
+
+    if let Some(purpose) = get("purpose") {
+        let target = opendomain_dir.join("domain/domain-map.md");
+        if let Ok(text) = std::fs::read_to_string(&target) {
+            if !has_live_heading(&text, "## DOM-") {
+                let title = get("organizations").unwrap_or_else(|| {
+                    if config.name.trim().is_empty() {
+                        "Primary context".to_string()
+                    } else {
+                        config.name.trim().to_string()
+                    }
+                });
+                let region = get("region").map(|r| format!("\n**Region**\n\n{}\n", r)).unwrap_or_default();
+                let block = format!(
+                    "\n## DOM-001 — {}\n\n```toml\npurpose = \"{}\"\nstatus = \"DRAFT\"\n\
+                     epistemic = \"ASSUMED\"\nconfidence = \"LOW\"\n```\n\n\
+                     Declared at `od init`; confirm or correct during domain modelling.\n{region}",
+                    title.replace('"', "'"),
+                    purpose.replace('"', "'"),
+                );
+                let mut updated = text;
+                if !updated.ends_with('\n') {
+                    updated.push('\n');
+                }
+                updated.push_str(&block);
+                if !updated.ends_with('\n') {
+                    updated.push('\n');
+                }
+                write(&target, &updated)?;
+                recorded.push("DOM-001".to_string());
+            }
+        }
+    }
+
+    if let Some(users) = get("users") {
+        let target = opendomain_dir.join("domain/stakeholders.md");
+        if let Ok(text) = std::fs::read_to_string(&target) {
+            if !has_live_heading(&text, "## STK-") {
+                let block = format!(
+                    "\n## STK-001 — {}\n\n```toml\nstatus = \"DRAFT\"\n\
+                     epistemic = \"ASSUMED\"\nconfidence = \"LOW\"\n```\n\n\
+                     **Objectives**\n\n- Declared at `od init`; confirm or correct during domain modelling.\n",
+                    users.replace('"', "'"),
+                );
+                let mut updated = text;
+                if !updated.ends_with('\n') {
+                    updated.push('\n');
+                }
+                updated.push_str(&block);
+                if !updated.ends_with('\n') {
+                    updated.push('\n');
+                }
+                write(&target, &updated)?;
+                recorded.push("STK-001".to_string());
+            }
+        }
+    }
+
+    Ok(recorded)
+}
+
+/// Appends a machine-harvested inventory section to `project.md`.
+///
+/// Runs only for brownfield/hybrid workspaces with something to report, and
+/// only once: the `<!-- od-inventory -->` marker makes re-runs no-ops, so a
+/// human-edited `project.md` is never appended to twice.
+fn append_brownfield_inventory(opendomain_dir: &Path, config: &Config) -> Result<()> {
+    if config.repository == RepositoryKind::Greenfield {
+        return Ok(());
+    }
+    let target = opendomain_dir.join("project.md");
+    let Ok(text) = std::fs::read_to_string(&target) else {
+        return Ok(());
+    };
+    if text.contains("<!-- od-inventory -->") {
+        return Ok(());
+    }
+    let root = opendomain_dir.parent().unwrap_or_else(|| Path::new("."));
+    let lines = harvest_inventory(root);
+    if lines.is_empty() {
+        return Ok(());
+    }
+    let mut section = String::from(
+        "\n## Harvested inventory (od init — verify before trusting)\n\n<!-- od-inventory -->\n\n",
+    );
+    for line in &lines {
+        section.push_str(&format!("- {line}\n"));
+    }
+    section.push_str(
+        "\n_Machine-harvested from the repository: confirm each line or move it into the \
+         sections above. An inventory nobody confirmed is a rumour with formatting._\n",
+    );
+    let mut updated = text;
+    if !updated.ends_with('\n') {
+        updated.push('\n');
+    }
+    updated.push_str(&section);
+    write(&target, &updated)?;
+    Ok(())
+}
 
 /// One file in the scaffold.
 #[derive(Debug, Clone, Copy)]
@@ -90,6 +342,12 @@ pub mod agent_contract {
         contents: include_str!("../templates/agent/.opencode/agent/spec-implementer.md"),
     };
 
+    /// `.opencode/agent/brownfield-discoverer.md`.
+    pub const BROWNFIELD_DISCOVERER: Template = Template {
+        path: ".opencode/agent/brownfield-discoverer.md",
+        contents: include_str!("../templates/agent/.opencode/agent/brownfield-discoverer.md"),
+    };
+
     /// `.opencode/skills/opendomain/SKILL.md`.
     pub const SKILL: Template = Template {
         path: ".opencode/skills/opendomain/SKILL.md",
@@ -108,6 +366,7 @@ pub mod agent_contract {
             OD_RECORD,
             DOMAIN_RESEARCHER,
             SPEC_IMPLEMENTER,
+            BROWNFIELD_DISCOVERER,
             SKILL,
         ]
     }
@@ -475,12 +734,18 @@ pub struct InitReport {
     pub skipped: Vec<String>,
     /// Agent instruction files created outside `opendomain/`.
     pub agent_files: Vec<String>,
+    /// Init-time context artifacts recorded (e.g. `DOM-001`, `STK-001`).
+    /// These are appended to existing registries, so they are neither
+    /// created files nor skipped ones — without this field a context-only
+    /// re-run would report "nothing to do" while having written artifacts.
+    #[serde(default)]
+    pub context: Vec<String>,
 }
 
 impl InitReport {
     /// `true` when nothing was written because the workspace already existed.
     pub fn is_noop(&self) -> bool {
-        self.created.is_empty() && self.agent_files.is_empty()
+        self.created.is_empty() && self.agent_files.is_empty() && self.context.is_empty()
     }
 }
 
@@ -510,6 +775,18 @@ pub fn scaffold(opendomain_dir: &Path, config: &Config, force: bool) -> Result<I
         write(&target, template.contents)?;
         report.created.push(template.path.to_string());
     }
+
+    // Context declared at init time (`od init --purpose ...`, stored in
+    // `opendomain.toml [project]`) is recorded as initial DOM-001/STK-001
+    // artifacts, so `od gate context` can pass without a second manual step.
+    // Existing artifacts are never touched: a re-run only fills registries
+    // that declare nothing yet.
+    report.context = append_init_context(opendomain_dir, config)?;
+
+    // Brownfield/hybrid projects start from code: record what was found so
+    // `project.md` describes the repository instead of staying fiction while
+    // code ships. Greenfield projects get nothing — there is nothing to find.
+    append_brownfield_inventory(opendomain_dir, config)?;
 
     write_agent_contract(opendomain_dir, force, &mut report)?;
 
@@ -983,6 +1260,164 @@ mod tests {
         assert_eq!(
             back.project.get("region").map(String::as_str),
             Some("Senegal")
+        );
+    }
+
+    #[test]
+    fn brownfield_signals_detect_existing_implementation() {
+        let dir = scratch("signals-empty");
+        assert!(brownfield_signals(&dir).is_empty());
+
+        let dir = scratch("signals-code");
+        fs::write(dir.join("package.json"), "{}").unwrap();
+        fs::create_dir_all(dir.join("services")).unwrap();
+        let signals = brownfield_signals(&dir);
+        assert!(signals.contains(&"package.json".to_string()));
+        assert!(signals.contains(&"services".to_string()));
+        assert!(!signals.contains(&"Cargo.toml".to_string()));
+    }
+
+    #[test]
+    fn init_context_records_dom_and_stk() {
+        // `od init --purpose/--users` must leave gate 0 satisfiable: the
+        // context lands in [project] and is mirrored as ASSUMED artifacts,
+        // never as researched fact.
+        let dir = scratch("init-context");
+        let od = dir.join("opendomain");
+        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        cfg.project.insert("purpose".into(), "Coach sellers".into());
+        cfg.project.insert("users".into(), "Sellers, managers".into());
+        let report = scaffold(&od, &cfg, false).unwrap();
+        assert_eq!(report.context, vec!["DOM-001".to_string(), "STK-001".to_string()]);
+        assert!(!report.is_noop());
+
+        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
+        assert!(has_live_heading(&map, "## DOM-001"), "DOM-001 was not recorded");
+        assert!(map.contains("epistemic = \"ASSUMED\""));
+        assert!(map.contains("Coach sellers"));
+
+        let stk = fs::read_to_string(od.join("domain/stakeholders.md")).unwrap();
+        assert!(has_live_heading(&stk, "## STK-001"), "STK-001 was not recorded");
+        assert!(stk.contains("epistemic = \"ASSUMED\""));
+
+        // The toml itself carries the context: single source of truth.
+        let toml = fs::read_to_string(od.join("opendomain.toml")).unwrap();
+        let back = Config::parse(&toml).unwrap();
+        assert_eq!(
+            back.project.get("purpose").map(String::as_str),
+            Some("Coach sellers")
+        );
+    }
+
+    #[test]
+    fn init_context_never_duplicates_curated_artifacts() {
+        let dir = scratch("init-context-rerun");
+        let od = dir.join("opendomain");
+        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        cfg.project.insert("purpose".into(), "Coach sellers".into());
+        cfg.project.insert("users".into(), "Sellers".into());
+        scaffold(&od, &cfg, false).unwrap();
+
+        // A re-run must not duplicate: curated artifacts win over init flags.
+        // Without --force the first declaration stands; with --force the
+        // framework files are refreshed (pre-existing semantics) and the
+        // current flags are re-applied — still exactly one live artifact.
+        cfg.project.insert("purpose".into(), "Something else".into());
+
+        scaffold(&od, &cfg, false).unwrap();
+        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
+        assert_eq!(strip_html_comments(&map).matches("## DOM-").count(), 1);
+        assert!(map.contains("Coach sellers"));
+
+        scaffold(&od, &cfg, true).unwrap();
+        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
+        assert_eq!(strip_html_comments(&map).matches("## DOM-").count(), 1);
+        assert!(map.contains("Something else"));
+        let stk = fs::read_to_string(od.join("domain/stakeholders.md")).unwrap();
+        assert_eq!(
+            strip_html_comments(&stk).matches("## STK-").count(),
+            1
+        );
+    }
+
+    #[test]
+    fn init_without_context_writes_no_artifact() {
+        // No flags, no artifacts: a bare init must not invent DOM/STK entries
+        // that would read as "we have a domain" on day one.
+        let dir = scratch("init-no-context");
+        let od = dir.join("opendomain");
+        let cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        scaffold(&od, &cfg, false).unwrap();
+        let map = fs::read_to_string(od.join("domain/domain-map.md")).unwrap();
+        assert!(!has_live_heading(&map, "## DOM-"));
+        let stk = fs::read_to_string(od.join("domain/stakeholders.md")).unwrap();
+        assert!(!has_live_heading(&stk, "## STK-"));
+    }
+
+    #[test]
+    fn brownfield_init_harvests_inventory_into_project_md() {
+        // Phase 0 must describe the repository instead of staying fiction
+        // while code ships: services, data models and manifests land in
+        // project.md, marked as machine-harvested to verify.
+        let dir = scratch("inventory");
+        fs::create_dir_all(dir.join("services/api-core")).unwrap();
+        fs::create_dir_all(dir.join("services/frontend")).unwrap();
+        fs::create_dir_all(dir.join("prisma")).unwrap();
+        fs::write(
+            dir.join("prisma/schema.prisma"),
+            "model User {\n  id String @id\n}\n\nmodel Workspace {\n  id String @id\n}\n",
+        )
+        .unwrap();
+        fs::write(dir.join("package.json"), "{}").unwrap();
+
+        let od = dir.join("opendomain");
+        let mut cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        cfg.repository = RepositoryKind::Brownfield;
+        scaffold(&od, &cfg, false).unwrap();
+
+        let project = fs::read_to_string(od.join("project.md")).unwrap();
+        assert!(project.contains("<!-- od-inventory -->"));
+        assert!(project.contains("api-core"));
+        assert!(project.contains("User"));
+        assert!(project.contains("package.json"));
+
+        // Re-runs never append twice, with or without --force: a human-edited
+        // project.md must not accumulate harvest sections.
+        for force in [false, true] {
+            scaffold(&od, &cfg, force).unwrap();
+            let project = fs::read_to_string(od.join("project.md")).unwrap();
+            assert_eq!(project.matches("<!-- od-inventory -->").count(), 1);
+        }
+    }
+
+    #[test]
+    fn greenfield_init_harvests_nothing() {
+        let dir = scratch("inventory-green");
+        fs::write(dir.join("package.json"), "{}").unwrap();
+        let od = dir.join("opendomain");
+        let cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        scaffold(&od, &cfg, false).unwrap();
+        let project = fs::read_to_string(od.join("project.md")).unwrap();
+        assert!(!project.contains("<!-- od-inventory -->"));
+    }
+
+    #[test]
+    fn brownfield_discoverer_is_read_only_and_report_bound() {
+        // The discoverer inventories; it never writes. Its frontmatter must
+        // deny edits, and its body must bind it to the three-section report
+        // with INFERRED-at-best findings — otherwise it is a second researcher
+        // with a broader bash allowance, which is exactly the exfiltration and
+        // laundering risk this file set exists to prevent.
+        let body = agent_contract::BROWNFIELD_DISCOVERER.contents;
+        assert!(body.contains("edit: deny"), "discoverer must deny edits");
+        assert!(body.contains("\"*\": deny"), "discoverer must deny bash by default");
+        assert!(body.contains("**Facts**"), "report contract: facts section");
+        assert!(body.contains("**Proposed context**"), "report contract: context section");
+        assert!(body.contains("**Human-only gaps**"), "report contract: gaps section");
+        assert!(body.contains("INFERRED"), "code findings are INFERRED at best");
+        assert!(
+            agent_contract::all().iter().any(|t| t.path.ends_with("brownfield-discoverer.md")),
+            "discoverer must be emitted by `od init`"
         );
     }
 }

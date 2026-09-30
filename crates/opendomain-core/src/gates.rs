@@ -387,6 +387,26 @@ pub const RULES: &[Rule] = &[
         severity: Severity::Advisory,
     },
     Rule {
+        slug: "nothing-completed",
+        gate: 8,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "nothing-implemented",
+        gate: 7,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "nothing-to-plan",
+        gate: 6,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "open-question-untracked",
+        gate: 1,
+        severity: Severity::Advisory,
+    },
+    Rule {
         slug: "open-uncertainty",
         gate: 8,
         severity: Severity::Advisory,
@@ -404,6 +424,11 @@ pub const RULES: &[Rule] = &[
     Rule {
         slug: "ownership-without-concept",
         gate: 2,
+        severity: Severity::Advisory,
+    },
+    Rule {
+        slug: "placeholder-context",
+        gate: 0,
         severity: Severity::Advisory,
     },
     Rule {
@@ -570,6 +595,26 @@ fn gate_context(index: &Index, out: &mut Vec<Finding>) {
             ));
         }
     }
+
+    // Quantity is not quality: placeholders satisfy the existence checks
+    // above while confirming nothing. A context made only of unconfirmed
+    // declarations still passes — but it must say so on the report.
+    let doms = index.of_kind(IdKind::Dom);
+    let stks = index.of_kind(IdKind::Stk);
+    if !doms.is_empty()
+        && !stks.is_empty()
+        && doms
+            .iter()
+            .chain(stks.iter())
+            .all(|a| a.has_unresolved_provenance())
+    {
+        out.push(advisory(
+            "gate-0/placeholder-context",
+            "every domain and stakeholder is ASSUMED, UNKNOWN or CONFLICTING: the context \
+             exists but nothing in it is confirmed — verify or correct it before modelling",
+            None,
+        ));
+    }
 }
 
 // ── Gate 1: research ─────────────────────────────────────────────────────
@@ -666,6 +711,23 @@ fn gate_research(index: &Index, out: &mut Vec<Finding>) {
                 "gate-1/low-confidence",
                 format!("{} rests on LOW confidence evidence", e.id),
                 Some(&e.id),
+            ));
+        }
+    }
+
+    // Open questions nobody followed up: unknowns parked in the research
+    // questions registry instead of tracked as UNC, where gate 8 can see
+    // them. An `answers` edge (or any dependent) counts as follow-up.
+    for q in index.of_kind(IdKind::Res) {
+        if q.status == ArtifactStatus::Open && dependents_of(index, &q.id).is_empty() {
+            out.push(advisory(
+                "gate-1/open-question-untracked",
+                format!(
+                    "{} is OPEN with nothing answering or tracking it: record it in \
+                     domain/uncertainties.md or answer it before it goes stale",
+                    q.id
+                ),
+                Some(&q.id),
             ));
         }
     }
@@ -1103,6 +1165,16 @@ fn gate_plan(index: &Index, out: &mut Vec<Finding>) {
     let tasks = index.of_kind(IdKind::Task);
     let plans = index.of_kind(IdKind::Plan);
 
+    // A gate that passes because there is nothing to assess is honest only
+    // if it says so. Absence of work is not evidence of plannable work.
+    if tasks.is_empty() && plans.is_empty() {
+        out.push(advisory(
+            "gate-6/nothing-to-plan",
+            "no tasks and no plans exist yet: this gate passes vacuously — there is nothing to assess",
+            None,
+        ));
+    }
+
     if !tasks.is_empty() && plans.is_empty() {
         out.push(blocking(
             "gate-6/tasks-without-plan",
@@ -1366,6 +1438,23 @@ fn gate_implementation(index: &Index, out: &mut Vec<Finding>) {
         }
     }
 
+    // Same vacuous-pass honesty as gate 6: nothing marked IMPLEMENTING or
+    // beyond means the implementation stage has not started, not that it
+    // succeeded.
+    let delivered = index
+        .of_kind(IdKind::Spec)
+        .into_iter()
+        .chain(index.of_kind(IdKind::Task))
+        .chain(index.of_kind(IdKind::Test))
+        .any(|a| a.status.at_least(ArtifactStatus::Implementing));
+    if !delivered {
+        out.push(advisory(
+            "gate-7/nothing-implemented",
+            "nothing is marked IMPLEMENTING or beyond: this gate passes vacuously — there is nothing to assess",
+            None,
+        ));
+    }
+
     for d in index.of_kind(IdKind::Drift) {
         if !d.is_resolved() {
             out.push(blocking(
@@ -1474,6 +1563,16 @@ fn gate_completion(index: &Index, out: &mut Vec<Finding>) {
                 ));
             }
         }
+    }
+
+    // Completion over an empty chain is the vacuous pass this framework is
+    // most often accused of: coherent, tested and free of unknowns — of nothing.
+    if index.of_kind(IdKind::Req).is_empty() && index.of_kind(IdKind::Test).is_empty() {
+        out.push(advisory(
+            "gate-8/nothing-completed",
+            "no requirements and no tests exist yet: this gate passes vacuously — there is nothing to assess",
+            None,
+        ));
     }
 }
 
@@ -2020,6 +2119,66 @@ mod tests {
             "{:?}",
             rules(&report)
         );
+    }
+
+    #[test]
+    fn gate_0_flags_all_assumed_context_as_placeholder() {
+        // Placeholders satisfy the existence checks but confirm nothing: the
+        // gate still passes, and the report says the context is unconfirmed.
+        let index = index_from(&[
+            (
+                "DOM-001",
+                "purpose = \"x\"\nepistemic = \"ASSUMED\"\nconfidence = \"LOW\"",
+                "Declared at init.",
+            ),
+            ("STK-001", "epistemic = \"ASSUMED\"\nconfidence = \"LOW\"", "Declared at init."),
+        ]);
+        let report = evaluate(Gate::by_name("context").unwrap(), &index);
+        assert!(report.passed());
+        assert!(rules(&report).contains(&"gate-0/placeholder-context"));
+    }
+
+    #[test]
+    fn gate_0_stays_quiet_when_context_is_confirmed() {
+        let index = index_from(&[
+            (
+                "DOM-001",
+                "purpose = \"x\"\nepistemic = \"INFERRED\"\nconfidence = \"MEDIUM\"",
+                "Modelled.",
+            ),
+            ("STK-001", "epistemic = \"EXPLICIT\"", "Interviewed."),
+        ]);
+        let report = evaluate(Gate::by_name("context").unwrap(), &index);
+        assert!(!rules(&report).contains(&"gate-0/placeholder-context"));
+    }
+
+    #[test]
+    fn gate_1_flags_open_question_with_no_follow_up() {
+        let index = index_from(&[("RES-001", "status = \"OPEN\"\nepistemic = \"UNKNOWN\"", "What?")]);
+        let report = evaluate(Gate::by_name("research").unwrap(), &index);
+        // Other rules block (no sources at all); the new rule itself is advisory.
+        assert!(rules(&report).contains(&"gate-1/open-question-untracked"));
+        let finding = report
+            .findings
+            .iter()
+            .find(|f| f.rule == "gate-1/open-question-untracked")
+            .unwrap();
+        assert_eq!(finding.severity, Severity::Advisory);
+    }
+
+    #[test]
+    fn gate_6_7_8_say_they_pass_vacuously() {
+        // Absence of work must read as absence, not as success.
+        let empty = index_from(&[]);
+        for (gate, slug) in [
+            ("plan", "gate-6/nothing-to-plan"),
+            ("implementation", "gate-7/nothing-implemented"),
+            ("completion", "gate-8/nothing-completed"),
+        ] {
+            let report = evaluate(Gate::by_name(gate).unwrap(), &empty);
+            assert!(report.passed(), "{gate} should stay advisory-only");
+            assert!(rules(&report).contains(&slug), "{gate} should report {slug}");
+        }
     }
 
     #[test]

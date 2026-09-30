@@ -72,7 +72,7 @@ fact about the tool, not an invitation to assume it exists.
 | Where does the project stand, and what is blocking? | `od status` |
 | Is anything dangling, unjustified or unresolved? | `od audit` |
 | Are all declared links resolvable? | `od link --check` |
-| What do the identifiers and rules mean? | `od reference` (58 rules, 9 gates, 37 kinds) |
+| What do the identifiers and rules mean? | `od reference` (63 rules, 9 gates, 37 kinds) |
 | Give me one artifact in full | `od show <ID>` |
 | Why does this artifact exist? | `od trace <ID>` |
 | What implements and verifies it? | `od trace <ID> --forward` |
@@ -97,6 +97,7 @@ unreadable; raise `--limit` if you need the whole graph and accept the output.
 | `od gate --through <n>` | Runs every gate up to and including number `n` (0–8). |
 | `od link <ID> <relation> <TARGET>` | Records a link declared by the dependent artifact. |
 | `od link --check` | Verifies declared links resolve. |
+| `od new <KIND> [--scope S]` | Prints the next free identifier of a kind. Read-only; re-run before writing. |
 | `od advance <ID> <STATUS>` | Moves an artifact along its lifecycle. |
 | `od propose <slug> [--summary S]` | Opens a change proposal under `changes/`. |
 | `od apply <slug>` | Marks a change as applied. |
@@ -124,7 +125,7 @@ silent no-op.
 Gates are cumulative: reaching gate 8 means 0 through 7 passed too. Run
 `od gate --through 8` to check the whole chain, or `od gate <n>` for one stage.
 
-`od reference` lists the **58 rules** these gates apply — 35 blocking, 23
+`od reference` lists the **63 rules** these gates apply — 35 blocking, 28
 advisory — grouped by gate, and `od reference --json` returns the same list
 machine-readably. Read it before you write artifacts rather than after a gate
 fails: a rule you learn about by tripping it is a rule that has already cost you

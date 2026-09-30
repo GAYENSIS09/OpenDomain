@@ -28,7 +28,10 @@ becomes indistinguishable from a real one.
 
 ## Artifact format
 
-Each registry is a Markdown file of `##` headings, one per artifact:
+Each registry is a Markdown file of `##` headings, one per artifact. When the
+registry is still empty — only the commented example and the Rules section —
+follow the example: empty is the normal starting state, not a reason to stop.
+Allocate the id with `od new <KIND>` rather than guessing the next number.
 
 ````markdown
 ## REQ-012 — Consult the movement history of an item
@@ -68,6 +71,7 @@ Ask the CLI rather than guessing — these are the real commands:
 | Is anything dangling or unjustified? | `od audit`, `od link --check` |
 | What do the identifiers mean? | `od reference` |
 | Record a link | `od link <ID> <relation> <TARGET>` |
+| Next free id of a kind | `od new <KIND> [--scope S]` (read-only; re-run before writing) |
 | Move along the lifecycle | `od advance <ID> <STATUS>` |
 
 Gates are named: `context`, `research`, `domain`, `requirements`, `opportunity`,

@@ -12,8 +12,14 @@ Before writing anything, establish what is actually known.
 2. Read the relevant registry under `opendomain/` (for example
    `opendomain/domain/business-rules.md`). Match the existing heading format
    exactly: `## <PREFIX>-<NNN> — Title`, then a fenced `toml` block, then prose.
+   If the registry has no live `##` headings yet — only the commented example
+   and the Rules section — follow the commented example and the Rules section:
+   an empty registry is the normal starting state, not a reason to stop.
 3. Run `od reference` if you are unsure which prefix a kind uses, or which
    relations exist.
+4. Allocate the identifier with `od new <KIND>` (for example `od new RULE`):
+   it prints the next free number for the kind, so two agents never claim the
+   same id. Do not guess the number by hand.
 
 ## The rule that matters
 

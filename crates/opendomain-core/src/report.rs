@@ -350,19 +350,38 @@ pub fn render_table(title: &str, rows: &[Row], style: Style) -> String {
     out
 }
 
-/// Renders a trace as an indented chain.
-pub fn render_trace(id: &Id, steps: &[TraceStep], style: Style) -> String {
+/// Renders a trace as an indented chain, in the direction it was walked: a
+/// backward trace explains why an artifact exists, a forward trace shows what
+/// implements and verifies it. The header and the orphan message name the
+/// direction, because a forward walk that finds nothing means "nothing
+/// downstream" — not "no recorded origin".
+pub fn render_trace(
+    id: &Id,
+    steps: &[TraceStep],
+    direction: crate::graph::Direction,
+    style: Style,
+) -> String {
     let mut out = String::new();
+    let (hint, orphan) = match direction {
+        crate::graph::Direction::Backward => (
+            "(upstream — why does this exist?)",
+            "(no upstream artifacts: this claim has no recorded origin)",
+        ),
+        crate::graph::Direction::Forward => (
+            "(downstream — what implements and verifies this?)",
+            "(no downstream artifacts: nothing implements or verifies this yet)",
+        ),
+    };
     out.push_str(&format!(
         "{} {} {}\n",
         style.paint("trace", Colour::Bold),
         id,
-        style.paint("(upstream — why does this exist?)", Colour::Dim)
+        style.paint(hint, Colour::Dim)
     ));
     if steps.len() <= 1 {
         // `steps` always contains the starting artifact, so a trace with no
         // further reach is an orphan, not an empty walk.
-        out.push_str("  (no upstream artifacts: this claim has no recorded origin)\n");
+        out.push_str(&format!("  {orphan}\n"));
         return out;
     }
     for (i, step) in steps.iter().enumerate() {
@@ -771,7 +790,12 @@ mod tests {
         ]);
         let graph = Graph::build(&index);
         let steps = graph.trace_backward(&Id::parse("REQ-001").unwrap(), &index);
-        let text = render_trace(&Id::parse("REQ-001").unwrap(), &steps, Style::Off);
+        let text = render_trace(
+            &Id::parse("REQ-001").unwrap(),
+            &steps,
+            crate::graph::Direction::Backward,
+            Style::Off,
+        );
         assert!(text.contains("REQ-001"));
         assert!(text.contains("EVD-001"));
         assert!(text.contains("SRC-001"));
@@ -783,8 +807,22 @@ mod tests {
         let graph = Graph::build(&index);
         let id = Id::parse("REQ-001").unwrap();
         let steps = graph.trace_backward(&id, &index);
-        let text = render_trace(&id, &steps, Style::Off);
+        let text = render_trace(&id, &steps, crate::graph::Direction::Backward, Style::Off);
         assert!(text.contains("no recorded origin"), "{text}");
+    }
+
+    #[test]
+    fn forward_trace_names_its_direction() {
+        // A forward walk that finds nothing means nothing downstream — it
+        // must never read as "no recorded origin", which answers the
+        // opposite question.
+        let index = index_from(&[("EVD-001", "", "x")]);
+        let graph = Graph::build(&index);
+        let id = Id::parse("EVD-001").unwrap();
+        let steps = graph.trace_forward(&id, &index);
+        let text = render_trace(&id, &steps, crate::graph::Direction::Forward, Style::Off);
+        assert!(text.contains("downstream"), "{text}");
+        assert!(!text.contains("no recorded origin"), "{text}");
     }
 
     #[test]
