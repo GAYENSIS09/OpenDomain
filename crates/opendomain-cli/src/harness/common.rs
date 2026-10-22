@@ -227,14 +227,6 @@ ajouter au [sandbox] allow de opendomain/opendomain.toml si légitime",
     }
 }
 
-/// Lit la config générale du workspace courant — le seul canal de réglages.
-/// Un workspace absent (usage hors projet, tests) : les défauts du papier,
-/// sans bruit. Une config qui existe mais refuse de parser : l'erreur sort —
-/// un harnais ne devine pas ses réglages.
-pub(crate) fn workspace_config() -> opendomain_core::Config {
-    opendomain_core::config::Config::load(Path::new("opendomain")).unwrap_or_default()
-}
-
 /// Lit la sandbox du projet courant, depuis `opendomain.toml`.
 ///
 /// Fail-loud conservé : si le workspace existe mais refuse de parser,
