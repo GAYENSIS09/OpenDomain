@@ -47,7 +47,7 @@
 
       <p>Knowledge alone does not ship software. The second half of OpenDomain is the <strong>execution harness</strong> (<code class="inline">opendomain/harness/</code>): a task becomes a DAG of specialised agents, the coordinator runs them in topological order, and <strong>no output ever reaches downstream context before its acceptance gate passes</strong> — <code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>. The registries enforce the same discipline at rest; the harness enforces it at runtime.</p>
 
-      <p>The harness follows <strong>Meta-Agent: From Task Descriptions to Verified Multi-Agent Systems</strong> (the PDF is in the repository). Every agent carries a full specification σ<sub>i</sub> — a natural-language role, a least-privilege tool whitelist, an explicit input/output contract, machine-checkable criteria. It is never admitted into the system until that spec is complete.</p>
+      <p>The harness follows <strong>Meta-Agent: From Task Descriptions to Verified Multi-Agent Systems</strong> (the paper is kept locally, not committed). Every agent carries a full specification σ<sub>i</sub> — a natural-language role, a least-privilege tool whitelist, an explicit input/output contract, machine-checkable criteria. It is never admitted into the system until that spec is complete.</p>
 
       <h2 id="canonical-loop">The canonical loop</h2>
       <p><strong>Generate → Verify → Attribute → Refine.</strong> A rejected output is not simply retried: it returns as a <em>typed</em> failure (<code class="inline">f ∈ F</code>) with structured feedback — contract violation, criteria failure, grounding failure, sandbox violation — at a given attempt number, and each type carries its own recovery directive. The agent never self-gates: the coordinator verifies, the agent only produces.</p>
@@ -132,7 +132,7 @@
         <tr><td><code class="inline">opendomain spec new &lt;slug&gt;</code></td><td>Creates <code class="inline">opendomain/harness/specs/&lt;slug&gt;/spec.md</code> from the template — one folder per job, append-only.</td></tr>
         <tr><td><code class="inline">opendomain workflow new &lt;kind&gt; &lt;slug&gt;</code></td><td>Pre-fills a spec from a domain playbook: <code class="inline">migration</code>, <code class="inline">refactor</code>, <code class="inline">tests</code>, <code class="inline">doc</code> — a starting point, not doctrine: the planner stays master of the DAG and the harness of the gates.</td></tr>
         <tr><td><code class="inline">opendomain ground &lt;slug&gt;</code></td><td>Design-time grounding: project markers, manifests, README, toolchain into <code class="inline">grounding/&lt;slug&gt;/repo-scan.md</code>, dated and sourced — plus a fingerprint replayed before every run.</td></tr>
-        <tr><td><code class="inline">opendomain plan &lt;slug&gt; [--llm]</code></td><td>Spec → DAG (M1).</td></tr>
+        <tr><td><code class="inline">opendomain plan &lt;slug&gt; [--llm]</code></td><td>Spec → DAG (M1). A <code class="inline">TASK-###</code> identifier resolves the registry record as the task description <code class="inline">T</code> — the harness triggers on the plan, not on a re-typed spec.</td></tr>
         <tr><td><code class="inline">opendomain build &lt;slug&gt;</code></td><td>Each agent's execution kit: shared <code class="inline">AGENTS.md</code> (six pillars), per-node σ<sub>i</sub> (<code class="inline">&lt;id&gt;.md</code>), machine projection (<code class="inline">&lt;id&gt;.kit.json</code>), and a construction report — PASS/FAIL per agent. Incomplete → non-zero exit.</td></tr>
         <tr><td><code class="inline">opendomain validate [<graph.json>]</code></td><td>Static rejection: unique ids, no self-loop, no dangling edge, no cycle — with the failing nodes named.</td></tr>
         <tr><td><code class="inline">opendomain run &lt;slug&gt; [--executor opencode|claude|mock]</code></td><td>M2. <code class="inline">mock</code> is deterministic and conformant to the canonical graph — CI, demos, and harness self-checks without an LLM.</td></tr>
@@ -143,6 +143,10 @@
         <tr><td><code class="inline">opendomain skill add &lt;url|path&gt;</code> / <code class="inline">opendomain skill new &lt;id&gt;</code></td><td>Install (curl for URLs) or start (template) a skill; the frontmatter is regenerated canonical (<code class="inline">provides</code>, <code class="inline">applies-to</code>).</td></tr>
         <tr><td><code class="inline">opendomain doctor</code></td><td>Executor-agnosticism made verifiable: opencode, claude, aider, git, cargo, node, python — each [ok] or [absent], with the fallback doctrine spelled out (no LLM → deterministic mode still works: init/validate/gates offline).</td></tr>
         <tr><td><code class="inline">opendomain bench</code></td><td>M5 invariants.</td></tr>
+        <tr><td><code class="inline">opendomain rigour</code></td><td>The §9.7 rigour table, plus the workspace audit: which requirement/criterion records declare a rigour today, and which declarations match no row.</td></tr>
+        <tr><td><code class="inline">opendomain provision [--dry-run]</code></td><td>F10 chain: repository-only stack detection, the ordered selection rules, then generated <code class="inline">.feature</code> scaffolds with <code class="inline">@AC</code> tags and provenance comments — or a refusal recorded as a DEC artifact. Nothing is installed.</td></tr>
+        <tr><td><code class="inline">opendomain bind</code></td><td>Binding provenance (GENERATED/ANNOTATED/ATTRIBUTED/INFERRED) and verification depth (executed/discovered/declared). Findings, not gate rules.</td></tr>
+        <tr><td><code class="inline">opendomain provenance</code></td><td>The F14/L9 bridge: each record's <code class="inline">run = "…"</code> citation verified against the archived run it names — and the runs no record claims.</td></tr>
       </table>
 
       <h2 id="runs">Runs are evidence</h2>
@@ -162,12 +166,12 @@
       <p>The executors are components, not identities: OpenCode, Claude Code, Aider, or a deterministic mock, all behind one trait. The <strong>runner always owns the gates</strong> — even a mock cannot produce an output that propagates without verification. <code class="inline">opendomain doctor</code> makes the contract verifiable instead of assumed; <code class="inline">opendomain bench</code> proves the mechanics without any LLM; and the offline planner keeps the whole pipeline usable with no network at all.</p>
 
       <h2 id="config">Configuration governs, it does not decorate</h2>
-      <p><code class="inline">opendomain/harness/config.opendomain.toml</code> is read by the CLI and handed to the runner:</p>
+      <p>The workspace's <strong>single</strong> config — <code class="inline">opendomain/opendomain.toml</code> — is read by the CLI and handed to the runner; there is no second harness config to diverge from:</p>
       <ul>
         <li><code class="inline">[gates]</code> — <code class="inline">strict = true</code> (fail-closed: a green verdict is never advisory; the CLI refuses loudly a config that says otherwise) and <code class="inline">max_attempts</code> (the retry budget, proportional to locality).</li>
-        <li><code class="inline">[sandbox]</code> — <code class="inline">enabled</code> + an <code class="inline">allow</code> list of binaries for criteria commands (template starts closed; <code class="inline">opendomain repatch --allow</code> records an explicit widening into the run log).</li>
-        <li><code class="inline">[executor]</code> — the default agent runner for <code class="inline">opendomain run</code>.</li>
+        <li><code class="inline">[sandbox]</code> — <code class="inline">enabled</code> + an <code class="inline">allow</code> list of binaries for criteria commands (template starts closed; <code class="inline">opendomain repatch --allow</code> records an explicit widening into the general config and the run log).</li>
       </ul>
+      <p>Both sections have defaults in the engine, so a workspace that omits them runs exactly as the paper prescribes.</p>
 
       <div class="note"><strong class="label">Note</strong>See also: <a href="gates.html">the nine gates</a> for the at-rest checks, <a href="theory.html">Theory</a> for the epistemic framework's full specification, and <a href="cli-reference.html">the CLI reference</a> for the registry commands. The harness directory structure is documented by the contract shipped into every workspace: <code class="inline">opendomain/harness/README.md</code>, written by <code class="inline">opendomain init</code>.</div>
     </article>

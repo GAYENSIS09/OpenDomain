@@ -98,9 +98,9 @@ opendomain provenance             # each record's run citation verified against 
       <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">opendomain gate --through specification --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
 
       <h2>Check the workshop itself</h2>
-<pre>cargo test --workspace      # 198 unit tests + 2 doctests across three crates (incl. the verification subsystem's)
+<pre>cargo test --workspace      # 206 unit tests + 2 doctests across the two crates (engine + cli)
 cargo fmt --all -- --check</pre>
-      <p>The workshop: <code class="inline">crates/opendomain-core/</code> (model, parser, index, graph, gates), <code class="inline">crates/opendomain-harness/</code> (agent DAG, gates <code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>, attribution, runner) and <code class="inline">crates/opendomain-cli/</code> (the <code class="inline">opendomain</code> binary).</p>
+      <p>The workshop: <code class="inline">crates/opendomain-core/</code> — the engine in one crate: <code class="inline">model/</code> (artifacts, ids, vocabularies), <code class="inline">registries/</code> (config, parser, workspace index), <code class="inline">analysis/</code> (the nine gates, the traceability graph), <code class="inline">scaffold/</code> (the single template writer), <code class="inline">verification/</code> (Sections 9/10 + the F14 bridge) and <code class="inline">harness/</code> (agent DAG, gates <code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>, attribution, runner) — and <code class="inline">crates/opendomain-cli/</code>, the thin <code class="inline">opendomain</code> binary that drives it.</p>
     </article>
 
     <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>

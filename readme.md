@@ -139,6 +139,13 @@ opendomain archive tighten-reservation
 
 ### The nine gates
 
+```
+0         1          2        3              4             5               6      7                8
+context → research → domain → requirements → opportunity → specification → plan → implementation → completion
+```
+
+Cumulative: passing gate 8 means gates 0–7 passed too.
+
 | Gate | Question it asks |
 | ---- | ---------------- |
 | `context` | Do we know what we are building, and what is already true? |
@@ -172,7 +179,7 @@ opendomain gate --through specification --json > gate-report.json
 Knowing the domain is half the discipline; executing it is the other half. The
 same `opendomain` binary carries the execution harness — the verified multi-agent
 runtime from *Meta-Agent: From Task Descriptions to Verified Multi-Agent
-Systems* (the paper ships with this repository). A task is compiled into a DAG
+Systems*. A task is compiled into a DAG
 of agents, and **no agent output ever reaches downstream context before its
 gate passes** (`yᵢ ∈ Cᵢ` — schema, forbidden patterns, bounded needles, and
 criteria commands executed by the runner itself). Agents are executor-agnostic
@@ -196,6 +203,11 @@ revises the faulty node only, keeping verified upstream outputs frozen.
 `opendomain verify <run>` replays every gate on an archived run at any time,
 without an LLM; `opendomain bench` checks the harness's mechanical invariants
 deterministically, also without one.
+
+```
+spec 001 → [gate] → analyste → [gate] → strategie → [gate] → synthese → [gate] → verificateur → [gate] → runs/
+             every [gate] = yᵢ ∈ Cᵢ, checked by the runner; runs/ is append-only — gated outputs only
+```
 
 The lifecycle is the seven milestones the harness was built and proven against:
 
@@ -379,10 +391,8 @@ opendomain-core/
 opendomain-cli/          the `opendomain` binary — thin glue: the clap commands
                          that drive the engine; no knowledge of its own
 docs-site/               static documentation, including the full specification
-opendomain-paper.tex     the specification paper (PDF committed, source ignored)
+opendomain-paper.tex     the specification paper (local working copy — not committed)
 opendomain.svg           the logo
-2605.25233v1.pdf         Meta-Agent: From Task Descriptions to Verified Multi-Agent
-                         Systems — the paper the harness follows
 AGENTS.md (generated)    agent orientation, loaded automatically by opencode
 opencode.json (this repo only)  opencode configuration for this repository
 ```
