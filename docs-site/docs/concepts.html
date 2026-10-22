@@ -28,6 +28,8 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
       <a href="cli-reference.html">CLI reference</a>
@@ -42,47 +44,88 @@
       <h2>Say how you know</h2>
       <p>"In Senegal, a standardized invoice must carry a NINEA" can be checked in the General Tax Code. "Invoices probably need an approval status" is a guess. Once copied into requirements, nothing distinguishes these two sentences anymore — and that is how clean-but-wrong software is born.</p>
       <p>OpenDomain therefore requires every record to carry a knowledge label, with no default value:</p>
-      <table>
-        <tr><th>State</th><th>Meaning</th><th>Example</th></tr>
-        <tr><td><code class="inline">EXPLICIT</code></td><td>Observed in an authoritative source.</td><td>The mandatory NINEA, Tax Code article.</td></tr>
-        <tr><td><code class="inline">TACIT</code></td><td>Known through practice, never written down.</td><td>The cashier eyeballs stock before validating.</td></tr>
-        <tr><td><code class="inline">HYBRID</code></td><td>Official source combined with experience, reasoning recorded.</td><td>Delivery lead time: written rule + observed traffic.</td></tr>
-        <tr><td><code class="inline">INFERRED</code></td><td>Deduced, to be confirmed, derivation recorded.</td><td>Returns seem to spike on Mondays.</td></tr>
-        <tr><td><code class="inline">ASSUMED</code></td><td>Temporary position to move forward, with an expiry.</td><td>Twenty concurrent users max, to revalidate.</td></tr>
-        <tr><td><code class="inline">UNKNOWN</code></td><td>Acknowledged as unknown.</td><td>Rate for digital services: not established.</td></tr>
-        <tr><td><code class="inline">CONFLICTING</code></td><td>Two serious sources disagree.</td><td>The accountant says "monthly", the text says "quarterly".</td></tr>
-      </table>
-      <div class="note"><strong class="label">Note</strong><code class="inline">TACIT</code> is not inferior to <code class="inline">EXPLICIT</code>. The unwritten know-how of the people doing the work is often more decisive than the official procedure. The framework records both and flags their divergence instead of burying it.</div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>State</th><th>Meaning</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="pill pass">EXPLICIT</span></td><td>Observed in an authoritative source.</td><td>The mandatory NINEA, Tax Code article.</td></tr>
+            <tr><td><span class="pill info">TACIT</span></td><td>Known through practice, never written down.</td><td>The cashier eyeballs stock before validating.</td></tr>
+            <tr><td><span class="pill teal">HYBRID</span></td><td>Official source combined with experience, reasoning recorded.</td><td>Delivery lead time: written rule + observed traffic.</td></tr>
+            <tr><td><span class="pill violet">INFERRED</span></td><td>Deduced, to be confirmed, derivation recorded.</td><td>Returns seem to spike on Mondays.</td></tr>
+            <tr><td><span class="pill adv">ASSUMED</span></td><td>Temporary position to move forward, with an expiry.</td><td>Twenty concurrent users max, to revalidate.</td></tr>
+            <tr><td><span class="pill mono">UNKNOWN</span></td><td>Acknowledged as unknown.</td><td>Rate for digital services: not established.</td></tr>
+            <tr><td><span class="pill fail">CONFLICTING</span></td><td>Two serious sources disagree.</td><td>The accountant says "monthly", the text says "quarterly".</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note"><strong class="label">Note</strong><span class="pill info">TACIT</span> is not inferior to <span class="pill pass">EXPLICIT</span>. The unwritten know-how of the people doing the work is often more decisive than the official procedure. The framework records both and flags their divergence instead of burying it.</div>
 
       <h2>Link everything to its evidence</h2>
-      <p>The framework forbids promoting an outside statement directly into a requirement. The permitted path always goes through the same stations:</p>
-      <ol>
-        <li><strong>Source</strong> — the page, the law, the interview, dated and recorded.</li>
-        <li><strong>Finding</strong> — what the source literally says.</li>
-        <li><strong>Interpretation</strong> — what that means in our situation.</li>
-        <li><strong>Candidate need</strong> — the problem this might answer.</li>
-        <li><strong>Requirement</strong> — the "the system SHALL…", only once the need is confirmed.</li>
+      <p>The framework forbids promoting an outside statement directly into a requirement. The permitted path always goes through the same five stations:</p>
+      <ol class="stations">
+        <li><strong>Source</strong> The page, the law, the interview, dated and recorded.</li>
+        <li><strong>Finding</strong> What the source literally says.</li>
+        <li><strong>Interpretation</strong> What that means in our situation.</li>
+        <li><strong>Candidate need</strong> The problem this might answer.</li>
+        <li><strong>Requirement</strong> The "the system SHALL…", only once the need is confirmed.</li>
       </ol>
       <p>The classic example: a competitor writes "our software handles stock reservations", and the assistant infers "the system SHALL handle reservations". But the page says neither why, nor whether it is an obligation or a comfort, nor where reservation sits relative to payment. Until field evidence confirms the need, the requirement stays a visible hypothesis — the leap is blocked.</p>
-      <p>When this path is honored everywhere, all records form a single genealogy (source, evidence, business rule, requirement, specification, test). You can then walk back to the source (<code class="inline">od trace</code>) or list a change's downstream (<code class="inline">od impact</code>) as plain graph traversals.</p>
+      <p>When this path is honored everywhere, all records form a single genealogy (source, evidence, business rule, requirement, specification, test). You can then walk back to the source (<code class="inline">opendomain trace</code>) or list a change's downstream (<code class="inline">opendomain impact</code>) as plain graph traversals.</p>
 
       <h2>Refuse whitewashing</h2>
-      <p>The most ordinary cheating: assumed in January, forgotten in March, marked "validated" in June. OpenDomain calls this epistemic laundering. Moving from <code class="inline">ASSUMED</code> or <code class="inline">INFERRED</code> to "validated" without bringing genuinely <code class="inline">EXPLICIT</code> evidence is blocked by the <code class="inline">gate-7/epistemic-laundering</code> rule. Changing the label is not evidence.</p>
+      <p>The most ordinary cheating: assumed in January, forgotten in March, marked "validated" in June. OpenDomain calls this <em>epistemic laundering</em> — relabeling a belief until it looks like knowledge.</p>
+      <h3>The forbidden transition</h3>
+      <p>Moving from <span class="pill adv">ASSUMED</span> or <span class="pill violet">INFERRED</span> to "VALIDATED" without bringing genuinely <span class="pill pass">EXPLICIT</span> evidence is blocked by the <code class="inline">gate-7/epistemic-laundering</code> rule. Changing the label is not evidence.</p>
+      <h3>The promotion journal</h3>
       <p>To progress honestly, you keep a promotion journal — where from, where to, on which evidence, on what date:</p>
-<pre>```toml
-status = "VALIDATED"
+<pre>status = "VALIDATED"
 epistemic = "EXPLICIT"
 promotions = [
+  # every honest step is one entry: origin, destination, evidence, date
   { from = "ASSUMED", to = "VALIDATED",
     evidence = ["EVD-014"], date = "2026-04-10" }
-]
-```</pre>
+]</pre>
+      <p>Each <code class="inline">promotions</code> entry answers three questions in one line: where the claim started (<code class="inline">from</code>), where it moved (<code class="inline">to</code>), and which evidence carried the move (<code class="inline">evidence</code>) — a dated, append-only record the tool can check instead of trusting.</p>
       <p>A project with no journal at all gets a mere warning: missing history doesn't prove cheating, but it makes cheating undetectable.</p>
 
       <h2>The rest of the picture</h2>
-      <p>Three choices complete the frame. The <strong>opportunity stage</strong> frames innovation: formulate falsifiable, testable hypotheses instead of copying competitors — and "no opportunity" is an honorable conclusion. The <strong>rejection of MVP as a compass</strong> prefers vertical increments that are complete in evidence. <strong>Three-loop verification</strong> nests specification, behavior, and tests, with rigor chosen per requirement type rather than imposed globally. The spirit stays the same: first understand the world as it is, then improve it — proving each step.</p>
+      <p>Three choices complete the frame:</p>
+      <div class="card-grid">
+        <a class="card" href="gates.html">
+          <span class="kicker k-red">Innovation</span>
+          <span class="ct">The opportunity stage</span>
+          <span class="cd">Formulate falsifiable, testable hypotheses instead of copying competitors — and "no opportunity" is an honorable conclusion.</span>
+          <span class="cf">The nine gates →</span>
+        </a>
+        <a class="card" href="theory.html">
+          <span class="kicker k-warn">Scoping</span>
+          <span class="ct">No MVP as a compass</span>
+          <span class="cd">Vertical increments that are complete in evidence, rather than thin slices whose missing foundation stays invisible.</span>
+          <span class="cf">Full specification →</span>
+        </a>
+        <a class="card" href="theory.html">
+          <span class="kicker k-ok">Verification</span>
+          <span class="ct">Three-loop verification</span>
+          <span class="cd">Specification, behavior, and tests as nested loops — with rigor chosen per requirement type rather than imposed globally.</span>
+          <span class="cf">The three loops →</span>
+        </a>
+      </div>
+      <p class="creed">The spirit stays the same: first understand the world as it is, then improve it — proving each step.</p>
 
-      <div class="next-links">Next: <a href="artifacts.html">Artifacts</a> — the exact record format.</div>
+      <nav class="page-nav" aria-label="Page navigation">
+        <a class="page-card prev" href="getting-started.html">
+          <span class="dir">← Previous</span>
+          <span class="pt">Getting started</span>
+          <span class="pd">Install the tool, create a project, get your first verdict.</span>
+        </a>
+        <a class="page-card next" href="artifacts.html">
+          <span class="dir">Next →</span>
+          <span class="pt">Artifacts</span>
+          <span class="pd">Text for humans, evidence for the machine.</span>
+        </a>
+      </nav>
     </article>
 
     <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
@@ -94,7 +137,7 @@ promotions = [
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
       <a href="theory.html">Theory</a>
     </nav>
-    <span>OpenDomain · MIT · Sept. 2026</span>
+    <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>
   <script src="../js/main.js"></script>
 </body>

@@ -28,6 +28,8 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
       <a href="cli-reference.html">CLI reference</a>
@@ -42,6 +44,48 @@
       <p>A gate is not a form: it is a question asked at the right moment, with a machine-checkable answer. Each gate is a pure function — it reads the project, returns its verdict, touches nothing. Run it twice: same answer. And when it refuses, it cites the exact rule rather than a vague paraphrase.</p>
 
       <h2>The journey in nine stages</h2>
+      <div class="diagram">
+      <svg viewBox="0 0 960 96" role="img" aria-label="The nine gates in execution order: context, research, domain, requirements, opportunity, specification, plan, implementation, completion">
+        <g class="d-line" stroke-width="1.5" fill="none">
+          <line x1="60" y1="30" x2="118" y2="30"/><polygon class="d-arrow" points="118,25.5 126,30 118,34.5"/>
+          <line x1="168" y1="30" x2="226" y2="30"/><polygon class="d-arrow" points="226,25.5 234,30 226,34.5"/>
+          <line x1="276" y1="30" x2="334" y2="30"/><polygon class="d-arrow" points="334,25.5 342,30 334,34.5"/>
+          <line x1="384" y1="30" x2="442" y2="30"/><polygon class="d-arrow" points="442,25.5 450,30 442,34.5"/>
+          <line x1="492" y1="30" x2="550" y2="30"/><polygon class="d-arrow" points="550,25.5 558,30 550,34.5"/>
+          <line x1="600" y1="30" x2="658" y2="30"/><polygon class="d-arrow" points="658,25.5 666,30 658,34.5"/>
+          <line x1="708" y1="30" x2="766" y2="30"/><polygon class="d-arrow" points="766,25.5 774,30 766,34.5"/>
+          <line x1="816" y1="30" x2="874" y2="30"/><polygon class="d-arrow" points="874,25.5 882,30 874,34.5"/>
+        </g>
+        <circle class="d-soft"  cx="40"  cy="30" r="16"/>
+        <circle class="d-node-2" cx="148" cy="30" r="16"/>
+        <circle class="d-node-2" cx="256" cy="30" r="16"/>
+        <circle class="d-node-2" cx="364" cy="30" r="16"/>
+        <circle class="d-node-2" cx="472" cy="30" r="16"/>
+        <circle class="d-node-2" cx="580" cy="30" r="16"/>
+        <circle class="d-node-2" cx="688" cy="30" r="16"/>
+        <circle class="d-node-2" cx="796" cy="30" r="16"/>
+        <circle class="d-ok"   cx="904" cy="30" r="16"/>
+        <text class="d-t-num" x="40"  y="34" text-anchor="middle">0</text>
+        <text class="d-t-num" x="148" y="34" text-anchor="middle">1</text>
+        <text class="d-t-num" x="256" y="34" text-anchor="middle">2</text>
+        <text class="d-t-num" x="364" y="34" text-anchor="middle">3</text>
+        <text class="d-t-num" x="472" y="34" text-anchor="middle">4</text>
+        <text class="d-t-num" x="580" y="34" text-anchor="middle">5</text>
+        <text class="d-t-num" x="688" y="34" text-anchor="middle">6</text>
+        <text class="d-t-num" x="796" y="34" text-anchor="middle">7</text>
+        <text class="d-t-num" x="904" y="34" text-anchor="middle">8</text>
+        <text class="d-t-sub" x="40"  y="72" text-anchor="middle">context</text>
+        <text class="d-t-sub" x="148" y="72" text-anchor="middle">research</text>
+        <text class="d-t-sub" x="256" y="72" text-anchor="middle">domain</text>
+        <text class="d-t-sub" x="364" y="72" text-anchor="middle">requirements</text>
+        <text class="d-t-sub" x="472" y="72" text-anchor="middle">opportunity</text>
+        <text class="d-t-sub" x="580" y="72" text-anchor="middle">specification</text>
+        <text class="d-t-sub" x="688" y="72" text-anchor="middle">plan</text>
+        <text class="d-t-sub" x="796" y="72" text-anchor="middle">implementation</text>
+        <text class="d-t-sub" x="904" y="72" text-anchor="middle">completion</text>
+      </svg>
+      </div>
+      <p class="d-t-tiny" style="font-family:var(--font-mono);font-size:12px;color:var(--ink-faint);margin-top:-2px">cumulative: passing gate 8 means 0–7 passed too — rerun any gate and the verdict is identical (pure functions)</p>
       <table>
         <tr><th>Gate</th><th>Question</th><th>What's at stake</th></tr>
         <tr><td><code class="inline">context</code></td><td>What are we building, for whom, under which constraints?</td><td>The foundation: without it, everything else floats.</td></tr>
@@ -57,8 +101,8 @@
       <div class="note"><strong class="label">Note</strong>The opportunity stage deliberately comes after requirements: innovating before understanding the world produces feature lists. After, on a validated model of reality, you can tell "what the domain does" from "what we believe we can change". A regulated project may conclude no innovation is required.</div>
 
       <h2>Two possible verdicts</h2>
-      <p><strong>Blocking</strong>: you don't pass — the command fails, which makes a natural CI step. <strong>Advisory</strong>: reported without blocking. The paper specified three levels, the tool has two today, and the gap is documented in the paper itself: the framework applies its honesty requirements to itself.</p>
-      <p>To run a gate: <code class="inline">od gate context</code>, or <code class="inline">od gate --through 3</code> to chain every gate up to requirements (<code class="inline">--through</code> takes the number 0–8, never the name). <code class="inline">od reference</code> prints the full dictionary of gates and record kinds.</p>
+      <p><span class="pill fail">Blocking</span> — you don't pass: the command fails, which makes a natural CI step. <span class="pill adv">Advisory</span> — reported without blocking. The paper specified three levels, the tool has two today, and the gap is documented in the paper itself: the framework applies its honesty requirements to itself.</p>
+      <p>To run a gate: <code class="inline">opendomain gate context</code>, or <code class="inline">opendomain gate --through 3</code> to chain every gate up to requirements (<code class="inline">--through</code> takes the number 0–8, never the name). <code class="inline">opendomain reference</code> prints the full dictionary of gates and record kinds.</p>
 
       <h2>The rules that tell the philosophy</h2>
       <p>The nine gates carry 63 named rules — 35 blocking, 28 advisory. Eight of them sum up the spirit:</p>
@@ -74,6 +118,9 @@
         <tr><td><code class="inline">gate-7/epistemic-laundering</code></td><td>Repainting doubt as certainty — the queen rule, see <a href="concepts.html">Concepts</a>.</td></tr>
       </table>
 
+      <div class="note"><strong class="label">The same questions, asked twice</strong>These nine gates check what the project <em>claims</em> in its registries — knowledge at rest. When the work is executed by AI agents, the same discipline is applied a second time, to what they <em>produce</em>: every agent output passes its acceptance gate before it reaches the next agent, failures are typed and attributed (local / upstream / structural), and each run is archived append-only as evidence. The refusal rules carry over one-for-one: a re-plan cannot disarm its schema gate for the same reason an author cannot re-label <code class="inline">ASSUMED</code> as <code class="inline">EXPLICIT</code> without evidence (the queen rule above). See <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>.</div>
+
       <div class="next-links">Next: <a href="cli-reference.html">CLI reference</a> — the tool in daily use.</div>
     </article>
 
@@ -86,7 +133,7 @@
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
       <a href="theory.html">Theory</a>
     </nav>
-    <span>OpenDomain · MIT · Sept. 2026</span>
+    <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>
   <script src="../js/main.js"></script>
 </body>

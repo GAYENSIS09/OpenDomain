@@ -1,8 +1,8 @@
 //! # OpenDomain core
 //!
-//! The engine behind the `od` command-line tool. Everything here is a pure
-//! function of a workspace on disk, which is what makes `od audit` and
-//! `od gate` trustworthy: they never mutate state, so running them twice gives
+//! The engine behind the `opendomain` command-line tool. Everything here is a pure
+//! function of a workspace on disk, which is what makes `opendomain audit` and
+//! `opendomain gate` trustworthy: they never mutate state, so running them twice gives
 //! the same answer.
 //!
 //! ## The idea
@@ -16,15 +16,16 @@
 //!
 //! | Module | Responsibility |
 //! |---|---|
-//! | [`vocab`] | Closed value sets: knowledge types, statuses, friction, operators |
-//! | [`ids`] | `REQ-001`, `REQ-INVENTORY-012`, `AC-INVENTORY-012-01` |
-//! | [`artifact`] | The artifact model and the relation vocabulary |
-//! | [`parse`] | Markdown registry parsing |
-//! | [`workspace`] | Discovery and indexing |
-//! | [`graph`] | Traceability, impact, rendering |
-//! | [`gates`] | The nine quality gates |
-//! | [`scaffold`] | `od init` |
+//! | [`model`] | The closed data model: `vocab`, `ids`, `artifact` |
+//! | [`registries`] | Reading the workspace from disk: `config`, `parse`, `workspace` |
+//! | [`analysis`] | Traceability (`graph`) and the nine quality gates (`gates`) |
 //! | [`report`] | Terminal and JSON rendering |
+//! | [`scaffold`] | `opendomain init` and its template set |
+//! | [`verification`] | The §9/§10 verification subsystem: rigour, provisioning, provenance |
+//! | [`harness`] | The execution harness: agent DAGs under verified gates |
+//!
+//! The flat module names are kept as aliases, so `opendomain_core::parse`,
+//! `opendomain_core::gates`, … resolve exactly as they always did.
 //!
 //! ## Example
 //!
@@ -65,26 +66,33 @@
 #![forbid(unsafe_code)]
 #![warn(missing_debug_implementations)]
 
-pub mod artifact;
-pub mod config;
+pub mod analysis;
 pub mod error;
-pub mod gates;
-pub mod graph;
-pub mod ids;
-pub mod parse;
+pub mod harness;
+pub mod model;
+pub mod registries;
 pub mod report;
 pub mod scaffold;
-pub mod vocab;
-pub mod workspace;
+pub mod verification;
 
-pub use artifact::{Artifact, Document, Relation};
-pub use config::Config;
+// Alias de compatibilité : les noms plats d'origine continuent de résoudre
+// (`opendomain_core::parse`, `opendomain_core::gates`, …) après le
+// regroupement par responsabilité. `mechanism` ne prend PAS d'alias : le nom
+// `verification` est déjà porté par le module, et sa surface §9.7/§10.9/§10.10
+// est re-exportée par `verification/mod.rs` (`pub use mechanism::*`).
+pub use analysis::{gates, graph};
+pub use model::{artifact, ids, vocab};
+pub use registries::{config, parse, workspace};
+pub use verification::{provenance, provisioning};
+
+pub use analysis::graph::{Direction, Graph, ImpactReport};
+pub use analysis::gates::{evaluate, Gate, GateReport, Severity};
 pub use error::{OdError, Result};
-pub use gates::{evaluate, Gate, GateReport, Severity};
-pub use graph::{Direction, Graph, ImpactReport};
-pub use ids::{Id, IdKind};
-pub use vocab::{ArtifactStatus, AuthorityModel, Confidence, KnowledgeType, Profile, Stage};
-pub use workspace::{Index, Workspace};
+pub use model::artifact::{Artifact, Document, Relation};
+pub use model::ids::{Id, IdKind};
+pub use model::vocab::{ArtifactStatus, AuthorityModel, Confidence, KnowledgeType, Profile, Stage};
+pub use registries::config::Config;
+pub use registries::workspace::{Index, Workspace};
 
 /// The framework version, taken from the crate manifest at compile time.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

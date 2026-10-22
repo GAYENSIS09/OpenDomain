@@ -62,4 +62,4 @@ input to Gate 0.
 
 ## Next
 
-Run `od gate 0` when this file is complete.
+Run `opendomain gate 0` when this file is complete.

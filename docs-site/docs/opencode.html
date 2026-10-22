@@ -28,6 +28,8 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
       <a href="cli-reference.html">CLI reference</a>
@@ -44,43 +46,49 @@
       <h2>Reading commands</h2>
       <table>
         <tr><th>Command</th><th>Role</th></tr>
-        <tr><td><code class="inline">/od-status</code></td><td>Where the project stands, and what is blocking — in ten seconds.</td></tr>
-        <tr><td><code class="inline">/od-gate</code></td><td>Runs one gate and reports the verdict as is, without softening it.</td></tr>
-        <tr><td><code class="inline">/od-trace</code></td><td>Tells a record's origin from its recorded links.</td></tr>
-        <tr><td><code class="inline">/od-impact</code></td><td>Lists what a change would invalidate, before touching code.</td></tr>
-        <tr><td><code class="inline">/od-audit</code></td><td>Full health report before declaring "done".</td></tr>
+        <tr><td><code class="inline">/opendomain-status</code></td><td>Where the project stands, and what is blocking — in ten seconds.</td></tr>
+        <tr><td><code class="inline">/opendomain-gate</code></td><td>Runs one gate and reports the verdict as is, without softening it.</td></tr>
+        <tr><td><code class="inline">/opendomain-trace</code></td><td>Tells a record's origin from its recorded links.</td></tr>
+        <tr><td><code class="inline">/opendomain-impact</code></td><td>Lists what a change would invalidate, before touching code.</td></tr>
+        <tr><td><code class="inline">/opendomain-audit</code></td><td>Full health report before declaring "done".</td></tr>
       </table>
 
       <h2>One command per stage</h2>
       <table>
         <tr><th>Command</th><th>Stage</th><th>What it does</th></tr>
-        <tr><td><code class="inline">/od-project</code></td><td>Context</td><td>Reads the repo, researches the domain, fills in the context, asks you the rest.</td></tr>
-        <tr><td><code class="inline">/od-research</code></td><td>Research</td><td>Fans out parallel research and merges corroborated evidence.</td></tr>
-        <tr><td><code class="inline">/od-record</code></td><td>Any</td><td>Writes one record while staying epistemically honest.</td></tr>
-        <tr><td><code class="inline">/od-domain</code></td><td>Domain</td><td>Grows the model by one bounded increment.</td></tr>
-        <tr><td><code class="inline">/od-requirements</code></td><td>Requirements</td><td>Derives a small batch of justified, testable requirements.</td></tr>
-        <tr><td><code class="inline">/od-opportunity</code></td><td>Opportunity</td><td>Challenges the design, earns one falsifiable concept.</td></tr>
-        <tr><td><code class="inline">/od-spec</code></td><td>Specification</td><td>Specifies one capability as observable behaviour.</td></tr>
-        <tr><td><code class="inline">/od-plan</code></td><td>Plan</td><td>Produces one bounded, ordered plan with decisions.</td></tr>
-        <tr><td><code class="inline">/od-implement</code></td><td>Implementation</td><td>Builds one scoped artifact through the craftsperson.</td></tr>
-        <tr><td><code class="inline">/od-complete</code></td><td>Completion</td><td>Reuses the audit, then calls the release: ship or stop.</td></tr>
+        <tr><td><code class="inline">/opendomain-project</code></td><td>Context</td><td>Reads the repo, researches the domain, fills in the context, asks you the rest.</td></tr>
+        <tr><td><code class="inline">/opendomain-research</code></td><td>Research</td><td>Fans out parallel research and merges corroborated evidence.</td></tr>
+        <tr><td><code class="inline">/opendomain-record</code></td><td>Any</td><td>Writes one record while staying epistemically honest.</td></tr>
+        <tr><td><code class="inline">/opendomain-domain</code></td><td>Domain</td><td>Grows the model by one bounded increment.</td></tr>
+        <tr><td><code class="inline">/opendomain-requirements</code></td><td>Requirements</td><td>Derives a small batch of justified, testable requirements.</td></tr>
+        <tr><td><code class="inline">/opendomain-opportunity</code></td><td>Opportunity</td><td>Challenges the design, earns one falsifiable concept.</td></tr>
+        <tr><td><code class="inline">/opendomain-spec</code></td><td>Specification</td><td>Specifies one capability as observable behaviour.</td></tr>
+        <tr><td><code class="inline">/opendomain-plan</code></td><td>Plan</td><td>Produces one bounded, ordered plan with decisions.</td></tr>
+        <tr><td><code class="inline">/opendomain-implement</code></td><td>Implementation</td><td>Builds one scoped artifact through the craftsperson.</td></tr>
+        <tr><td><code class="inline">/opendomain-complete</code></td><td>Completion</td><td>Reuses the audit, then calls the release: ship or stop.</td></tr>
       </table>
       <p>Every command answers summary-first — verdict, top blockers, one next action — with the tool's full output in an appendix. No wall-of-gates noise.</p>
 
       <h2>Three roles</h2>
-      <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/od-project</code>.</p>
-      <p><strong>domain-researcher, the investigator.</strong> It reads, searches, and reports only dated sources and evidence, fanning out in parallel by keyword. Called by the interviewer, <code class="inline">/od-research</code>, <code class="inline">/od-domain</code>, and <code class="inline">/od-requirements</code>. By default it can hardly execute anything — except <code class="inline">od *</code> to check its own work.</p>
-      <p><strong>spec-implementer, the craftsperson.</strong> One scoped task against an existing specification, with a gate check before and after. If it steps out of scope, the gate catches it. Called by <code class="inline">/od-implement</code>.</p>
+      <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/opendomain-project</code>.</p>
+      <p><strong>domain-researcher, the investigator.</strong> It reads, searches, and reports only dated sources and evidence, fanning out in parallel by keyword. Called by the interviewer, <code class="inline">/opendomain-research</code>, <code class="inline">/opendomain-domain</code>, and <code class="inline">/opendomain-requirements</code>. By default it can hardly execute anything — except <code class="inline">opendomain *</code> to check its own work.</p>
+      <p><strong>spec-implementer, the craftsperson.</strong> One scoped task against an existing specification, with a gate check before and after. If it steps out of scope, the gate catches it. Called by <code class="inline">/opendomain-implement</code>.</p>
 
-      <h2>Five skills</h2>
+      <h2>No fourth agent: the harness is driven by commands</h2>
+      <p>There is <strong>no meta-agent persona</strong>. The harness is driven the same way every other stage is: a command hands off to a role, a role loads a skill. <code class="inline">/opendomain-implement</code> names a <code class="inline">TASK-###</code> → the task record <em>is</em> the task description <code class="inline">T</code>: <code class="inline">opendomain plan TASK-012</code> compiles it into a DAG of agents, <code class="inline">opendomain build</code> equips each one with a complete execution kit, then <code class="inline">opendomain run</code> drives the run — where the coordinator, not any persona, applies the gates. The execution doctrine lives once, in the <code class="inline">opendomain-harness</code> skill — no per-platform copies, nothing to diverge. Doctrine: see <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>.</p>
+      <p>The same projection mechanism is what the runtime agents themselves receive: each node of a run graph is written as its own agent file (universal <code class="inline">deny</code>, then one <code class="inline">allow</code> per whitelisted tool), so least privilege is enforced by the executor, not suggested by a phrase in a prompt.</p>
+
+      <h2>Six skills</h2>
       <p>The framework's know-how, loaded on demand by commands and roles:</p>
       <table>
         <tr><th>Skill</th><th>Load it when…</th></tr>
-        <tr><td><code class="inline">opendomain</code></td><td>You need the shared discipline and the map to the other four.</td></tr>
+        <tr><td><code class="inline">opendomain</code></td><td>You need the shared discipline and the map to the other five.</td></tr>
         <tr><td><code class="inline">opendomain-epistemics</code></td><td>Choosing a knowledge value, recording a promotion, checking laundering.</td></tr>
         <tr><td><code class="inline">opendomain-artifacts</code></td><td>Writing or repairing any record — format, ids, relations.</td></tr>
         <tr><td><code class="inline">opendomain-research</code></td><td>Gathering evidence — parallel search, triangulation, saturation.</td></tr>
         <tr><td><code class="inline">opendomain-gates</code></td><td>Reading any gate, status, or audit output — identifier to action.</td></tr>
+        <tr><td><code class="inline">opendomain-harness</code></td><td>The work executes through agents — the execution doctrine: task → DAG → kits → run under gates → attribution.</td></tr>
       </table>
       <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator → craftsperson), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role.</div>
 
@@ -89,16 +97,16 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "bash": {
-      "od *": "allow",
-      "od init *": "ask",
-      "od link *": "ask",
-      "od advance *": "ask",
-      "od apply *": "ask",
-      "od archive *": "ask"
+      "opendomain *": "allow",
+      "opendomain init *": "ask",
+      "opendomain link *": "ask",
+      "opendomain advance *": "ask",
+      "opendomain apply *": "ask",
+      "opendomain archive *": "ask"
     }
   }
 }</pre>
-      <div class="note"><strong class="label">Note</strong>opencode reads its configuration at startup: restart it after any addition. <code class="inline">AGENTS.md</code> is never overwritten, even with <code class="inline">--force</code>. <code class="inline">od init</code> never writes <code class="inline">opencode.json</code>: copying the permission above remains your decision.</div>
+      <div class="note"><strong class="label">Note</strong>opencode reads its configuration at startup: restart it after any addition. <code class="inline">AGENTS.md</code> is never overwritten, even with <code class="inline">--force</code>. <code class="inline">opendomain init</code> never writes <code class="inline">opencode.json</code>: copying the permission above remains your decision.</div>
     </article>
 
     <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
@@ -110,7 +118,7 @@
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
       <a href="theory.html">Theory</a>
     </nav>
-    <span>OpenDomain · MIT · Sept. 2026</span>
+    <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>
   <script src="../js/main.js"></script>
 </body>

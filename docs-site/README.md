@@ -26,7 +26,8 @@ docs-site/
     concepts.html         # knowledge states, evidence, anti-whitewashing
     artifacts.html        # record format + annotated example
     gates.html            # the 9 gates + rules
-    cli-reference.html    # od reference (the only command-centered page)
+    cli-reference.html    # the registry commands, on one page
+    harness.html          # the execution doctrine: loop, six pillars, M1-M7
     opencode.html         # commands, roles, permissions
     theory.html           # full specification (v0.20.26)
   css/style.css           # restrained theme + dark mode + responsive details

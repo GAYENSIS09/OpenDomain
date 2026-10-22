@@ -10,6 +10,12 @@ must exhibit, traceable to evidence.
 Required fields: `type`, `status`. Strongly required: `derived-from`,
 `actor`, `epistemic`.
 
+Optional: `rigour` — the verification mechanism this requirement demands,
+declared against the Section 9.7 table (`"Business behaviour, acceptance"`,
+`"Unit-level contract"`, `"Performance envelope"`, …). `opendomain rigour`
+audits the declarations; `opendomain provision` refuses to scaffold BDD when
+they are absent.
+
 `type` is one of `BUSINESS` `FUNCTIONAL` `NON_FUNCTIONAL` `DATA` `SECURITY`
 `INTEGRATION` `COMPLIANCE` `OPERATIONAL` `TECHNICAL_CONSTRAINT`.
 

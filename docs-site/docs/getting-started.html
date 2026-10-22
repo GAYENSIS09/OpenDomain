@@ -29,6 +29,8 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
       <a href="cli-reference.html">CLI reference</a>
@@ -43,32 +45,37 @@
       <h2>Prerequisites</h2>
       <p>You need Rust 1.75 or newer. A single build is enough; afterwards the binary is self-contained.</p>
 
-      <h2>Install</h2>
+      <h2><span class="stepnum">1</span>Install</h2>
       <p>The recommended way, with Rust installed:</p>
 <pre>cargo install --git https://github.com/GAYENSIS09/OpenDomain --locked opendomain-cli
-od --version</pre>
-      <p>Prefer building from source? That works too — the binary lands at <code class="inline">target/release/od.exe</code> (Windows) or <code class="inline">target/release/od</code> (Unix):</p>
+opendomain --version</pre>
+      <p>Prefer building from source? That works too — the binary lands at <code class="inline">target/release/opendomain.exe</code> (Windows) or <code class="inline">target/release/opendomain</code> (Unix):</p>
 <pre>git clone https://github.com/GAYENSIS09/OpenDomain
 cd OpenDomain
 cargo build --release</pre>
       <p>Put the binary on your <code class="inline">PATH</code>, or call it by its full path.</p>
 
-      <h2>Initialize a project</h2>
-      <p><code class="inline">od init</code> doesn't create code — it prepares a tidy workbench and installs only: an <code class="inline">opendomain/</code> folder of 41 files (33 registries, 7 explanatory documents, and <code class="inline">opendomain.toml</code> describing the project), plus an agent contract (<code class="inline">AGENTS.md</code> and the <code class="inline">.opencode/</code> files). It records no project context; that comes next. Re-run, it reports what already exists without overwriting anything.</p>
+      <h2><span class="stepnum">2</span>Initialize a project</h2>
+      <p><code class="inline">opendomain init</code> doesn't create code — it prepares a tidy workbench and installs only: an <code class="inline">opendomain/</code> folder of 41 files — 34 registries (one per artifact kind), 6 explanatory documents, and <code class="inline">opendomain.toml</code> — plus the execution harness under <code class="inline">opendomain/harness/</code> (specs, grounding, graph, runs — the criteria <code class="inline">C<sub>i</sub></code> live inside <code class="inline">graph.json</code> and the settings in <code class="inline">opendomain.toml</code>), an agent contract (<code class="inline">AGENTS.md</code> and the <code class="inline">.opencode/</code> files: 15 commands, 3 role agents, 6 skills — the execution doctrine lives once, in the <code class="inline">opendomain-harness</code> skill). <strong>75 files in total</strong>. It records no project context; that comes next. Re-run, it reports what already exists without overwriting anything.</p>
 <pre>mkdir my-bookstore && cd my-bookstore
-od init --name my-bookstore
-od status</pre>
-      <div class="tip"><strong class="label">Tip</strong>Three profiles cover common situations: <code class="inline">full</code> (everything, default), <code class="inline">core</code> (no innovation stage, for systems with an imposed scope), and <code class="inline">lean</code> (the domain model already lives elsewhere). <code class="inline">--dry-run</code> shows what would be created without writing anything. To take over an existing system, prefer <code class="inline">--repository brownfield</code>: current code is treated as a clue there, not a specification.</div>
+opendomain init --name my-bookstore
+opendomain status</pre>
+      <div class="tip"><strong class="label">Tip</strong>Three profiles cover common situations: <code class="inline">full</code> (everything, default), <code class="inline">core</code> (no innovation stage, for systems with an imposed scope), and <code class="inline">lean</code> (the domain model already lives elsewhere). <code class="inline">--dry-run</code> shows what would be created without writing anything. To take over an existing system, prefer <code class="inline">--repository brownfield</code>: current code is treated as a clue there, not a specification. There is no meta-agent persona: the harness is driven by the commands (<code class="inline">/opendomain-implement</code> → roles → skills), and the execution doctrine lives once, in the <code class="inline">opendomain-harness</code> skill.</div>
 
-      <h2>Complete the context</h2>
-      <p>An empty workbench knows nothing about your project yet. In opencode, run <code class="inline">/od-project</code>: an agent reads the whole repository, researches the domain from the keywords it finds, fills in <code class="inline">project.md</code>, and asks you for whatever no reading could answer — jurisdiction, real users, constraints. Afterwards <code class="inline">od gate context</code> should turn green. See <a href="opencode.html">With opencode</a> for the full command map.</p>
+      <h2><span class="stepnum">3</span>Complete the context</h2>
+      <p>An empty workbench knows nothing about your project yet. In opencode, run <code class="inline">/opendomain-project</code>: an agent reads the whole repository, researches the domain from the keywords it finds, fills in <code class="inline">project.md</code>, and asks you for whatever no reading could answer — jurisdiction, real users, constraints. Afterwards <code class="inline">opendomain gate context</code> should turn green. See <a href="opencode.html">With opencode</a> for the full command map.</p>
 
-      <h2>Read your first verdict</h2>
-      <p>At first, gates fail — that's their job. <code class="inline">od status</code> gives the project weather (what is ready, what is blocked), <code class="inline">od gate context</code> returns the first gate's verdict with what's missing, and <code class="inline">od audit</code> reports traceability health. Every refusal cites the exact rule: read it as an instruction, not a reproach.</p>
-      <p>Once two records are linked, try <code class="inline">od trace</code> (why does this requirement exist?) and <code class="inline">od impact</code> (what would need revisiting if this rule changed?). That's the moment the framework "clicks". Command details live in the <a href="cli-reference.html">CLI reference</a>.</p>
+      <h2><span class="stepnum">4</span>Read your first verdict</h2>
+      <p>At first, gates fail — that's their job: <span class="pill fail">Blocking</span> findings stop the command, <span class="pill adv">Advisory</span> findings are reported and recorded. <code class="inline">opendomain status</code> gives the project weather (what is ready, what is blocked), <code class="inline">opendomain gate context</code> returns the first gate's verdict with what's missing, and <code class="inline">opendomain audit</code> reports traceability health. Every refusal cites the exact rule: read it as an instruction, not a reproach.</p>
+      <p>Once two records are linked, try <code class="inline">opendomain trace</code> (why does this requirement exist?) and <code class="inline">opendomain impact</code> (what would need revisiting if this rule changed?). That's the moment the framework "clicks". Command details live in the <a href="cli-reference.html">CLI reference</a>.</p>
+
+      <h2><span class="stepnum">5</span>Then the harness, when you're ready</h2>
+      <p>The registries say what must be done; the <strong>harness</strong> is where agents do it. Create a task spec (<code class="inline">opendomain spec new 001-my-task</code>), ground the repo (<code class="inline">opendomain ground 001-my-task</code>), compile the plan (<code class="inline">opendomain plan 001-my-task</code> — a DAG of agents, refused if any agent is incomplete), then run it (<code class="inline">opendomain run 001-my-task --executor mock</code> works fully offline for a first look). Try <code class="inline">opendomain validate</code> on the graph, <code class="inline">opendomain bench</code> for the invariants, and read <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a> for the doctrine behind those five commands.</p>
 
       <h2>Next</h2>
-      <p>Read <a href="concepts.html">Concepts</a> for the substance — knowledge statuses, the evidence chain, anti-whitewashing — then <a href="artifacts.html">Artifacts</a> for the exact record format.</p>
+      <p>Read <a href="concepts.html">Concepts</a> for the substance — knowledge statuses, the evidence chain, anti-whitewashing — then <a href="artifacts.html">Artifacts</a> for the exact record format, and <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a> for the execution doctrine.</p>
     </article>
 
     <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
@@ -80,7 +87,7 @@ od status</pre>
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
       <a href="theory.html">Theory</a>
     </nav>
-    <span>OpenDomain · MIT · Sept. 2026</span>
+    <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>
   <script src="../js/main.js"></script>
 </body>

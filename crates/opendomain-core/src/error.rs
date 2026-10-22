@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[derive(Debug, thiserror::Error)]
 pub enum OdError {
     /// The `opendomain/` directory could not be found.
-    #[error("no `opendomain/` directory found in {0} or any parent — run `od init` first")]
+    #[error("no `opendomain/` directory found in {0} or any parent — run `opendomain init` first")]
     WorkspaceNotFound(PathBuf),
 
     /// A workspace was found but is missing required top-level entries.
@@ -14,7 +14,7 @@ pub enum OdError {
     Malformed { path: PathBuf, reason: String },
 
     /// `opendomain.toml` is absent.
-    #[error("missing `opendomain.toml` in {0} — run `od init` or `od update`")]
+    #[error("missing `opendomain.toml` in {0} — run `opendomain init` or `opendomain update`")]
     MissingConfig(PathBuf),
 
     /// `opendomain.toml` could not be parsed.

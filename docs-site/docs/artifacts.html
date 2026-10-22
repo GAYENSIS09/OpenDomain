@@ -28,6 +28,8 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
       <a href="cli-reference.html">CLI reference</a>
@@ -60,7 +62,7 @@ look up an item's chronological movements.</pre>
       <p>The contract is simple: everything asserted in prose must have its counterpart in the TOML block. If the block says <code class="inline">INFERRED</code>, the prose may not speak as if it were certain. And if the TOML is malformed, the tool reports the line number instead of guessing.</p>
 
       <h2>Naming and linking</h2>
-      <p>The prefix says what it is: <code class="inline">REQ</code> for a requirement, <code class="inline">EVD</code> for evidence, <code class="inline">SRC</code> for a source, <code class="inline">RULE</code> for a business rule, <code class="inline">AC</code> for an acceptance criterion, <code class="inline">SPEC</code> for a specification — 37 kinds in all, listed by <code class="inline">od reference</code>. Scope can be qualified (<code class="inline">REQ-INVENTORY-014</code>, <code class="inline">AC-INVENTORY-014-01</code>).</p>
+      <p>The prefix says what it is: <code class="inline">REQ</code> for a requirement, <code class="inline">EVD</code> for evidence, <code class="inline">SRC</code> for a source, <code class="inline">RULE</code> for a business rule, <code class="inline">AC</code> for an acceptance criterion, <code class="inline">SPEC</code> for a specification — 37 kinds in all, listed by <code class="inline">opendomain reference</code>. Scope can be qualified (<code class="inline">REQ-INVENTORY-014</code>, <code class="inline">AC-INVENTORY-014-01</code>).</p>
       <p>Links are declared by whoever depends on the other: you write <code class="inline">REQ-004 derived-from RULE-001</code> on the requirement's record, never the reverse. Like citing sources at the bottom of a page, this makes walking back to the origin infallible.</p>
 
       <h2>A record's life, end to end</h2>
@@ -73,6 +75,8 @@ look up an item's chronological movements.</pre>
         <li><strong>Specification and test</strong> (<code class="inline">SPEC-008</code>, <code class="inline">AC-008-01</code>): what will be observed, and how it will be verified.</li>
       </ol>
       <p>At every step, gates verify: does the evidence cite a source? Does the requirement cite evidence? Does the test really cover the requirement marked "implemented"? Nothing passes by force — everything passes by evidence.</p>
+      <p>The records also meet the <strong>runtime</strong> half of the framework: when the implementation of such a step is executed by agents, the work is archived under <code class="inline">opendomain/harness/runs/</code> as a dated, append-only run — frozen graph, gate verdicts, validated outputs — and the registries' tests and validation records may cite that run as their provenance. The artifact record is how the project says what it knows; the run archive is how it says how a particular step was made. See <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>.</p>
 
       <div class="next-links">Next: <a href="gates.html">The 9 gates</a> — the questions guarding each stage.</div>
     </article>
@@ -86,7 +90,7 @@ look up an item's chronological movements.</pre>
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
       <a href="theory.html">Theory</a>
     </nav>
-    <span>OpenDomain · MIT · Sept. 2026</span>
+    <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>
   <script src="../js/main.js"></script>
 </body>

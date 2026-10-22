@@ -12,9 +12,9 @@ docs-site/.docusaurus
 *.tsbuildinfo
 
 # OpenDomain runtime
-opendomain/.od-cache/
+opendomain/.opendomain-cache/
 .opendomain-cache/
-*.od.lock
+*.opendomain.lock
 
 # LaTeX build artifacts. The PDF is committed; everything pdflatex produces
 # alongside it is not.
@@ -41,4 +41,4 @@ Thumbs.db
 !.vscode/extensions.json
 opendomain-paper.tex
 opendomain-paper.pdf
-examples-docs-formats-delete-after-usage
+opendomain-paper.txt

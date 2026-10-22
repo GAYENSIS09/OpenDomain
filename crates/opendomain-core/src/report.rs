@@ -1,16 +1,16 @@
 //! Rendering: terminal output, Markdown and JSON.
 //!
 //! Two rules shape this module. First, every report exists in both a human and
-//! a machine form, because `od status --json` is what a CI job consumes while
-//! `od status` is what a person reads. Second, colour is never load-bearing:
+//! a machine form, because `opendomain status --json` is what a CI job consumes while
+//! `opendomain status` is what a person reads. Second, colour is never load-bearing:
 //! severity is always stated in words, so piping to a file loses nothing.
 
-use crate::artifact::Artifact;
-use crate::gates::{Gate, GateReport, Severity};
-use crate::graph::{Graph, ImpactReport, TraceStep};
-use crate::ids::{Id, IdKind};
-use crate::vocab::{ArtifactStatus, Stage};
-use crate::workspace::Index;
+use crate::model::artifact::Artifact;
+use crate::analysis::gates::{Gate, GateReport, Severity};
+use crate::analysis::graph::{Graph, ImpactReport, TraceStep};
+use crate::model::ids::{Id, IdKind};
+use crate::model::vocab::{ArtifactStatus, Stage};
+use crate::registries::workspace::Index;
 use owo_colors::OwoColorize;
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -64,7 +64,7 @@ pub enum Colour {
     Bold,
 }
 
-/// Workspace-level counts, the input to `od status`.
+/// Workspace-level counts, the input to `opendomain status`.
 #[derive(Debug, Clone, Serialize)]
 pub struct StatusReport {
     /// Project name from the configuration.
@@ -94,7 +94,7 @@ pub struct StatusReport {
 }
 
 /// Builds the status report for a loaded workspace.
-pub fn status(name: &str, config: &crate::config::Config, index: &Index) -> StatusReport {
+pub fn status(name: &str, config: &crate::registries::config::Config, index: &Index) -> StatusReport {
     let mut counts = BTreeMap::new();
     for kind in IdKind::ALL {
         let n = index.ids(*kind).len();
@@ -123,7 +123,7 @@ pub fn status(name: &str, config: &crate::config::Config, index: &Index) -> Stat
 
     let gates: Vec<GateReport> = Gate::ALL
         .iter()
-        .map(|g| crate::gates::evaluate(*g, index))
+        .map(|g| crate::analysis::gates::evaluate(*g, index))
         .collect();
     let blocking_gate = gates.iter().find(|r| !r.passed()).map(|r| r.name);
 
@@ -216,7 +216,7 @@ pub fn render_status(report: &StatusReport, style: Style) -> String {
     if let Some(gate) = report.blocking_gate {
         out.push('\n');
         out.push_str(&format!(
-            "  next: resolve the `{gate}` gate, or run `od gate {gate}` for the detail\n"
+            "  next: resolve the `{gate}` gate, or run `opendomain gate {gate}` for the detail\n"
         ));
     }
     out
@@ -264,7 +264,7 @@ pub fn render_gate(report: &GateReport, style: Style) -> String {
     out
 }
 
-/// A single row of a `od list` table.
+/// A single row of a `opendomain list` table.
 #[derive(Debug, Clone, Serialize)]
 pub struct Row {
     /// The identifier.
@@ -358,16 +358,16 @@ pub fn render_table(title: &str, rows: &[Row], style: Style) -> String {
 pub fn render_trace(
     id: &Id,
     steps: &[TraceStep],
-    direction: crate::graph::Direction,
+    direction: crate::analysis::graph::Direction,
     style: Style,
 ) -> String {
     let mut out = String::new();
     let (hint, orphan) = match direction {
-        crate::graph::Direction::Backward => (
+        crate::analysis::graph::Direction::Backward => (
             "(upstream — why does this exist?)",
             "(no upstream artifacts: this claim has no recorded origin)",
         ),
-        crate::graph::Direction::Forward => (
+        crate::analysis::graph::Direction::Forward => (
             "(downstream — what implements and verifies this?)",
             "(no downstream artifacts: nothing implements or verifies this yet)",
         ),
@@ -427,7 +427,7 @@ pub fn render_impact(report: &ImpactReport, style: Style) -> String {
     }
     for entry in &report.entries {
         let (tag, colour) = match entry.class {
-            crate::vocab::ImpactClass::Direct => ("direct  ", Colour::Red),
+            crate::model::vocab::ImpactClass::Direct => ("direct  ", Colour::Red),
             _ => ("indirect", Colour::Yellow),
         };
         out.push_str(&format!(
@@ -440,7 +440,7 @@ pub fn render_impact(report: &ImpactReport, style: Style) -> String {
     out
 }
 
-/// A stage-by-stage rollup, used by `od audit`.
+/// A stage-by-stage rollup, used by `opendomain audit`.
 #[derive(Debug, Clone, Serialize)]
 pub struct AuditReport {
     /// Per-stage artifact counts.
@@ -494,13 +494,13 @@ pub fn audit(index: &Index) -> AuditReport {
             unjustified += 1;
         }
         if graph
-            .reachable(&r.id, index, crate::graph::Direction::Forward)
+            .reachable(&r.id, index, crate::analysis::graph::Direction::Forward)
             .iter()
             .any(|s| s.id.kind() == IdKind::Spec)
         {
             specified += 1;
         }
-        let downstream = graph.reachable(&r.id, index, crate::graph::Direction::Forward);
+        let downstream = graph.reachable(&r.id, index, crate::analysis::graph::Direction::Forward);
         if !downstream.is_empty() {
             traced += 1;
         }
@@ -535,7 +535,7 @@ pub fn audit(index: &Index) -> AuditReport {
         dangling,
         gates: Gate::ALL
             .iter()
-            .map(|g| crate::gates::evaluate(*g, index))
+            .map(|g| crate::analysis::gates::evaluate(*g, index))
             .collect(),
     }
 }
@@ -611,7 +611,7 @@ pub fn render_finding_line(rule: &str, message: &str, style: Style) -> String {
     format!("{} {message}", style.paint(rule, colour))
 }
 
-/// Renders an artifact's full detail, as `od show` does.
+/// Renders an artifact's full detail, as `opendomain show` does.
 pub fn render_artifact(artifact: &Artifact, style: Style) -> String {
     let mut out = String::new();
     out.push_str(&format!(
@@ -678,8 +678,8 @@ pub fn render_artifact(artifact: &Artifact, style: Style) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::Config;
-    use crate::parse;
+    use crate::registries::config::Config;
+    use crate::registries::parse;
     use std::path::PathBuf;
 
     fn index_from(specs: &[(&str, &str, &str)]) -> Index {
@@ -765,7 +765,7 @@ mod tests {
     #[test]
     fn gate_rendering_separates_severities() {
         let index = index_from(&[("EVD-001", "", "orphan")]);
-        let report = crate::gates::evaluate(Gate::by_name("research").unwrap(), &index);
+        let report = crate::analysis::gates::evaluate(Gate::by_name("research").unwrap(), &index);
         let text = render_gate(&report, Style::Off);
         assert!(text.contains("FAIL"));
         assert!(text.contains("blocking"));
@@ -793,7 +793,7 @@ mod tests {
         let text = render_trace(
             &Id::parse("REQ-001").unwrap(),
             &steps,
-            crate::graph::Direction::Backward,
+            crate::analysis::graph::Direction::Backward,
             Style::Off,
         );
         assert!(text.contains("REQ-001"));
@@ -807,7 +807,7 @@ mod tests {
         let graph = Graph::build(&index);
         let id = Id::parse("REQ-001").unwrap();
         let steps = graph.trace_backward(&id, &index);
-        let text = render_trace(&id, &steps, crate::graph::Direction::Backward, Style::Off);
+        let text = render_trace(&id, &steps, crate::analysis::graph::Direction::Backward, Style::Off);
         assert!(text.contains("no recorded origin"), "{text}");
     }
 
@@ -820,7 +820,7 @@ mod tests {
         let graph = Graph::build(&index);
         let id = Id::parse("EVD-001").unwrap();
         let steps = graph.trace_forward(&id, &index);
-        let text = render_trace(&id, &steps, crate::graph::Direction::Forward, Style::Off);
+        let text = render_trace(&id, &steps, crate::analysis::graph::Direction::Forward, Style::Off);
         assert!(text.contains("downstream"), "{text}");
         assert!(!text.contains("no recorded origin"), "{text}");
     }

@@ -14,6 +14,27 @@ Required fields: `status`, `verifies`, `level`, `assertions`. Recommended:
 and passed against the current implementation** — not that it was written.
 Gate 8 checks for this.
 
+### Verification depth and binding provenance
+
+Two optional fields make a test's claim inspectable (Sections 10.9/10.10):
+
+```toml
+verification-depth = "executed"   # executed | discovered | declared
+binding = { to = "AC-004-03", provisionance = "ANNOTATED", confirmed = false }
+```
+
+- `verification-depth` — `executed`: the suite was run against the current
+  implementation and its result observed; `discovered`: the artifact exists
+  and is bound, but was not run here; `declared`: only the link is asserted.
+  `opendomain bind` states the depth it audited from, and a VERIFIED record
+  without `automation` reads as claimed-versus-actual.
+- `binding` — how the `verifies` edge was established: `GENERATED`
+  (provisioner tag), `ANNOTATED` (`// odc:<ID>` comment), `ATTRIBUTED`
+  (language-native marker), or `INFERRED` (naming convention, LOW
+  confidence). An INFERRED binding cannot close a traceability edge until
+  `confirmed = true` after human review; the framework never presents the
+  origins as equivalent.
+
 <!--
 ## TEST-023 — Concurrent receipts cannot exceed the outstanding quantity
 
@@ -74,3 +95,12 @@ If this test fails intermittently, the guard is not correctly serialised. Do
   value in the framework to fake, and faking it makes the entire trace
   meaningless.
 - Record the tolerance. A test with no tolerance quietly grows one.
+- When the implementation under test was executed by agents, cite the archived
+  run that verified it — with the first-class field:
+  `run = "runs/run-<NNN>-<slug>"` (the run directory
+  `opendomain/harness/runs/run-<NNN>-<slug>/`), and, when the claim rests on
+  one node's verdict, `run-node = "…"` — that node's last `gates.log` line is
+  what makes the citation checkable. `opendomain provenance` verifies every
+  citation against the archive it names: a citation that names no archive is
+  an appeal, not evidence. A run archive is evidence in the same sense as
+  this registry — append-only, never rewritten after the fact.

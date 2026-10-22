@@ -8,7 +8,7 @@ alter that, reviewed and then applied or rejected.
 
 ## Why changes are separate
 
-Keeping proposals out of the registries is what makes `od status` meaningful. If
+Keeping proposals out of the registries is what makes `opendomain status` meaningful. If
 `REQ-004` could be edited directly, the registry would always describe an
 ambiguous mix of agreed and proposed behaviour, and no gate could tell them
 apart.
@@ -43,7 +43,7 @@ change means another change.
 - `proposal.md` must state *why* before *what*. A proposal that leads with
   implementation has already skipped the interesting part.
 - Anything that survives application is copied into the registries by
-  `od apply`; the change directory is then the historical record of how it
+  `opendomain apply`; the change directory is then the historical record of how it
   arrived.
 - A rejected change is archived, not deleted. Knowing what was considered and
   why it lost is worth more than a clean directory.

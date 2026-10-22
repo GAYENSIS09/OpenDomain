@@ -28,6 +28,8 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
       <a href="cli-reference.html">CLI reference</a>
@@ -40,39 +42,65 @@
       <p class="subtitle">Four intents: locate, link, ask, evolve.</p>
 
       <h2>Locate — where do we stand?</h2>
-<pre>od status                 # project weather: real progress + blockers
-od gate context           # verdict of one specific gate
-od gate --through 3       # every gate up to requirements (--through takes 0-8)
-od audit                  # traceability health report
-od reference              # dictionary: gates + 37 record kinds</pre>
+<pre>opendomain status                 # project weather: real progress + blockers
+opendomain gate context           # verdict of one specific gate
+opendomain gate --through 3       # every gate up to requirements (--through takes 0-8)
+opendomain audit                  # traceability health report
+opendomain reference              # dictionary: gates + 37 record kinds</pre>
       <p><code class="inline">status</code> every morning, <code class="inline">gate</code> before each stage, <code class="inline">audit</code> before saying "done".</p>
 
       <h2>Link — declare dependencies</h2>
-<pre>od link --check                         # does every link point to something real?
-od link REQ-012 derived-from EVD-014    # this requirement comes from this evidence
-od advance REQ-012 VALIDATED            # move a record to validated state
-od show REQ-012                         # full record of one artifact</pre>
+<pre>opendomain link --check                         # does every link point to something real?
+opendomain link REQ-012 derived-from EVD-014    # this requirement comes from this evidence
+opendomain advance REQ-012 VALIDATED            # move a record to validated state
+opendomain show REQ-012                         # full record of one artifact</pre>
       <p>Whoever depends always declares the link.</p>
 
       <h2>Ask — why, and what if it changes?</h2>
-<pre>od trace REQ-012                    # walk back to the source: the "why"
-od trace --forward REQ-012          # walk down: who implements and verifies it
-od impact RULE-007                  # what a change would invalidate
-od graph --root REQ-012 --depth 3   # the neighborhood, to see the web</pre>
+<pre>opendomain trace REQ-012                    # walk back to the source: the "why"
+opendomain trace --forward REQ-012          # walk down: who implements and verifies it
+opendomain impact RULE-007                  # what a change would invalidate
+opendomain graph --root REQ-012 --depth 3   # the neighborhood, to see the web</pre>
 
       <h2>Evolve — change without rewriting history</h2>
-<pre>od propose tighter-reservation --summary "Tighten the reservation window"
-od apply tighter-reservation
-od archive tighter-reservation</pre>
+<pre>opendomain propose tighter-reservation --summary "Tighten the reservation window"
+opendomain apply tighter-reservation
+opendomain archive tighter-reservation</pre>
       <p>Propose, apply, archive. Even refuted hypotheses are kept: a deleted failure gets re-derived, an archived failure teaches.</p>
 
+      <h2>Execute — the verified harness</h2>
+      <p>The same binary runs the work itself: a spec becomes a DAG of agents, and no agent output propagates before its gate (<code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>) passes. Failures are typed and attributed — local, upstream, structural. See <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield</a>.</p>
+<pre>opendomain spec new 001-migrate-invoice       # the task, its constraints, its criteria
+opendomain ground 001-migrate-invoice         # repo scan + fingerprint, replayed before every run
+opendomain plan 001-migrate-invoice           # the DAG (offline, or --llm via OpenCode, verified)
+opendomain build 001-migrate-invoice          # each agent's execution kit, construction-verified
+opendomain run 001-migrate-invoice --executor opencode | claude | mock
+opendomain verify runs/run-001-…              # replay every gate on the archived run, offline
+opendomain attribute runs/run-001-…           # typed attribution + lesson memory
+opendomain repatch runs/run-001-… --allow BIN # partial re-plan: faulty node only, upstreams frozen
+opendomain bench                              # the harness's invariants, deterministic and offline
+opendomain new REQ --scope inventory          # next free identifier (read-only)
+opendomain workflow new tests 002-bdd-pass    # pre-fill a spec from a playbook
+opendomain skill add URL·PATH | skill new ID  # install or start a reusable procedure
+opendomain resolve 001-migrate-invoice        # one provider per need; a miss is a typed error</pre>
+
+      <h2>Verify — the verification subsystem</h2>
+      <p>Sections 9/10 of the paper, in the order F10 fixes: the rigour table, then the generated executable specifications, then the binding-provenance record, then the provisioner — each stage gated on the previous one.</p>
+<pre>opendomain rigour                 # the §9.7 table + which records declare a rigour
+opendomain provision --dry-run    # stack detection + ordered selection (R1–R4), nothing written
+opendomain provision              # .feature scaffolds with @AC tags + provenance — or a recorded refusal
+opendomain bind                   # binding provenance (GENERATED/ANNOTATED/ATTRIBUTED/INFERRED) + depth
+opendomain provenance             # each record's run citation verified against the archived run (F14/L9)</pre>
+      <p>Nothing is ever installed and no generated file ever contains a passing assertion (PP4); the decision — or the §10.13 refusal, with its alternative mechanism — lands as a <code class="inline">DEC</code> artifact. <code class="inline">bind</code> reports findings; it is not a gate, so no legacy workspace starts failing.</p>
+
       <h2>Global options and CI</h2>
-      <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">od gate --through specification --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
+      <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">opendomain gate --through specification --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
 
       <h2>Check the workshop itself</h2>
-<pre>cargo test --workspace      # 129 unit tests + 2 doctests
+<pre>cargo test --workspace      # 198 unit tests + 2 doctests across three crates (incl. the verification subsystem's)
 cargo fmt --all -- --check</pre>
-      <p>The workshop: <code class="inline">crates/opendomain-core/</code> (model, parser, index, graph, gates) and <code class="inline">crates/opendomain-cli/</code> (the <code class="inline">od</code> binary).</p>
+      <p>The workshop: <code class="inline">crates/opendomain-core/</code> (model, parser, index, graph, gates), <code class="inline">crates/opendomain-harness/</code> (agent DAG, gates <code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>, attribution, runner) and <code class="inline">crates/opendomain-cli/</code> (the <code class="inline">opendomain</code> binary).</p>
     </article>
 
     <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
@@ -84,7 +112,7 @@ cargo fmt --all -- --check</pre>
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
       <a href="theory.html">Theory</a>
     </nav>
-    <span>OpenDomain · MIT · Sept. 2026</span>
+    <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>
   <script src="../js/main.js"></script>
 </body>

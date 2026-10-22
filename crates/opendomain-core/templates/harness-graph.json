@@ -1,0 +1,132 @@
+{
+  "_note": "Example. Validate with: opendomain validate opendomain/harness/graph/graph.json",
+  "meta": {
+    "name": "specialisation-de-fonction",
+    "source": "example executed in the README",
+    "langue": "en"
+  },
+  "nodes": [
+    {
+      "id": "analyste",
+      "role": "Specification analyst: signature + docstring -> behavioral rules, edge cases (empty list, single element, threshold zero, strict inequality), ambiguities resolved. Produces no code.",
+      "tools": ["read", "grep", "glob"],
+      "contract": {
+        "input_schema": {
+          "type": "object",
+          "required": ["signature", "docstring"],
+          "properties": { "signature": { "type": "string" }, "docstring": { "type": "string" } },
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "required": ["regles", "cas_limites", "ambiguites"],
+          "properties": {
+            "regles": { "type": "array", "items": { "type": "string" } },
+            "cas_limites": { "type": "array", "items": { "type": "string" } },
+            "ambiguites": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "forbidden": ["```python"]
+      },
+      "criteria": {
+        "schema_check": true,
+        "contains": ["cas limite"],
+        "not_contains": [],
+        "commands": []
+      },
+      "depends_on": []
+    },
+    {
+      "id": "strategie",
+      "role": "Strategist: selects the algorithm and data structures, plans how each edge case is handled (e.g. pairwise comparison with early return, empty list -> False, threshold <= 0 -> False).",
+      "tools": ["read", "grep"],
+      "contract": {
+        "input_schema": {
+          "type": "object",
+          "required": ["analyste"],
+          "properties": { "analyste": { "type": "object" } },
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "required": ["algorithme", "plan"],
+          "properties": {
+            "algorithme": { "type": "string" },
+            "plan": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "forbidden": []
+      },
+      "criteria": {
+        "schema_check": true,
+        "contains": ["plan"],
+        "not_contains": [],
+        "commands": []
+      },
+      "depends_on": ["analyste"]
+    },
+    {
+      "id": "synthese",
+      "role": "Synthesizer: emits the implementation in a single code block; exact signature; docstring verbatim; guard clause for each planned edge case.",
+      "tools": ["read", "write", "edit"],
+      "contract": {
+        "input_schema": {
+          "type": "object",
+          "required": ["strategie"],
+          "properties": { "strategie": { "type": "object" } },
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "required": ["fichier", "code"],
+          "properties": {
+            "fichier": { "type": "string" },
+            "code": { "type": "string", "minLength": 10 }
+          },
+          "additionalProperties": false
+        },
+        "forbidden": ["import numpy", "eval("]
+      },
+      "criteria": {
+        "schema_check": true,
+        "contains": ["```"],
+        "not_contains": [],
+        "commands": []
+      },
+      "depends_on": ["strategie"]
+    },
+    {
+      "id": "verificateur",
+      "role": "Final verifier: signature conformance, docstring verbatim, coverage of every edge case raised by the analyst, forbidden patterns absent. Emits a justified PASS/FAIL verdict, never ambiguous.",
+      "tools": ["read", "grep", "bash"],
+      "contract": {
+        "input_schema": {
+          "type": "object",
+          "required": ["synthese"],
+          "properties": { "synthese": { "type": "object" } },
+          "additionalProperties": false
+        },
+        "output_schema": {
+          "type": "object",
+          "required": ["verdict", "raison", "controles"],
+          "properties": {
+            "verdict": { "type": "string", "minLength": 4 },
+            "raison": { "type": "string" },
+            "controles": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        },
+        "forbidden": []
+      },
+      "criteria": {
+        "schema_check": true,
+        "contains": ["verdict"],
+        "not_contains": [],
+        "commands": []
+      },
+      "depends_on": ["synthese"]
+    }
+  ]
+}

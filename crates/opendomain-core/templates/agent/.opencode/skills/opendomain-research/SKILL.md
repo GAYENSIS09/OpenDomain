@@ -14,7 +14,7 @@ Trust has an order: a regulation or standard outranks official docs, which outra
 
 ## 2. Record each source richly
 
-Every accepted source becomes a `SRC-` record (`od new SRC`): title, type, address, today's date as `retrieved`, and the exact sections you used. Then each finding becomes its own `EVD-` record (`od new EVD`): a `type` from the vocabulary (`USER_NEED`, `DOMAIN_FACT`, `BUSINESS_RULE`, `INDUSTRY_PRACTICE`, `REGULATORY_REQUIREMENT`, `TECHNICAL_CONSTRAINT`, `COMPETITOR_CAPABILITY`, `MARKET_SIGNAL`, `ASSUMPTION`, `HYPOTHESIS`, `INFERENCE`), a `Statement` phrased in the source's own terms, an `Exact context` (section, page, revision), a `Not claimed` section saying what the source does *not* establish, a `derived-from` link to the source, and an honest epistemic value with its confidence.
+Every accepted source becomes a `SRC-` record (`opendomain new SRC`): title, type, address, today's date as `retrieved`, and the exact sections you used. Then each finding becomes its own `EVD-` record (`opendomain new EVD`): a `type` from the vocabulary (`USER_NEED`, `DOMAIN_FACT`, `BUSINESS_RULE`, `INDUSTRY_PRACTICE`, `REGULATORY_REQUIREMENT`, `TECHNICAL_CONSTRAINT`, `COMPETITOR_CAPABILITY`, `MARKET_SIGNAL`, `ASSUMPTION`, `HYPOTHESIS`, `INFERENCE`), a `Statement` phrased in the source's own terms, an `Exact context` (section, page, revision), a `Not claimed` section saying what the source does *not* establish, a `derived-from` link to the source, and an honest epistemic value with its confidence.
 
 ## 3. Triangulate, then stop
 

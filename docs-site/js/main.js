@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // injected so no page template has to change.
   const root = document.documentElement;
   const stored = (() => {
-    try { return localStorage.getItem("od-theme"); } catch { return null; }
+    try { return localStorage.getItem("opendomain-theme"); } catch { return null; }
   })();
   const applyTheme = (t) => {
     root.setAttribute("data-theme", t);
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
     themeBtn.type = "button";
     themeBtn.addEventListener("click", () => {
       const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-      try { localStorage.setItem("od-theme", next); } catch { /* private mode */ }
+      try { localStorage.setItem("opendomain-theme", next); } catch { /* private mode */ }
       applyTheme(next);
     });
     topInner.insertBefore(themeBtn, searchEl || null);
@@ -46,22 +46,72 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.prepend(skip);
   const layout = document.querySelector("main.layout");
   if (layout && !layout.id) layout.id = "main";
-  // Code block copy
-  document.querySelectorAll("pre").forEach((pre) => {
+  // Code blocks — each `pre` is wrapped by main.js into a `.codeblock`
+  // with a header (detected language + copy button), so the button never
+  // sits over the code, and the text snapshot taken before any DOM change
+  // means a block that itself ends in the word "copy" is never truncated.
+  const codeLang = (text) => {
+    const t = (text || "").replace(/^\s+/, "");
+    if (/^\$|^\s*(opendomain|cargo|git|mkdir|cd|npm|pnpm|python|node|pip)\s/.test(t)) return "console";
+    if (/^\s*(fn |let |use |struct |impl |#\[|pub )/m.test(t)) return "rust";
+    // TOML : clé = valeur (chaîne, tableau, table anonyme, booléen, nombre)
+    if (/^\s*[A-Za-z_][\w.-]*\s*=\s*(?:"[\s\S]*"|\[|\{|true|false|-?\d)/m.test(t)) return "toml";
+    return "text";
+  };
+  document.querySelectorAll("article pre").forEach((pre) => {
+    const code = pre.querySelector("code");
+    let text = ((code || pre).textContent || "").replace(/\r?\n+$/, "");
+    // Les sources HTML contiennent parfois des fences Markdown qui ont
+    // fui (```toml … ```) : on les retire ici et le tag devient le
+    // langage affiché — l'en-tête lit TOML et « copy » copie du TOML nu.
+    let forcedLang = null;
+    const outerFence = text.match(/^\s*```([A-Za-z0-9+#-]*)[ \t]*\r?\n([\s\S]*?)\r?\n?[ \t]*```\s*$/);
+    if (outerFence) {
+      forcedLang = outerFence[1] || null;
+      text = outerFence[2];
+    }
+    const wrap = document.createElement("div");
+    wrap.className = "codeblock";
+    const head = document.createElement("div");
+    head.className = "codehead";
+    const langEl = document.createElement("span");
+    langEl.className = "clang";
+    langEl.textContent = forcedLang || codeLang(text);
     const btn = document.createElement("button");
     btn.className = "copy";
+    btn.type = "button";
     btn.textContent = "copy";
+    btn.setAttribute("aria-label", "Copy code to clipboard");
     btn.addEventListener("click", async () => {
-      const text = pre.innerText.replace(/copy$/, "").trim();
+      const done = (msg) => {
+        btn.textContent = msg;
+        setTimeout(() => (btn.textContent = "copy"), 1500);
+      };
       try {
         await navigator.clipboard.writeText(text);
-        btn.textContent = "copied";
-        setTimeout(() => (btn.textContent = "copy"), 1400);
+        done("copied ✓");
       } catch {
-        btn.textContent = "select + Ctrl+C";
+        // Clipboard API is unavailable on file:// or plain http contexts —
+        // fall back to the textarea trick instead of just saying no.
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          done("copied ✓");
+        } catch {
+          done("Ctrl+C");
+        }
       }
     });
-    pre.appendChild(btn);
+    head.append(langEl, btn);
+    pre.replaceWith(wrap);
+    wrap.append(head, pre);
   });
 
   // Mobile sidebar + scrim veil, Escape to close
@@ -167,4 +217,85 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   });
+
+  // Pagination : cartes « précédent / suivant » en fin d'article.
+  // L'ordre des pages vient de la barre latérale ; une page peut livrer
+  // sa propre `.page-nav` (concepts.html) : rien n'est alors généré. Un
+  // ancien `.next-links` commençant par « Next: » est consommé : son
+  // lien devient la carte Suivant et le texte qui suit (le slogan)
+  // devient la description de cette carte. Les descriptions des autres
+  // cartes reprennent le sous-titre de chaque page.
+  try {
+    if (!document.querySelector(".page-nav")) {
+      const DESC = {
+        "Introduction": "Understand the domain before coding, and prove every rule.",
+        "Getting started": "Install the tool, create a project, get your first verdict.",
+        "Concepts": "The three ideas everything else follows from.",
+        "Artifacts": "Text for humans, evidence for the machine.",
+        "The harness": "Agents build the work; every output passes its gate before it propagates.",
+        "The 9 gates": "Nine questions you no longer get to forget.",
+        "CLI reference": "Four intents: locate, link, ask, evolve.",
+        "With opencode": "The same assistant, with a work contract.",
+        "Theory": "The complete framework specification.",
+      };
+      const pages = Array.from(document.querySelectorAll(".sidebar a")).map((a) => ({
+        label: a.textContent.trim(),
+        href: a.getAttribute("href") || "",
+      }));
+      const cur = location.pathname.split("/").pop() || "index.html";
+      const idx = pages.findIndex((p) => p.href.split("/").pop() === cur);
+      const article = document.querySelector("article.prose");
+      if (idx !== -1 && article) {
+        let next = null;
+        const legacy = document.querySelector(".next-links");
+        if (legacy && /^\s*Next\s*:/i.test(legacy.textContent)) {
+          const a = legacy.querySelector("a");
+          if (a) {
+            const tagline = (legacy.textContent.split(a.textContent).slice(1).join("") || "")
+              .replace(/^[\s—–-]+/, "").trim();
+            next = {
+              label: a.textContent.trim(),
+              href: a.getAttribute("href") || "",
+              desc: tagline || (DESC[a.textContent.trim()] || ""),
+            };
+            legacy.remove();
+          }
+        }
+        if (!next && idx + 1 < pages.length) {
+          const p = pages[idx + 1];
+          next = { label: p.label, href: p.href, desc: DESC[p.label] || "" };
+        }
+        const prev = idx > 0 ? pages[idx - 1] : null;
+        if (prev || next) {
+          const nav = document.createElement("nav");
+          nav.className = "page-nav";
+          nav.setAttribute("aria-label", "Page navigation");
+          const card = (cls, dir, label, href, desc) => {
+            const a = document.createElement("a");
+            a.className = "page-card " + cls;
+            a.href = href;
+            const dirEl = document.createElement("span");
+            dirEl.className = "dir";
+            dirEl.textContent = dir;
+            const titleEl = document.createElement("span");
+            titleEl.className = "pt";
+            titleEl.textContent = label;
+            a.append(dirEl, titleEl);
+            if (desc) {
+              const d = document.createElement("span");
+              d.className = "pd";
+              d.textContent = desc;
+              a.append(d);
+            }
+            nav.append(a);
+          };
+          if (prev) card("prev", "← Previous", prev.label, prev.href, DESC[prev.label] || "");
+          if (next) card("next", "Next →", next.label, next.href, next.desc);
+          article.appendChild(nav);
+        }
+      }
+    }
+  } catch (err) {
+    /* La pagination est décorative : ne jamais casser la page pour elle. */
+  }
 });

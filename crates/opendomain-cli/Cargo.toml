@@ -2,11 +2,11 @@
 name = "opendomain-cli"
 version = "0.20.26"
 edition = "2021"
-description = "The `od` command-line interface for OpenDomain"
+description = "The `opendomain` command-line interface for OpenDomain"
 license = "MIT"
 
 [[bin]]
-name = "od"
+name = "opendomain"
 path = "src/main.rs"
 
 [dependencies]

@@ -21,6 +21,13 @@ verification lives here, in plain Markdown, addressable by identifier.
 | `architecture/` | `architecture.md` and `ADR` decision records | 3 |
 | `validation/` | `SCN` scenarios, `TEST` acceptance tests, drift findings, audits | 3 |
 | `changes/` | In-flight change proposals, one directory each | all |
+| `harness/` | Verified execution: task specs, grounding, the agent DAG, runs, memory; governed by `opendomain.toml` (`[gates]`, `[sandbox]`) | execution |
+
+When implementation is executed by agents, it runs through `harness/`: every
+agent output passes its gate before it reaches the next agent, and each run is
+archived under `harness/runs/` — the registries' `TEST` and `DRIFT` records
+may cite those archives as their provenance. The full execution doctrine is
+the framework's documentation; the directory contract is `harness/README.md`.
 
 ## The file format
 
@@ -53,7 +60,7 @@ a malformed block is reported, never guessed at.
 
 ## Rules that are enforced
 
-These are checked by `od gate` and `od audit`, not by good intentions:
+These are checked by `opendomain gate` and `opendomain audit`, not by good intentions:
 
 - Every requirement has `derived-from` an evidence record or a business rule.
 - Evidence is `derived-from` a source. An unsourced claim is not evidence.
@@ -71,26 +78,26 @@ These are checked by `od gate` and `od audit`, not by good intentions:
 
 ## Getting started
 
-`od` reads and checks; it does not author. You write the artifacts, `od` tells
-you whether they are consistent. Every command below is real — run `od --help`
-or `od <command> --help` for the full list.
+`opendomain` reads and checks; it does not author. You write the artifacts, `opendomain` tells
+you whether they are consistent. Every command below is real — run `opendomain --help`
+or `opendomain <command> --help` for the full list.
 
 ```bash
-od status                        # where does the project actually stand?
-od gate context                  # what is missing before the domain can start?
-od gate --through domain         # run every gate up to the domain stage
+opendomain status                        # where does the project actually stand?
+opendomain gate context                  # what is missing before the domain can start?
+opendomain gate --through domain         # run every gate up to the domain stage
 
 # write artifacts, then check them
-od link --check                  # every referenced id must exist
-od link REQ-012 derived-from EVD-014   # declare an edge (writes the TOML block)
-od advance REQ-012 VALIDATED     # move along the lifecycle
-od show REQ-012                  # one artifact's full record
+opendomain link --check                  # every referenced id must exist
+opendomain link REQ-012 derived-from EVD-014   # declare an edge (writes the TOML block)
+opendomain advance REQ-012 VALIDATED     # move along the lifecycle
+opendomain show REQ-012                  # one artifact's full record
 
-od trace REQ-012                 # why does this exist?
-od trace --forward REQ-012       # what implements and verifies it?
-od impact RULE-007               # what breaks if this changes?
-od graph --root REQ-012 --depth 3
-od audit                         # traceability health across the workspace
+opendomain trace REQ-012                 # why does this exist?
+opendomain trace --forward REQ-012       # what implements and verifies it?
+opendomain impact RULE-007               # what breaks if this changes?
+opendomain graph --root REQ-012 --depth 3
+opendomain audit                         # traceability health across the workspace
 ```
 
 Gates are named, not numbered, in the commands: `context`, `research`, `domain`,
@@ -98,4 +105,4 @@ Gates are named, not numbered, in the commands: `context`, `research`, `domain`,
 `completion`. Numbers 0-8 are also accepted and mean the same order.
 
 `--json` works on every command that reports, for use in scripts and CI.
-`od reference` prints the full gate list and the 37 artifact kinds.
+`opendomain reference` prints the full gate list and the 37 artifact kinds.

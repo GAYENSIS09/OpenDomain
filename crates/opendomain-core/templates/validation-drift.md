@@ -77,3 +77,9 @@ Write the concurrency scenario before implementing it, not after.
 - Say explicitly which side changed and why.
 - A drift with a `decision` but no `rationale` is a drift that will be
   relitigated at the worst possible moment.
+- When the drift was surfaced while agents were executing the work, cite the
+  archived run where it surfaced — with the first-class field
+  `run = "runs/run-<NNN>-<slug>"` (and `run-node = "…"` when the claim rests
+  on one node's gate line). `opendomain provenance` verifies every citation
+  against the archive it names; a citation that names no archive is an
+  appeal, not evidence.

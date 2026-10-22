@@ -2,7 +2,7 @@
 
 The record of what was actually promised and delivered.
 
-Run `od audit` to regenerate the machine-checkable parts. This file holds the
+Run `opendomain audit` to regenerate the machine-checkable parts. This file holds the
 narrative that a machine cannot infer: what the audit was checking, who asked,
 and what it concluded.
 

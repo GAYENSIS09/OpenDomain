@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brownfield adoption — OpenDomain</title>
+  <meta name="description" content="OpenDomain: adopting the framework on an existing codebase without blocking builds — baseline, inventory without rewritings, one-capability spine, measured growth." />
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <a href="harness.html">The harness</a>
+      <a href="brownfield.html">Brownfield adoption</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>Brownfield adoption</h1>
+      <p class="subtitle">Take over an existing system without blocking its build — measure first, widen the spine capability by capability.</p>
+
+      <p>Existing code is <strong>evidence, not specification</strong>. The brownfield posture is the paper's Section 5.10: observed behaviour is classified before any change — <code class="inline">documented</code>, <code class="inline">inferred</code>, <code class="inline">observed</code>, <code class="inline">legacy-accidental</code>, <code class="inline">intentional</code>, <code class="inline">compatibility-preserving</code>, <code class="inline">unknown</code> — and nothing is deleted for being undocumented, nothing kept for being implemented. The walkthrough below is built only on commands that exist today; where a capability is still specified-only, it is marked <span class="pill adv">spec-only</span>. Bare commands are shipped: <span class="pill pass">shipped</span>.</p>
+
+      <h2><span class="stepnum">1</span>Survey — the tool reads the repo before you decide</h2>
+      <p><span class="pill pass">shipped</span> <code class="inline">opendomain init</code> detects existing implementation signals and tells you when a greenfield declaration would be the wrong posture; the recorded classification wins over flags unless you re-ran with <code class="inline">--force</code>. Use the brownfield profile up front:</p>
+<pre>opendomain init --repository brownfield --profile core
+opendomain status</pre>
+      <p><code class="inline">--profile core</code> skips the opportunity stage (the domain will come from the code and its evidence, not from a brainstorm), which is Stage 3 onwards: domain, requirements, specification, plan, implementation, completion.</p>
+
+      <h2><span class="stepnum">2</span>Baseline — declare what is, honestly</h2>
+      <p><span class="pill pass">shipped</span> Create <code class="inline">BAS-001</code> in <code class="inline">requirements/baselines.md</code> with the measured traceability coverage of the <em>current</em> state. The number is the deliverable (the paper says it explicitly: a project that learns its baseline is 20% knows what the work is). Record the measurement, not an ambition. The lifecycle runs forward: lowering a baseline is an edit, like going backwards through the registry.</p>
+<pre>opendomain new BAS
+# BAS-001: coverage 20% of TEST-artifacted requirements, measured
+opendomain status</pre>
+
+      <h2><span class="stepnum">3</span>Inventory — classify, do not rewrite</h2>
+      <p><span class="pill pass">shipped</span> Pick <strong>one capability</strong> (one business flow). Register what the repo says:</p>
+<pre>opendomain new TERM   # glossary for that flow's terms
+opendomain new ENT    # entities; owners declared
+opendomain new RULE   # derived-from: the behaviour you can observe
+opendomain new EVD    # evidence: repo behaviour as SRC ("repository" type)
+opendomain reference  # the 37 kinds, labelled</pre>
+      <p>Honesty rules apply unchanged: a rule you reconstructed from code is <code class="inline">INFERRED</code> until something documents it; a behaviour with no source at all is <code class="inline">UNKNOWN</code>. Epistemic laundering (repainting the inferred as explicit) is what gate 8 blocks — on brownfield it blocks copy-pasted confidence identical to how it blocks it on greenfield.</p>
+
+      <h2><span class="stepnum">4</span>One spine, end to end</h2>
+      <p><span class="pill pass">shipped</span> Close the chain for that one capability — requirement → specification → criteria → test — then run every gate up to completion:</p>
+<pre>opendomain link REQ-012 derived-from RULE-001
+opendomain advance REQ-012 SUPPORTED      # after evidence copies it
+opendomain propose one-capability-spec    # the work runs under changes/
+opendomain gate --through 8</pre>
+      <p>Gates are read-only pure functions: running them cannot break the build. In CI, capture the report rather than hard-failing while the baseline is low (<code class="inline">--json</code> gives the machine-readable result); move the gate to blocking per gate as its stage matures — that decision is yours, per pipeline stage.</p>
+
+      <h2><span class="stepnum">5</span>Growth — capability by capability, measured</h2>
+      <p><span class="pill pass">shipped</span> Repeat step 3–4 on the next capability, and update the baseline (BAS-002…). Drift discovered along the way (undocumented behaviour that turns out load-bearing) is filed in <code class="inline">validation/drift.md</code>, not fixed silently. Two mechanical checks keep the posture honest:</p>
+      <ul>
+        <li><code class="inline">opendomain audit</code> — coverage, orphan evidence, dangling links;</li>
+        <li><code class="inline">opendomain trace --provenance REQ-…</code> — nearest-source-first: a requirement whose chain stops at a repository behaviour reads as what it is.</li>
+      </ul>
+
+      <h2><span class="stepnum">6</span>When new work is agent-executed</h2>
+      <p><span class="pill pass">shipped</span> The increments themselves can run through the execution harness:</p>
+<pre>opendomain spec new 002-drift-migration
+opendomain ground 002-drift-migration     # fingerprint of the brown tree
+opendomain plan 002-drift-migration       # DAG; incomplete agents refused
+opendomain run 002-drift-migration --executor mock   # first, offline
+opendomain run 002-drift-migration --executor opencode</pre>
+      <p>The grounding fingerprint matters most here: a brown tree drifts by design, and a run against a stale fingerprint fails <strong>before any model call</strong> — typed <code class="inline">grounding_failure</code>, upstream attribution, no spend. <span class="pill adv">spec-only</span> Still on the roadmap (F10/F14 of the paper): the automated <code class="inline">provision</code> command that would generate BDD stubs bound by <code class="inline">@AC</code> tags for you, and run references as first-class registry fields citing the archived run. Until then the bridge is prose: cite the run directory and its <code class="inline">gates.log</code> line in the TEST/DRIFT record.</p>
+
+      <div class="warn"><strong class="label">Anti-pattern</strong>Adopting on everything at once. The minimal-artifact principle is the cost bound: registries are a menu (per profile), and the 20%-baseline is a floor, not a ceiling you must jump to. If the domain is low-entropy (pure UI, no regulation), the framework's own prediction is that its overhead is unjustified — and it gives the falsification condition in the paper rather than hiding it.</div>
+
+      <div class="note"><strong class="label">Note</strong>The brownfield taxonomy and the baseline discipline are the paper's Section 5.10; reverse specification is called out in the limitations (L7) as the least-developed path. The framework does not promise the walk is free — only that every step is measured and that the measurement is the artifact.</div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/brownfield.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="harness.html">The harness</a>
+    </nav>
+    <span>OpenDomain · MIT · Oct. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>
