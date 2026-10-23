@@ -92,7 +92,7 @@ unreadable; raise `--limit` if you need the whole graph and accept the output.
 
 | Command | What it does |
 |---|---|
-| `opendomain init [--name N] [--profile lean\|core\|full]` | Writes `opendomain/` and the agent contract. |
+| `opendomain init [--name N] [--profile lean\|core\|full] [--gitignore]` | Writes `opendomain/` and the agent contract; `--gitignore` lists the two regenerable trees (opendomain/, .opencode/) in `.gitignore` — opt-in: versioning belongs to the project. |
 | `opendomain gate <gate>` | Runs one gate. Exits non-zero on a blocking finding. |
 | `opendomain gate --through <n>` | Runs every gate up to and including number `n` (0–8). |
 | `opendomain link <ID> <relation> <TARGET>` | Records a link declared by the dependent artifact. |

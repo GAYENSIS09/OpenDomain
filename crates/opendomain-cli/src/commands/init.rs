@@ -157,6 +157,41 @@ pub fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
     // run invokes via opencode. Idempotent: it never overwrites an existing file.
     opendomain_core::scaffold::harness::run(&start.to_string_lossy())?;
 
+    // Versionnement : le scaffold ne dépose JAMAIS de .gitignore de lui-même
+    // (un fichier de versioning appartient au projet — cf. harness.rs) ; la
+    // doctrine est **conseillée** ici, et écrite seulement sur demande
+    // explicite (`--gitignore`), idempotente (des lignes déjà présentes ne
+    // sont pas dupliquées).
+    let gitignore = start.join(".gitignore");
+    if args.gitignore {
+        let mut to_add = vec![
+            "# OpenDomain — arbres régénérables par `opendomain init` / `opendomain build` :".to_string(),
+            "# les registres et les runs restent committables (la preuve F14/L9) ;".to_string(),
+            "# retirer ces lignes si le projet versionne ses registres.".to_string(),
+            "/opendomain/".to_string(),
+            "/.opencode/".to_string(),
+        ];
+        if let Ok(existing) = std::fs::read_to_string(&gitignore) {
+            to_add.retain(|l| !existing.lines().any(|e| e.trim() == l.trim()));
+        }
+        if !to_add.is_empty() {
+            let mut text = std::fs::read_to_string(&gitignore).unwrap_or_default();
+            if !text.is_empty() && !text.ends_with('\n') {
+                text.push('\n');
+            }
+            text.push_str(&to_add.join("\n"));
+            text.push('\n');
+            std::fs::write(&gitignore, text)?;
+            println!("  + {} (les deux arbres ancrés — votre décision, toujours réversible)", gitignore.display());
+        } else {
+            println!("  = .gitignore déjà à jour");
+        }
+    } else if start.join(".git").exists() {
+        println!(
+            "\nversionnement : les registres (opendomain/*.md) et les runs\n(opendomain/harness/runs/) sont la preuve citée par `run = \"…\"`\n(opendomain provenance) — à commiter ; les arbres régénérables\n(.opencode/, opendomain/) peuvent être ignorés dans .gitignore.\nÉcrire ces lignes : `opendomain init --gitignore` (opt-in, idempotent)."
+        );
+    }
+
     println!("\nnext: run /opendomain-project to complete context, then `opendomain status` + `opendomain gate context`");
     println!("next (harness): `opendomain spec new 001-my-task` → `opendomain ground` → `opendomain plan` → `opendomain run`");
     Ok(())

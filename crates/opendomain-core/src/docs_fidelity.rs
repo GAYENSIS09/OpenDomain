@@ -17,10 +17,18 @@
 //! drapeau mort.
 
 const README: &str = include_str!("../../../readme.md");
+const SITE_INDEX: &str = include_str!("../../../docs-site/index.html");
+const SITE_README: &str = include_str!("../../../docs-site/README.md");
 const DOCS_HARNESS: &str = include_str!("../../../docs-site/docs/harness.html");
 const DOCS_GETTING_STARTED: &str = include_str!("../../../docs-site/docs/getting-started.html");
 const DOCS_BROWNFIELD: &str = include_str!("../../../docs-site/docs/brownfield.html");
 const DOCS_CLI_REFERENCE: &str = include_str!("../../../docs-site/docs/cli-reference.html");
+const DOCS_GATES: &str = include_str!("../../../docs-site/docs/gates.html");
+const DOCS_CONCEPTS: &str = include_str!("../../../docs-site/docs/concepts.html");
+const DOCS_ARTIFACTS: &str = include_str!("../../../docs-site/docs/artifacts.html");
+const DOCS_OPENCODE: &str = include_str!("../../../docs-site/docs/opencode.html");
+const DOCS_THEORY: &str = include_str!("../../../docs-site/docs/theory.html");
+const SITE_JS: &str = include_str!("../../../docs-site/js/main.js");
 const TPL_AGENTS: &str = include_str!("../templates/agent/AGENTS.md");
 const TPL_SKILL_HARNESS: &str =
     include_str!("../templates/agent/.opencode/skills/opendomain-harness/SKILL.md");
@@ -30,10 +38,18 @@ const TPL_SPEC_SAMPLE: &str = include_str!("../templates/harness-spec-sample.md"
 /// Les surfaces documentaires épinglées (nom lisible → contenu).
 pub const SURFACES: &[(&str, &str)] = &[
     ("readme.md", README),
+    ("docs-site/index.html", SITE_INDEX),
+    ("docs-site/README.md", SITE_README),
     ("docs-site/docs/harness.html", DOCS_HARNESS),
     ("docs-site/docs/getting-started.html", DOCS_GETTING_STARTED),
     ("docs-site/docs/brownfield.html", DOCS_BROWNFIELD),
     ("docs-site/docs/cli-reference.html", DOCS_CLI_REFERENCE),
+    ("docs-site/docs/gates.html", DOCS_GATES),
+    ("docs-site/docs/concepts.html", DOCS_CONCEPTS),
+    ("docs-site/docs/artifacts.html", DOCS_ARTIFACTS),
+    ("docs-site/docs/opencode.html", DOCS_OPENCODE),
+    ("docs-site/docs/theory.html", DOCS_THEORY),
+    ("docs-site/js/main.js", SITE_JS),
     ("templates/agent/AGENTS.md", TPL_AGENTS),
     (
         "templates/agent/.opencode/skills/opendomain-harness/SKILL.md",
@@ -92,9 +108,10 @@ par défaut, `--offline` est le repli demandé explicitement) — {name} : {v:?}
         // un include_str sur un chemin faux ne compile pas : ce test épingle
         // aussi la liste elle-même (une surface retirée du dépôt casse la
         // compilation — c'est voulu).
-        assert!(SURFACES.len() >= 9);
+        assert!(SURFACES.len() >= 17);
         assert!(README.contains("Executing under the harness"));
         assert!(DOCS_HARNESS.contains("lifecycle"));
+        assert!(DOCS_THEORY.contains("gates"));
         assert!(TPL_AGENTS.contains("opendomain kit add"));
     }
 }

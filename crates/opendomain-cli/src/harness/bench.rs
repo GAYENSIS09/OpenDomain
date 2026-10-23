@@ -269,13 +269,22 @@ fn test_kit_typed() -> bool {
 /// Un besoin = un fournisseur ; un besoin sans fournisseur est un `miss`
 /// typé (jamais un composant inventé ou un silence).
 fn test_resolver_per_need() -> bool {
-    use crate::harness::components::{Component, Registry, resolve};
+    use crate::harness::components::{Component, Registry, default_state, resolve};
     let mut registry = Registry::default();
     registry.components.push(Component {
         id: "revue".into(),
         kind: "skill".into(),
         provides: vec!["design.revue".into()],
-        ..Default::default()
+        // pas de Default sur Component : la provenance est explicite
+        requires: Default::default(),
+        source_kind: "local".into(),
+        source: String::new(),
+        source_url: None,
+        version: None,
+        installed_at: None,
+        state: default_state(),
+        applies_to: Vec::new(),
+        preferred: false,
     });
     let r = resolve(&registry, &["design.revue".into()]);
     let r2 = resolve(&registry, &["fusion.manifestes".into()]);

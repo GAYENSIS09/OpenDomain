@@ -56,28 +56,6 @@ pub struct Component {
     pub preferred: bool,
 }
 
-/// Un `Default` **qui respecte le cycle de vie** : un composant sans état
-/// déclaré vaut `activated` (le comportement historique), pas une chaîne
-/// vide — un derive naïf donnerait `state: ""`, un état hors vocabulaire.
-impl Default for Component {
-    fn default() -> Self {
-        Component {
-            id: String::new(),
-            kind: "skill".to_string(),
-            provides: Vec::new(),
-            requires: Requires::default(),
-            source_kind: "local".to_string(),
-            source: String::new(),
-            source_url: None,
-            version: None,
-            installed_at: None,
-            state: default_state(),
-            applies_to: Vec::new(),
-            preferred: false,
-        }
-    }
-}
-
 /// Les trois états du cycle de vie d'un composant.
 pub const STATES: &[&str] = &["discovered", "validated", "activated"];
 
@@ -1087,6 +1065,26 @@ mod tests {
         assert!(id.is_empty() && p.is_empty());
     }
 
+    /// Composant de test **complet** — pas de `Default` sur `Component` : la
+    /// provenance se déclare explicitement (source_url, version, date, état),
+    /// elle ne se devine pas.
+    fn bare_comp() -> Component {
+        Component {
+            id: String::new(),
+            kind: "skill".into(),
+            provides: Vec::new(),
+            requires: Requires::default(),
+            source_kind: "local".into(),
+            source: String::new(),
+            source_url: None,
+            version: None,
+            installed_at: None,
+            state: default_state(),
+            applies_to: Vec::new(),
+            preferred: false,
+        }
+    }
+
     #[test]
     fn registre_roundtrip() {
         let mut r = Registry::default();
@@ -1099,7 +1097,7 @@ mod tests {
             source: "opendomain/harness/skills/revue-design.md".into(),
             applies_to: vec!["*".into()],
             preferred: false,
-            ..Default::default()
+            ..bare_comp()
         });
         r.upsert(Component {
             id: "mcp/figma".into(),
@@ -1114,7 +1112,7 @@ mod tests {
             source: "https://registry/figma-mcp".into(),
             applies_to: vec![],
             preferred: true,
-            ..Default::default()
+            ..bare_comp()
         });
         let json = r.to_json().unwrap();
         let v: Value = serde_json::from_str(&json).unwrap();
@@ -1134,14 +1132,14 @@ mod tests {
             provides: vec!["design.revue".into(), "figma.frames".into()],
             source_kind: "remote".into(),
             preferred: true,
-            ..Default::default()
+            ..bare_comp()
         });
         r.upsert(Component {
             id: "skill/revue".into(),
             kind: "skill".into(),
             provides: vec!["design.revue".into(), "figma.tokens".into()],
             source_kind: "local".into(),
-            ..Default::default()
+            ..bare_comp()
         });
         let res = resolve(
             &r,
@@ -1174,7 +1172,7 @@ mod tests {
                 env: vec!["__OPENDOMAIN_ENV_ABSENTE_XYZ__".into()],
                 files: vec![],
             },
-            ..Default::default()
+            ..bare_comp()
         };
         let verdicts = check_requirements(&c);
         assert_eq!(verdicts.len(), 2);
@@ -1184,7 +1182,7 @@ mod tests {
         let ok = Component {
             id: "y".into(),
             requires: Requires { bins: vec![common.into()], ..Default::default() },
-            ..Default::default()
+            ..bare_comp()
         };
         assert!(check_requirements(&ok).iter().all(|r| r.is_ok()));
     }
@@ -1268,7 +1266,7 @@ mod tests {
             requires: Requires::default(),
             source_kind: "local".into(),
             source: skill_path.to_string_lossy().to_string(),
-            ..Default::default()
+            ..bare_comp()
         });
         let dag = dag_avec_kit(opendomain_core::harness::Kit {
             skills: vec!["deploy.vercel".into()],
@@ -1306,7 +1304,7 @@ mod tests {
             requires: Requires::default(),
             source_kind: "remote".into(),
             source: "https://exemple.invalid/skill.md".into(),
-            ..Default::default()
+            ..bare_comp()
         });
         let dag = dag_avec_kit(opendomain_core::harness::Kit {
             skills: vec!["recherche.web".into()],
