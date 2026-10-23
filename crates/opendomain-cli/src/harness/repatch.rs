@@ -21,7 +21,8 @@
 //! 2. **`--llm`** — le méta-agent propose le nœud révisé (historique des
 //!    gates + leçons du registre mémoire M4 + contrats amont en entrée) ;
 //!    le harnais le VÉRIFIE (partialité, complétude) jusqu'à trois
-//!    tentatives, avec feedback typé — la même boucle que `plan --llm`.
+//!    tentatives, avec feedback typé — la même boucle que le plan via
+//!    opencode.
 //!
 //! `violation de sandbox` refuse la révision de nœud : le harnais a arrêté
 //! la COMMANDE avant l'agent — l'élargissement de l'allowlist est une

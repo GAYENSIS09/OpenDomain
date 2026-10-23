@@ -56,6 +56,28 @@ pub struct Component {
     pub preferred: bool,
 }
 
+/// Un `Default` **qui respecte le cycle de vie** : un composant sans état
+/// déclaré vaut `activated` (le comportement historique), pas une chaîne
+/// vide — un derive naïf donnerait `state: ""`, un état hors vocabulaire.
+impl Default for Component {
+    fn default() -> Self {
+        Component {
+            id: String::new(),
+            kind: "skill".to_string(),
+            provides: Vec::new(),
+            requires: Requires::default(),
+            source_kind: "local".to_string(),
+            source: String::new(),
+            source_url: None,
+            version: None,
+            installed_at: None,
+            state: default_state(),
+            applies_to: Vec::new(),
+            preferred: false,
+        }
+    }
+}
+
 /// Les trois états du cycle de vie d'un composant.
 pub const STATES: &[&str] = &["discovered", "validated", "activated"];
 
