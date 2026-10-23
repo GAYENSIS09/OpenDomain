@@ -70,7 +70,8 @@ pub fn run_captured(bin: &str, args: &[String], timeout_secs: u64) -> Result<Cap
                 let _ = t_out.join();
                 let _ = t_err.join();
                 return Err(anyhow!(
-                    "`{bin}` a dépassé {timeout_secs}s — augmenter --timeout ou utiliser le planificateur hors-ligne (sans --llm)"
+                    "`{bin}` a dépassé {timeout_secs}s — augmenter --timeout, ou demander \
+explicitement le repli déterministe : `opendomain plan <slug> --offline`"
                 ));
             }
             None => thread::sleep(Duration::from_millis(200)),
@@ -182,8 +183,22 @@ pub fn agents_dir(slug: &str) -> std::path::PathBuf {
 /// Outils → actions V2 : `write`/`edit` → `edit` (écrire et patcher),
 /// `bash`/`cmd`/`terminal` → `shell`, `task`/`subagent` → `subagent`,
 /// autres → action homonyme. Renvoie l'id d'agent à passer à `--agent`.
-pub fn write_opencode_agent(spec: &AgentSpec) -> Result<String> {
-    let agent_id = render_opencode_agent(spec)?;
+/// Id d'agent de nœud **namespacé par le run** : `opendomain-<slug>-<id>`
+/// (ascii). L'exécution invoque cet id ; la construction l'a défini.
+pub fn node_agent_id(spec: &AgentSpec, slug: &str) -> Result<String> {
+    let file_id = sanitize_agent_id(spec.id.trim());
+    anyhow::ensure!(!file_id.is_empty(), "id de nœud non projetable : `{}`", spec.id);
+    let slug_id = sanitize_agent_id(slug);
+    anyhow::ensure!(!slug_id.is_empty(), "slug de run non projetable : `{slug}`");
+    Ok(format!("opendomain-{slug_id}-{file_id}"))
+}
+
+/// **Définit** l'agent de nœud — phase 1 (construction), l'étape de
+/// l'architecte : le fichier dans `.opencode/agent/` porte les permissions
+/// projetées ET le contrat de sortie. Visible, reviewable, AVANT le run —
+/// l'exécution invoque, elle ne réécrit pas.
+pub fn define_opencode_agent(spec: &AgentSpec, slug: &str) -> Result<String> {
+    let agent_id = node_agent_id(spec, slug)?;
     let rel = format!(".opencode/agent/{agent_id}.md");
     let path = Path::new(&rel);
     let parent = path.parent().ok_or_else(|| anyhow!("chemin d'agent inattendu : {rel}"))?;
@@ -192,15 +207,20 @@ pub fn write_opencode_agent(spec: &AgentSpec) -> Result<String> {
     Ok(agent_id)
 }
 
-/// Id d'agent de nœud (`opendomain-<id>`, ascii), hors disque — testable.
-fn render_opencode_agent(spec: &AgentSpec) -> Result<String> {
-    let id_raw = spec.id.trim();
-    let file_id = sanitize_agent_id(id_raw);
-    anyhow::ensure!(!file_id.is_empty(), "id de nœud non projetable : `{id_raw}`");
-    Ok(format!("opendomain-{file_id}"))
+/// Définit **tous** les nœuds d'un graphe, dans l'ordre topologique — le pas
+/// de construction de l'architecte du harnais. Renvoie les ids définis.
+pub fn define_node_agents(dag: &opendomain_core::harness::Dag, slug: &str) -> Result<Vec<String>> {
+    let order = dag.topological_order()?;
+    let mut ids = Vec::with_capacity(order.len());
+    for id in &order {
+        ids.push(define_opencode_agent(&dag.nodes[id], slug)?);
+    }
+    Ok(ids)
 }
 
-/// Frontmatter (permissions V2) + corps du fichier d'agent.
+/// Frontmatter (permissions V2) + corps du fichier d'agent : les
+/// permissions projetées ET le contrat de sortie — l'agent se définit en
+/// entier (outils, sorties), reviewable avant le run.
 fn agent_yaml_body(spec: &AgentSpec) -> String {
     let mut yaml = String::from(
         "---\ndescription: Nœud du harnais OpenDomain — permissions projetées de la spec\nmode: primary\npermissions:\n  - action: \"*\"\n    resource: \"*\"\n    effect: deny\n",
@@ -216,9 +236,10 @@ fn agent_yaml_body(spec: &AgentSpec) -> String {
         yaml.push_str(&format!("  - action: {action}\n    resource: \"*\"\n    effect: allow\n"));
     }
     yaml.push_str(&format!(
-        "---\n\n# Agent `{}` (nœud du harnais OpenDomain)\n\nTu es le nœud `{}` du harnais OpenDomain. Ta production est l'objet JSON du\ncontrat de sortie fourni dans le message — rien d'autre. Les commandes de\ncritères tournent hors de toi (le coordinator les exécute sous sandbox).\n",
+        "---\n\n# Agent `{}` (nœud du harnais OpenDomain)\n\nTu es le nœud `{}` du harnais OpenDomain. Ta production est l'objet JSON du\ncontrat de sortie ci-dessous — rien d'autre. Les commandes de\ncritères tournent hors de toi (le coordinator les exécute sous sandbox).\n\n## SORTIE (contrat)\n\n```json\n{}\n```\n",
         spec.id.trim(),
-        spec.id.trim()
+        spec.id.trim(),
+        spec.contract.output_schema
     ));
     yaml
 }
@@ -281,8 +302,8 @@ mod tests {
             tools: vec!["read".into(), "write".into(), "bash".into()],
             ..Default::default()
         };
-        let agent = write_opencode_agent(&spec).unwrap();
-        assert_eq!(agent, "opendomain-synthese");
+        let agent = define_opencode_agent(&spec, "task-001").unwrap();
+        assert_eq!(agent, "opendomain-task-001-synthese");
         let file = std::fs::read_to_string(format!(".opencode/agent/{agent}.md")).unwrap();
         // opencode (défaut) : refus-first puis allow — l'agent file_id est
         // testé pour l'ordre : deny AVANT allow (dernier match gagnant).
@@ -303,8 +324,8 @@ mod tests {
             tools: vec!["bash".into(), "terminal".into(), "bash".into()],
             ..Default::default()
         };
-        let agent = write_opencode_agent(&spec).unwrap();
-        assert_eq!(agent, "opendomain-noeud-setname-action");
+        let agent = define_opencode_agent(&spec, "task-001").unwrap();
+        assert_eq!(agent, "opendomain-task-001-noeud-setname-action");
         let file = std::fs::read_to_string(format!(".opencode/agent/{agent}.md")).unwrap();
         assert_eq!(file.matches("action: shell").count(), 1, "actions déduplicables");
         let _ = std::fs::remove_dir_all(".opencode");

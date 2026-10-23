@@ -64,6 +64,13 @@ amont (connaissance). Rejouer `opendomain ground {slug}` puis \
             run = run_dir.display()
         ),
 
+        // Panne amont : rien à réviser ni à relancer — reprise différée.
+        FailureKind::UpstreamFailure => bail!(
+            "panne amont — la re-planification ne s'applique pas : reprendre plus tard : \
+`opendomain run {slug} --resume {run}`",
+            run = run_dir.display()
+        ),
+
         // Local : les retries avec feedback sont la bonne boucle — la
         // re-planification est réservée au structurel.
         FailureKind::SpecMismatch | FailureKind::CriteriaFailure => bail!(

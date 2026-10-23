@@ -91,9 +91,9 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
             enter(cli)?;
             harness::doctor::run()
         }
-        Command::Plan { spec_path, llm, timeout } => {
+        Command::Plan { spec_path, offline, timeout } => {
             enter(cli)?;
-            harness::plan::run(spec_path, *llm, *timeout)
+            harness::plan::run(spec_path, *offline, *timeout)
         }
         Command::Ground { spec_path } => {
             enter(cli)?;
@@ -103,9 +103,10 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
             enter(cli)?;
             harness::build::run(spec_path)
         }
-        Command::Run { spec_path, executor, timeout, resume, graph } => {
+        Command::Run { spec_path, timeout, resume, graph } => {
             enter(cli)?;
-            harness::runflow::run(spec_path, executor, *timeout, resume.clone(), graph.clone())
+            // Exécuteur unique : opencode — la voie réelle, visible, archivée.
+            harness::runflow::run(spec_path, "opencode", *timeout, resume.clone(), graph.clone())
         }
         Command::Verify { run_path } => {
             enter(cli)?;

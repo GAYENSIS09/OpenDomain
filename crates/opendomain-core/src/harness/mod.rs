@@ -115,6 +115,16 @@ mod tests {
     fn attribution_typee() {
         assert_eq!(attribute(FailureKind::SpecMismatch), Attribution::Local);
         assert_eq!(attribute(FailureKind::GroundingFailure), Attribution::Upstream);
+        assert_eq!(attribute(FailureKind::UpstreamFailure), Attribution::Upstream);
         assert_eq!(attribute(FailureKind::ContractViolation), Attribution::Structural);
+    }
+
+    #[test]
+    fn panne_amont_est_typee_et_dirigee_vers_la_reprise_differee() {
+        let f = Failure::new("x", FailureKind::UpstreamFailure, "quota épuisé");
+        assert_eq!(f.attribution(), Attribution::Upstream);
+        let directive = f.directive();
+        assert!(directive.contains("reprendre plus tard"));
+        assert!(directive.contains("--resume"));
     }
 }

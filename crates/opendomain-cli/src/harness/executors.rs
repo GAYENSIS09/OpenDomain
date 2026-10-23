@@ -8,14 +8,23 @@
 
 use anyhow::{anyhow, Result};
 use opendomain_core::harness::{AgentSpec, Failure, FailureKind};
-use serde_json::{json, Value};
+use serde_json::Value;
+use std::path::{Path, PathBuf};
 
-use crate::harness::adapters::{extract_json, run_captured};
+use crate::harness::adapters::{extract_json, node_agent_id, run_captured};
 
-/// Exécuteur LLM existant (`opencode`, `claude`).
+/// Exécuteur LLM existant (`opencode`).
 pub struct LlmExecutor {
     pub bin: String,
     pub timeout_secs: u64,
+    /// Dossier où archiver la réponse BRUTE de chaque nœud
+    /// (`context/<id>.raw.txt`, à côté du JSON validé) — la visibilité du
+    /// run passe par les fichiers, jamais par la console (les accents y
+    /// sont corrompus, leçon du 2026-10-23).
+    pub raw_dir: Option<PathBuf>,
+    /// Slug du run courant — l'id d'agent de nœud est namespacé par lui
+    /// (`opendomain-<slug>-<id>`, défini à la construction par `build`).
+    pub slug: Option<String>,
     /// Skills résolues du registre (`opendomain resolve`), attachées selon
     /// `applies-to` — pillar 6 du kit, branché dans la boucle réelle.
     pub skills: Vec<crate::harness::components::SkillAttach>,
@@ -26,18 +35,19 @@ impl LlmExecutor {
     pub fn new(bin: &str, timeout_secs: u64) -> Result<Self> {
         if crate::harness::doctor::which(bin).is_none() {
             return Err(anyhow!(
-                "`{bin}` introuvable sur PATH — voir `opendomain doctor`, ou lancer \
-`--executor mock` pour un run déterministe sans LLM"
+                "`{bin}` introuvable sur PATH — voir `opendomain doctor`"
             ));
         }
         Ok(Self {
             bin: bin.to_string(),
             timeout_secs,
+            raw_dir: None,
+            slug: None,
             skills: Vec::new(),
         })
     }
 
-    fn args(&self, prompt: &str, spec: &AgentSpec) -> Vec<String> {
+    fn args(&self, prompt: &str, spec: &AgentSpec) -> Result<Vec<String>> {
         match self.bin.as_str() {
             "claude" => {
                 let mut a = vec!["-p".into(), prompt.into()];
@@ -47,19 +57,50 @@ impl LlmExecutor {
                     a.push("--allowedTools".into());
                     a.push(spec.tools.iter().map(|t| claude_tool(t)).collect::<Vec<_>>().join(","));
                 }
-                a
+                Ok(a)
             }
             _ => {
-                // opencode (défaut) : agent de nœud généré avec permissions
-                // V2 (deny-all puis allow de la whitelist), invoqué `--agent`.
+                // opencode : l'agent de nœud a été DÉFINI à la construction
+                // (`opendomain build` — permissions V2 deny-all puis allow de
+                // la whitelist, + contrat de sortie). L'exécution l'invoque ;
+                // elle ne réécrit rien — un fichier qui n'existe pas est une
+                // faute de construction, typée.
                 let mut a = vec!["run".into(), prompt.into()];
-                if let Ok(agent_id) = crate::harness::adapters::write_opencode_agent(spec) {
-                    a.push("--agent".into());
-                    a.push(agent_id);
-                }
-                a
+                let slug = self
+                    .slug
+                    .as_deref()
+                    .ok_or_else(|| anyhow!("l'architecte définit, le run invoque : lancer `opendomain build` d'abord (agent de nœud non défini)"))?;
+                let agent_id = node_agent_id(spec, slug)?;
+                let file = Path::new(".opencode/agent").join(format!("{agent_id}.md"));
+                anyhow::ensure!(
+                    file.is_file(),
+                    "agent `{agent_id}` non défini — lancer `opendomain build` (la construction définit les agents, l'exécution les invoque)"
+                );
+                a.push("--agent".into());
+                a.push(agent_id);
+                Ok(a)
             }
         }
+    }
+    /// Sonde d'amont : un one-shot `opencode run "Réponds OK."` AVANT tout
+    /// run (leçon du 2026-10-23 : 3 tentatives du nœud `analyste` tuées par
+    /// la même panne — l'endpoint indisponible). La panne est typée
+    /// immédiatement, avec la reprise conseillée.
+    pub fn probe_upstream(timeout_secs: u64) -> Result<()> {
+        let out = run_captured(
+            "opencode",
+            &["run".to_string(), "Réponds OK.".to_string()],
+            timeout_secs.min(60),
+        )?;
+        if !out.status_ok {
+            return Err(anyhow!(
+                "amont `opencode` indisponible (sonde one-shot) : {} — \
+reprendre plus tard : `opendomain run <spec> --resume <run>` ; \
+une panne transitoire se re-planifie, elle ne se retente pas à l'identique trois fois",
+                out.stderr.lines().last().unwrap_or("(aucun détail)")
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -71,7 +112,17 @@ impl opendomain_core::harness::Executor for LlmExecutor {
         feedback: Option<&Failure>,
     ) -> Result<Value> {
         let prompt = node_prompt(spec, input, feedback, &self.skills);
-        let out = run_captured(&self.bin, &self.args(&prompt, spec), self.timeout_secs)?;
+        let out = run_captured(&self.bin, &self.args(&prompt, spec)?, self.timeout_secs)?;
+        // La réponse brute est archivée AVANT tout diagnostic : ce qui s'est
+        // réellement passé reste lisible dans un fichier, quel que soit le
+        // verdict — jamais réécrit depuis la console (accents corrompus).
+        if let Some(dir) = &self.raw_dir {
+            let _ = std::fs::create_dir_all(dir);
+            let _ = std::fs::write(
+                dir.join(format!("{}.raw.txt", spec.id)),
+                format!("--- stdout ---\n{}\n--- stderr ---\n{}", out.stdout, out.stderr),
+            );
+        }
         if !out.status_ok && out.stdout.trim().is_empty() {
             return Err(anyhow!(
                 "`{}` a échoué : {}",
@@ -91,11 +142,26 @@ impl opendomain_core::harness::Executor for LlmExecutor {
     }
 
     /// Canal d'erreurs typé : le parse d'enveloppe est une violation de
-    /// contrat ; un dépassement de délai reste une faute locale dirigée
-    /// (hint d'augmentation de timeout). Le runner pose les hints.
+    /// contrat ; une panne du service LLM (quota épuisé, authentification,
+    /// indisponibilité) est une faute **amont** — la remédiation est «
+    /// reprendre plus tard », jamais trois relances à l'identique
+    /// (leçon du 2026-10-23) ; un dépassement de délai reste une faute
+    /// locale dirigée (hint d'augmentation de timeout).
     fn classify_error(&self, err: &anyhow::Error) -> FailureKind {
         let msg = format!("{err:#}");
-        if msg.contains("JSON") {
+        let low = msg.to_lowercase();
+        const AMONT: [&str; 7] = [
+            "usage limit",
+            "rate limit",
+            "quota",
+            "unauthorized",
+            "forbidden",
+            "subscription",
+            "indisponible",
+        ];
+        if AMONT.iter().any(|m| low.contains(m)) {
+            FailureKind::UpstreamFailure
+        } else if msg.contains("JSON") {
             FailureKind::ContractViolation
         } else {
             FailureKind::SpecMismatch
@@ -173,6 +239,21 @@ pub fn node_prompt(
         spec.criteria.commands
     );
     let tools = tools_brief(spec);
+    // Leçon du 2026-10-23 (mémoire) : les agents imbriqués tapent du bash
+    // sur un shell PowerShell, et la console corrompt les accents — les
+    // équivalents sont nommés, l'interdit est explicite, le canal de
+    // livraison est le fichier.
+    let platform = if cfg!(windows) {
+        "SHELL RÉEL : PowerShell (Windows) — utilise Get-ChildItem, Select-Object -First N, \
+Test-Path. INTERDITS : `ls -la`, `head`, `2>/dev/null` (bash — échoue ici).\n\
+CONSOLE : elle corrompt les accents — ne réécris JAMAIS un texte accentué lu depuis la \
+console : lis le fichier directement.\n\
+LIVRAISON : écris tes livrables dans des fichiers ; la console n'est pas un canal de livraison."
+    } else {
+        "SHELL RÉEL : bash — la console peut corrompre les accents : lis les fichiers \
+directement plutôt que de réécrire leur contenu.\n\
+LIVRAISON : écris tes livrables dans des fichiers ; la console n'est pas un canal de livraison."
+    };
     let skills_text = crate::harness::components::applicable(skills, &spec.id)
         .iter()
         .map(|s| format!("--- skill `{}` ({} ) ---\n{}", s.id, s.applies_to.join(","), s.text))
@@ -196,6 +277,7 @@ pub fn node_prompt(
         "Tu es l'agent `{id}` du harnais OpenDomain (phase 2).\n\
 RÔLE : {role}\n\
 OUTILS AUTORISÉS (moindre privilège — tout autre outil : violation) : {tools}\n\
+{platform}\n\
 CONTRAT D'ENTRÉE : {contract_in}\nENTRÉES AMONT (contexte) : {input_brief}\n\
 CONTRAT DE SORTIE — RENVOI UNIQUEMENT l'objet JSON conforme, sans prose ni bloc de code :\n{contract_out}\n\
 CRITÈRES DE GATE :\n{criteria}{skills_section}{retry}",
@@ -233,8 +315,12 @@ fn brief(v: &Value) -> String {
 }
 
 /// Exécuteur simulé : sorties conformes au graphe canonique, zéro réseau.
+/// Auto-vérification INTERNE du harnais uniquement (tests) — pas un mode de
+/// run : la voie réelle est `opencode`, visible et archivée.
+#[cfg(test)]
 pub struct MockGraphExecutor;
 
+#[cfg(test)]
 impl opendomain_core::harness::Executor for MockGraphExecutor {
     fn run(
         &mut self,
@@ -242,6 +328,7 @@ impl opendomain_core::harness::Executor for MockGraphExecutor {
         _input: &Value,
         _feedback: Option<&Failure>,
     ) -> Result<Value> {
+        use serde_json::json;
         let id = spec.id.to_lowercase();
         let canned = if id.contains("analys") {
             json!({
@@ -267,6 +354,7 @@ impl opendomain_core::harness::Executor for MockGraphExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn le_prompt_contient_contrat_et_feedback() {
@@ -293,5 +381,30 @@ mod tests {
             let out = mock.run(spec, &json!({}), None).unwrap();
             assert!(gate(spec, &out).is_ok(), "mock non conforme pour {node}");
         }
+    }
+
+    #[test]
+    fn classification_d_erreur_upstream_panne_amont_pas_relance() {
+        use opendomain_core::harness::Executor as _;
+        let ex = LlmExecutor {
+            bin: "opencode".into(),
+            timeout_secs: 60,
+            raw_dir: None,
+            slug: None,
+            skills: Vec::new(),
+        };
+        // quota épuisé (leçon du 2026-10-23) → amont, pas « relancer l'agent »
+        let quota = anyhow!("`opencode` a échoué : Error: Free usage limit reached. \
+Subscribe to OpenCode Go to keep going: https://opencode.ai/go");
+        assert_eq!(ex.classify_error(&quota), opendomain_core::harness::FailureKind::UpstreamFailure);
+        // indisponibilité / auth
+        let down = anyhow!("amont `opencode` indisponible (sonde one-shot) : connection refused");
+        assert_eq!(ex.classify_error(&down), opendomain_core::harness::FailureKind::UpstreamFailure);
+        // enveloppe non JSON → violation de contrat (la réponse existait)
+        let bad_json = anyhow!("JSON invalide : sortie non conforme");
+        assert_eq!(ex.classify_error(&bad_json), opendomain_core::harness::FailureKind::ContractViolation);
+        // autre → violation de spécification (fallback existant)
+        let other = anyhow!("chose inattendue");
+        assert_eq!(ex.classify_error(&other), opendomain_core::harness::FailureKind::SpecMismatch);
     }
 }

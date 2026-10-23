@@ -78,7 +78,7 @@ AGENTS.md                          # the rules, readable by any agent
                                    # /opendomain-audit, /opendomain-record, /opendomain-project, /opendomain-research,
                                    # /opendomain-domain, /opendomain-requirements, /opendomain-opportunity,
                                    # /opendomain-spec, /opendomain-plan, /opendomain-implement, /opendomain-complete
-.opencode/agent/                   # domain-researcher, spec-implementer, context-completer,
+.opencode/agent/                   # domain-researcher, context-completer,
                                    # opendomain-harnais (subagent: builds the agent system from a TASK record)
 .opencode/skills/                  # opendomain, -artifacts, -epistemics, -research, -gates, -harness
 ```
@@ -258,7 +258,7 @@ This repository ships a working opencode integration. If you point opencode at a
 | `/opendomain-opportunity` | Gate 4 challenged concept + falsifiable hypothesis |
 | `/opendomain-spec` | Gate 5 observable-behaviour spec + acceptance criteria |
 | `/opendomain-plan` | Gate 6 bounded, ordered plan |
-| `/opendomain-implement <SPEC/TASK/AC>` | Gate 7, delegates to `spec-implementer` |
+| `/opendomain-implement <TASK/SPEC/AC>` | Gate 7 — routes through the verified harness (`opendomain-harnais`) |
 | `/opendomain-complete` | Gate 8 full alignment audit before release |
 
 One command per gate keeps usage simple: run the command for the stage you are in; it loads the skill, delegates to the right subagent, then shows `opendomain gate` verbatim. No extra orchestration to learn.
@@ -267,7 +267,7 @@ One command per gate keeps usage simple: run the command for the stage you are i
 
 - `context-completer` — owns Phase 0 (`project.md` + `[project]` + `DOM-001`/`STK-001`). Reads the repo itself, **delegates external research to `domain-researcher`**, then asks human-only gaps. Called by `/opendomain-project`.
 - `domain-researcher` — evidence specialist. Called by `context-completer`, `/opendomain-research`, `/opendomain-domain`, `/opendomain-requirements`; fans out 3-6 axes in parallel itself. Bash `deny` by default with `opendomain *` + read-only repo commands allowed.
-- `spec-implementer` — bounded build (one artifact, gates before/after). Called by `/opendomain-implement` (always) and `/opendomain-plan` (read-only spike).
+- `opendomain-harnais` - the harness architect: a TASK record becomes a verified agent system (plan → ground → build → run under gates → attribution). Called by `/opendomain-implement` on a `TASK-`. Bash `deny` by default with `opendomain *` + read-only repo commands allowed. Doctrine: the `opendomain-harness` skill.
 
 **Skills** (the framework's strength, loaded on demand by commands and agents)
 

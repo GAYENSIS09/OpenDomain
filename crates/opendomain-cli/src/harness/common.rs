@@ -258,18 +258,22 @@ pub fn parse_sandbox_config(text: &str) -> Sandbox {
         if !in_sandbox || t.is_empty() || t.starts_with('#') {
             continue;
         }
-        if let Some(v) = t.strip_prefix("enabled") {
-            enabled = v.trim_start_matches('=').trim() == "true";
-        } else if let Some(v) = t.strip_prefix("allow") {
-            allow = v
-                .trim_start_matches('=')
-                .trim()
-                .trim_start_matches('[')
-                .trim_end_matches(']')
-                .split(',')
-                .map(|s| s.trim().trim_matches('"').to_string())
-                .filter(|s| !s.is_empty())
-                .collect();
+        if let Some((key, raw)) = t.split_once('=') {
+            // clé et valeur trimées : `enabled = true` comme `enabled=true`,
+            // et une valeur tronquée à son premier commentaire `#`.
+            let value = raw.split('#').next().unwrap_or("").trim();
+            let key = key.trim();
+            if key == "enabled" {
+                enabled = value == "true";
+            } else if key == "allow" {
+                allow = value
+                    .trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .split(',')
+                    .map(|s| s.trim().trim_matches('"').to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+            }
         }
     }
     Sandbox { enabled, allow }
@@ -382,5 +386,23 @@ mod tests {
         // désactivée → tout passe (décision explicite, jamais accidentelle)
         let off = Sandbox { enabled: false, allow: Vec::new() };
         assert!(off.permits("curl http://x").is_ok());
+    }
+
+    #[test]
+    fn sandbox_parse_tolerant_aux_espaces_autour_du_signe_egal() {
+        // forme écrite par le scaffold / un humain : espaces autour du `=`
+        let cfg = parse_sandbox_config(
+            "[opendomain]\nversion = 1\n\n[sandbox]\nenabled = true\nallow = [\"cargo\", \"rustc\"]\n",
+        );
+        assert!(cfg.enabled, "espaces avant le `=` ne doivent pas casser enabled");
+        assert_eq!(cfg.allow, vec!["cargo".to_string(), "rustc".to_string()]);
+        // forme compacte, et commentaire en fin de ligne
+        let compact = parse_sandbox_config("[sandbox]\nenabled=true\nallow=[\"npm\"] # registre\n");
+        assert!(compact.enabled);
+        assert_eq!(compact.allow, vec!["npm".to_string()]);
+        // absent → désactivée (fail-open assumé)
+        let absent = parse_sandbox_config("[opendomain]\nversion = 1\n");
+        assert!(!absent.enabled);
+        assert!(absent.allow.is_empty());
     }
 }

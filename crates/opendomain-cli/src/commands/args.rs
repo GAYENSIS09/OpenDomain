@@ -82,12 +82,14 @@ pub enum Command {
     },
     /// Check that executors and toolchains are available.
     Doctor,
-    /// Compile a spec into a DAG of agents (offline, or `--llm` via OpenCode).
+    /// Compile a spec into a DAG of agents — via opencode by default (the
+    /// real decomposition, verified by the harness); `--offline` asks the
+    /// deterministic fallback explicitly (CI, no network).
     Plan {
         spec_path: String,
-        /// Ask OpenCode for the graph (Generate → Verify → Refine loop).
+        /// The deterministic offline graph, asked explicitly.
         #[arg(long)]
-        llm: bool,
+        offline: bool,
         /// Max delay of one LLM call (seconds).
         #[arg(long, default_value_t = 600)]
         timeout: u64,
@@ -97,11 +99,10 @@ pub enum Command {
     /// Build each agent's execution kit and verify the construction.
     Build { spec_path: String },
     /// Run the agent graph under the gates, archiving the whole run.
+    /// The executor is OpenCode — the real, visible, archived path; the raw
+    /// response of every node is saved into the run's `context/`.
     Run {
         spec_path: String,
-        /// Executor of the agents: `opencode` | `claude` | `mock` (deterministic).
-        #[arg(long, default_value = "opencode")]
-        executor: String,
         /// Max delay per agent (seconds).
         #[arg(long, default_value_t = 600)]
         timeout: u64,

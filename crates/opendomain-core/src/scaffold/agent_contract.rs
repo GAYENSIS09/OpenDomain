@@ -115,12 +115,6 @@ pub const DOMAIN_RESEARCHER: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/agent/domain-researcher.md"),
 };
 
-/// `.opencode/agent/spec-implementer.md`.
-pub const SPEC_IMPLEMENTER: Template = Template {
-    path: ".opencode/agent/spec-implementer.md",
-    contents: include_str!("../../templates/agent/.opencode/agent/spec-implementer.md"),
-};
-
 /// `.opencode/agent/context-completer.md`.
 pub const CONTEXT_COMPLETER: Template = Template {
     path: ".opencode/agent/context-completer.md",
@@ -129,9 +123,11 @@ pub const CONTEXT_COMPLETER: Template = Template {
 
 /// `.opencode/agent/opendomain-harnais.md` — l'architecte du harnais :
 /// un `TASK-###` du registre devient un système d'agents vérifié. Subagent
-/// borné (jamais persona principal) : la doctrine vit une fois, dans le
-/// skill `opendomain-harness` ; ce fichier porte l'identité, le rapport et
-/// les arrêts.
+/// borné (jamais persona principal), dans le moule du context-completer :
+/// permissions deny-all + allows explicites, phases, handback. La doctrine
+/// vit une fois, dans le skill `opendomain-harness`. Le spec-implementer
+/// direct a été supprimé : TOUTE implémentation exécutée par des agents
+/// passe par le harnais vérifié — pas de voie qui le contourne.
 pub const HARNESS_ARCHITECT: Template = Template {
     path: ".opencode/agent/opendomain-harnais.md",
     contents: include_str!("../../templates/agent/.opencode/agent/opendomain-harnais.md"),
@@ -198,7 +194,6 @@ pub fn all() -> Vec<Template> {
         OD_IMPLEMENT,
         OD_COMPLETE,
         DOMAIN_RESEARCHER,
-        SPEC_IMPLEMENTER,
         CONTEXT_COMPLETER,
         HARNESS_ARCHITECT,
         SKILL,

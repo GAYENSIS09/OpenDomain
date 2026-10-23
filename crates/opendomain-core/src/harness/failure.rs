@@ -25,6 +25,9 @@ pub enum FailureKind {
     /// configuration (ou de résolution de besoin), jamais de l'agent : la
     /// directive est ailleurs que la relance d'agent.
     SandboxViolation,
+    /// L'exécuteur LLM est indisponible (quota épuisé, authentification,
+    /// endpoint en panne) : rien à relancer ni à réviser — reprendre plus tard.
+    UpstreamFailure,
 }
 
 impl FailureKind {
@@ -36,6 +39,7 @@ impl FailureKind {
             Self::ContractViolation => "violation de contrat",
             Self::CriteriaFailure => "critère non satisfait",
             Self::SandboxViolation => "violation de sandbox",
+            Self::UpstreamFailure => "panne amont (exécuteur)",
         }
     }
 
@@ -50,6 +54,13 @@ impl FailureKind {
                 "corriger la sandbox — allowlist `[sandbox]` de \
 `opendomain/harness/config.opendomain.toml` ; l'inscrire explicitement : \
 `opendomain repatch <run> --allow <binaire>` — puis relancer le nœud",
+            ),
+            // Panne amont : relancer le même agent trois fois ne change rien
+            // (leçon du 2026-10-23) — la reprise est différée, ciblée.
+            Self::UpstreamFailure => Some(
+                "amont indisponible (quota, auth, endpoint) — reprendre plus tard : \
+`opendomain run <spec> --resume <run>` ; une panne amont se re-planifie, \
+elle ne se retente pas à l'identique trois fois",
             ),
             _ => None,
         }
@@ -102,7 +113,7 @@ ou regénération `opendomain plan --llm`"
 pub fn attribute(kind: FailureKind) -> Attribution {
     match kind {
         FailureKind::SpecMismatch | FailureKind::CriteriaFailure => Attribution::Local,
-        FailureKind::GroundingFailure => Attribution::Upstream,
+        FailureKind::GroundingFailure | FailureKind::UpstreamFailure => Attribution::Upstream,
         // Le réglage (contrat, sandbox) est fautive de façon structurelle :
         // la remédiation passe par la configuration, pas par l'agent.
         FailureKind::ContractViolation | FailureKind::SandboxViolation => Attribution::Structural,

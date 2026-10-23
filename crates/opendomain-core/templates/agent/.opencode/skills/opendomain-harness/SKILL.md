@@ -26,8 +26,12 @@ run — never an unverified claim.
 4. **Execution kit**: `opendomain build <slug>` equips every agent in
    `agents/<slug>/` — `AGENTS.md` (the shared contract: loop, tools, context
    & memory, sandbox, hooks, skills), `<id>.md` (σ_i: role, tool whitelist,
-   I/O contract, criteria), `<id>.kit.json` (machine manifest). Targeted
-   fixes only; `opendomain validate` replays the static graph checks.
+   I/O contract, criteria), `<id>.kit.json` (machine manifest) — and
+   **defines the node-agents** in `.opencode/agent/`: one file per node,
+   deny-universal first, one allow per whitelisted tool, the output contract
+   in the body. Visible and reviewable BEFORE the run; the run invokes them,
+   it never rewrites them. Targeted fixes only; `opendomain validate`
+   replays the static graph checks.
 
 ## Phase 2 — Execution under gates
 

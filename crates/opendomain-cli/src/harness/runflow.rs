@@ -11,7 +11,7 @@ use opendomain_core::harness::{Dag, GraphFile};
 use opendomain_core::harness::{gate, Executor, RunConfig, Runner, RunSummary, TraceEvent};
 
 use crate::harness::common::resolve_spec;
-use crate::harness::executors::{LlmExecutor, MockGraphExecutor};
+use crate::harness::executors::LlmExecutor;
 
 /// `opendomain run <spec> [--executor opencode|claude|mock] [--timeout S]
 ///                  [--resume runs/run-NNN-…] [--graph <fichier>]
@@ -102,26 +102,40 @@ remettre `strict = true` dans opendomain/opendomain.toml, ou supprimer le régla
 
     println!("run {run_dir:?} — graphe : {graph_source} — exécuteur : {executor_name}");
 
+    // Sonde d'amont (leçon du 2026-10-23 : 3 tentatives du nœud `analyste`
+    // tuées par la même panne `opencode` — endpoint indisponible) : un
+    // one-shot AVANT le run. Panne amont = échec typé immédiat, pas trois
+    // tentatives à l'identique.
+    if executor_name == "opencode" {
+        crate::harness::executors::LlmExecutor::probe_upstream(timeout_secs)?;
+    }
+
+    // Exécuteur unique du run : `opencode` — la décomposition réelle passe
+    // par lui. Le mock déterministe reste le moteur d'auto-vérification
+    // INTERNE (`opendomain bench`, tests) et n'est pas un mode de run ;
+    // claude/aider restent derrière le trait, sans surface de run.
+    if executor_name != "opencode" {
+        return Err(anyhow!(
+            "exécuteur unique du run : `opencode` — la voie réelle, visible, archivée. \
+Le mock déterministe reste l'auto-vérification interne (`opendomain bench`), \
+pas un mode de run."
+        ));
+    }
+
     let (summary, store) = {
-        let mut boxed: Box<dyn Executor> = match executor_name {
-            "mock" => Box::new(MockGraphExecutor),
-            "opencode" | "claude" => {
-                let mut ex = LlmExecutor::new(executor_name, timeout_secs)?;
-                // skills du registre → prompts des nœuds ciblés (pillar 6)
-                ex.skills = crate::harness::components::attach_for_run(&spec_text, false);
-                if !ex.skills.is_empty() {
-                    let ids: Vec<&str> = ex.skills.iter().map(|s| s.id.as_str()).collect();
-                    println!("skills chargées : {}", ids.join(", "));
-                }
-                Box::new(ex)
-            }
-            "aider" => {
-                return Err(anyhow!(
-                    "adaptateur aider à venir — utiliser `opencode`, `claude` ou `mock` (voir Readme)"
-                ))
-            }
-            other => return Err(anyhow!("exécuteur inconnu : {other}")),
-        };
+        let mut ex = LlmExecutor::new(executor_name, timeout_secs)?;
+        ex.slug = Some(sp.slug.clone());
+        // Réponses BRUTES archivées à côté des sorties validées : ce qui se
+        // passe est lisible (fichiers, jamais la console — les accents y
+        // sont corrompus, leçon du 2026-10-23).
+        ex.raw_dir = Some(run_dir.join("context"));
+        // skills du registre → prompts des nœuds ciblés (pillar 6)
+        ex.skills = crate::harness::components::attach_for_run(&spec_text, false);
+        if !ex.skills.is_empty() {
+            let ids: Vec<&str> = ex.skills.iter().map(|s| s.id.as_str()).collect();
+            println!("skills chargées : {}", ids.join(", "));
+        }
+        let mut boxed: Box<dyn Executor> = Box::new(ex);
         // Commandes de critères : exécutées ICI (sandbox du projet cible),
         // pas par les exécuteurs — mêmes gates pour tous, structurellement.
         let cmd_gate = |cmd: &str| crate::harness::executors::run_gate_command(cmd, timeout_secs);

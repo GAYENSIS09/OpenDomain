@@ -64,7 +64,7 @@
         <tr><td><code class="inline">/opendomain-opportunity</code></td><td>Opportunity</td><td>Challenges the design, earns one falsifiable concept.</td></tr>
         <tr><td><code class="inline">/opendomain-spec</code></td><td>Specification</td><td>Specifies one capability as observable behaviour.</td></tr>
         <tr><td><code class="inline">/opendomain-plan</code></td><td>Plan</td><td>Produces one bounded, ordered plan with decisions.</td></tr>
-        <tr><td><code class="inline">/opendomain-implement</code></td><td>Implementation</td><td>Builds one scoped artifact through the craftsperson.</td></tr>
+        <tr><td><code class="inline">/opendomain-implement</code></td><td>Implementation</td><td>Routes through the verified harness — a TASK to the architect, a SPEC/AC through its TASK record.</td></tr>
         <tr><td><code class="inline">/opendomain-complete</code></td><td>Completion</td><td>Reuses the audit, then calls the release: ship or stop.</td></tr>
       </table>
       <p>Every command answers summary-first — verdict, top blockers, one next action — with the tool's full output in an appendix. No wall-of-gates noise.</p>
@@ -72,7 +72,7 @@
       <h2>Three roles</h2>
       <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/opendomain-project</code>.</p>
       <p><strong>domain-researcher, the investigator.</strong> It reads, searches, and reports only dated sources and evidence, fanning out in parallel by keyword. Called by the interviewer, <code class="inline">/opendomain-research</code>, <code class="inline">/opendomain-domain</code>, and <code class="inline">/opendomain-requirements</code>. By default it can hardly execute anything — except <code class="inline">opendomain *</code> to check its own work.</p>
-      <p><strong>spec-implementer, the craftsperson.</strong> One scoped task against an existing specification, with a gate check before and after. If it steps out of scope, the gate catches it. Called by <code class="inline">/opendomain-implement</code>.</p>
+      <p><strong>opendomain-harnais, the harness architect.</strong> A TASK record becomes a verified agent system: plan (the record <em>is</em> the task description), grounding, kits, run under the gates, per-attribution recovery. Called by <code class="inline">/opendomain-implement</code> on a <code class="inline">TASK-</code>. Bash deny by default with <code class="inline">opendomain *</code> + read-only repo commands allowed; doctrine in the <code class="inline">opendomain-harness</code> skill. There is no direct-coding role: every agent-executed implementation goes through the verified harness.</p>
       <p><strong>opendomain-harnais, the harness architect.</strong> A fourth role — a bounded subagent, never a primary persona. It turns ONE <code class="inline">TASK-###</code> record into a verified agent system: <code class="inline">opendomain plan TASK-012</code> (the record <em>is</em> the task description <code class="inline">T</code>), grounding, kits (<code class="inline">opendomain build</code>), then the run under the gates (<code class="inline">opendomain run</code>) — where the coordinator, not the architect, applies them — and per-attribution recovery. Its doctrine lives once, in the <code class="inline">opendomain-harness</code> skill; the role file carries identity, report shape, and stops. Called by <code class="inline">/opendomain-implement TASK-…</code>.</p>
 
       <h2>The fourth role: the harness architect — not a persona</h2>
@@ -91,7 +91,7 @@
         <tr><td><code class="inline">opendomain-gates</code></td><td>Reading any gate, status, or audit output — identifier to action.</td></tr>
         <tr><td><code class="inline">opendomain-harness</code></td><td>The work executes through agents — the execution doctrine: task → DAG → kits → run under gates → attribution.</td></tr>
       </table>
-      <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator → craftsperson), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role.</div>
+      <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator → architect), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role. Implementation has ONE path: through the verified harness — <code class="inline">spec-implementer</code> was removed so agent-authored code can never bypass the run archive.</div>
 
       <h2>Permissions: read freely, change by agreement</h2>
 <pre>{

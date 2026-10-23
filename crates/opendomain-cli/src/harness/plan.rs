@@ -10,28 +10,37 @@
 //! Dans les deux cas, la sortie est validée par `opendomain-harness` avant écriture
 //! (archive `graph/<slug>.json` + graphe actif `graph/graph.json`).
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use opendomain_core::harness::{AgentSpec, Contract, Criteria, Dag, GraphFile};
 use serde_json::json;
 
 use crate::harness::common::{detect_language, extract_forbidden, resolve_spec, section_lines, title_of};
 
-/// `opendomain plan <spec> [--llm] [--timeout S]`.
-pub fn run(spec_input: &str, use_llm: bool, timeout_secs: u64) -> Result<()> {
+/// `opendomain plan <spec> [--offline] [--timeout S]`.
+///
+/// La voie par défaut est la décomposition **réelle** : opencode propose le
+/// graphe, le harnais le vérifie (Generate → Verify → Refine) — la panne
+/// amont sort typée, jamais un repli silencieux vers le déterministe.
+/// `--offline` : repli explicite (CI, pas de réseau) — le graphe
+/// déterministe reste disponible, mais comme un choix nommé, pas un
+/// camouflet automatique.
+pub fn run(spec_input: &str, offline: bool, timeout_secs: u64) -> Result<()> {
     let sp = resolve_spec(spec_input)?;
     let text = std::fs::read_to_string(&sp.spec)?;
 
-    let file = if use_llm {
-        match crate::harness::adapters::plan_with_llm(&sp.slug, &text, detect_language(&text), timeout_secs) {
-            Ok(f) => f,
-            Err(e) => {
-                eprintln!("!  --llm a échoué : {e}");
-                eprintln!("  ↳ repli sur le planificateur hors-ligne (déterministe)");
-                build_heuristic_graph(&sp.slug, &text)
-            }
-        }
-    } else {
+    let file = if offline {
+        println!("plan : mode hors-ligne explicite — graphe déterministe (repli nommé, pas la voie réelle)");
         build_heuristic_graph(&sp.slug, &text)
+    } else {
+        crate::harness::adapters::plan_with_llm(&sp.slug, &text, detect_language(&text), timeout_secs)
+            .map_err(|e| {
+                anyhow!(
+                    "plan via opencode : {e} — \
+amont indisponible ? (sonde : `opencode run \"Réponds OK.\"`) ; \
+le repli déterministe existe et se demande explicitement : `opendomain plan {slug} --offline`",
+                    slug = sp.slug
+                )
+            })?
     };
 
     // Vérification de construction (statique) — on n'écrit jamais un graphe

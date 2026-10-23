@@ -730,7 +730,7 @@ mod tests {
 
         // Inter-agent calls are declared, not implied.
         assert!(agent_contract::CONTEXT_COMPLETER.contents.contains("domain-researcher"));
-        assert!(agent_contract::SPEC_IMPLEMENTER.contents.contains("Called by"));
+        assert!(agent_contract::HARNESS_ARCHITECT.contents.contains("Called by"));
 
         // Summary-first kills the verbatim-noise: every command states it.
         for t in agent_contract::all() {

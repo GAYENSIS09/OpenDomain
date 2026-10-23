@@ -61,6 +61,15 @@ pub fn run(spec_input: &str) -> Result<()> {
         println!("  + {kit_path:?}");
     }
 
+    // La construction DÉFINIT les agents de nœud (phase 1 de l'architecte) :
+    // chaque nœud → un fichier dans `.opencode/agent/` (permissions projetées
+    // + contrat de sortie), visible et reviewable AVANT le run — l'exécution
+    // invoquera ces ids, elle ne réécrira pas.
+    let defined = crate::harness::adapters::define_node_agents(&dag, &sp.slug)?;
+    for id in &defined {
+        println!("  agent défini : {id}");
+    }
+
     // vérification de construction
     let (report, ok) = verify(&dag);
     let report_file = out_dir.join("report.md");
@@ -73,7 +82,7 @@ pub fn run(spec_input: &str) -> Result<()> {
             dag.nodes.len(),
             out_dir.display()
         );
-        println!("  suite : opendomain run {} --executor opencode (ou mock)", sp.slug);
+        println!("  suite : opendomain run {}", sp.slug);
         Ok(())
     } else {
         Err(anyhow!(
