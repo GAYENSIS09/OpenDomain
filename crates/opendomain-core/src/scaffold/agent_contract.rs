@@ -127,6 +127,16 @@ pub const CONTEXT_COMPLETER: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/agent/context-completer.md"),
 };
 
+/// `.opencode/agent/opendomain-harnais.md` — l'architecte du harnais :
+/// un `TASK-###` du registre devient un système d'agents vérifié. Subagent
+/// borné (jamais persona principal) : la doctrine vit une fois, dans le
+/// skill `opendomain-harness` ; ce fichier porte l'identité, le rapport et
+/// les arrêts.
+pub const HARNESS_ARCHITECT: Template = Template {
+    path: ".opencode/agent/opendomain-harnais.md",
+    contents: include_str!("../../templates/agent/.opencode/agent/opendomain-harnais.md"),
+};
+
 /// `.opencode/skills/opendomain/SKILL.md` — index.
 pub const SKILL: Template = Template {
     path: ".opencode/skills/opendomain/SKILL.md",
@@ -190,6 +200,7 @@ pub fn all() -> Vec<Template> {
         DOMAIN_RESEARCHER,
         SPEC_IMPLEMENTER,
         CONTEXT_COMPLETER,
+        HARNESS_ARCHITECT,
         SKILL,
         SKILL_EPISTEMICS,
         SKILL_ARTIFACTS,

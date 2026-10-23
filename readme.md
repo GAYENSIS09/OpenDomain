@@ -68,7 +68,7 @@ opendomain status
 
 `opendomain init` **installs only** — registries + `opendomain.toml` + the execution harness + agent contract. It records no context: run `/opendomain-project` afterwards to fill `project.md`, `[project]`, `DOM-001`/`STK-001` from the repository, external research, then user answers.
 
-It creates an `opendomain/` directory of **41 files** — 34 registry files (one per artifact kind, from `SRC` to `TEST`), six explanatory files (`README.md`, `project.md`, the research protocol, the architecture overview, the specs and changes READMEs) and `opendomain.toml` — plus the **execution harness** under `opendomain/harness/` (9 further files: the `specs/`, `graph/`, `runs/`, `grounding/`, `agents/`, `contracts/`, `memory/` directories with their contracts, and a worked example graph — the criteria `C_i` live inside `graph.json`, next to each node's contract, and the harness settings live in `opendomain.toml` under `[gates]`/`[sandbox]`). **In total, `opendomain init` writes 75 files.** It is idempotent — re-running it reports what already exists and changes nothing.
+It creates an `opendomain/` directory of **41 files** — 34 registry files (one per artifact kind, from `SRC` to `TEST`), six explanatory files (`README.md`, `project.md`, the research protocol, the architecture overview, the specs and changes READMEs) and `opendomain.toml` — plus the **execution harness** under `opendomain/harness/` (9 further files: the `specs/`, `graph/`, `runs/`, `grounding/`, `agents/`, `contracts/`, `memory/` directories with their contracts, and a worked example graph — the criteria `C_i` live inside `graph.json`, next to each node's contract, and the harness settings live in `opendomain.toml` under `[gates]`/`[sandbox]`). **In total, `opendomain init` writes 76 files.** It is idempotent — re-running it reports what already exists and changes nothing.
 
 It also writes an **agent contract** to the project root, so the framework is usable by any coding agent rather than only by someone who has read the paper:
 
@@ -78,7 +78,8 @@ AGENTS.md                          # the rules, readable by any agent
                                    # /opendomain-audit, /opendomain-record, /opendomain-project, /opendomain-research,
                                    # /opendomain-domain, /opendomain-requirements, /opendomain-opportunity,
                                    # /opendomain-spec, /opendomain-plan, /opendomain-implement, /opendomain-complete
-.opencode/agent/                   # domain-researcher, spec-implementer, context-completer
+.opencode/agent/                   # domain-researcher, spec-implementer, context-completer,
+                                   # opendomain-harnais (subagent: builds the agent system from a TASK record)
 .opencode/skills/                  # opendomain, -artifacts, -epistemics, -research, -gates, -harness
 ```
 
@@ -290,7 +291,7 @@ Every command and agent renders **summary-first**: Verdict (1 line) → top-3 bl
 
 **Skill.** `.opencode/skills/opendomain/SKILL.md` loads on demand and carries the artifact format and the epistemic discipline. `AGENTS.md` holds the short version that is always in context, so the skill does not have to be.
 
-To adopt this in your own project, run `opendomain init` — it writes `AGENTS.md` and the twenty-four `.opencode/` files (15 commands, 3 role agents, 6 skills) for you, and puts the `opendomain` binary on `PATH`. There is no meta-agent persona: the harness is driven by the commands (`/opendomain-implement` → roles → skills), and the execution doctrine lives once, in the `opendomain-harness` skill. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
+To adopt this in your own project, run `opendomain init` — it writes `AGENTS.md` and the twenty-five `.opencode/` files (15 commands, 4 role agents, 6 skills) for you, and puts the `opendomain` binary on `PATH`. There is no primary persona: the harness is driven by the commands (`/opendomain-implement TASK-012` → the `opendomain-harnais` subagent → skills), and the execution doctrine lives once, in the `opendomain-harness` skill. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
 
 ```json
 {
