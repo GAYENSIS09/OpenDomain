@@ -14,7 +14,7 @@
 //! (archive `graph/<slug>.json` + graphe actif `graph/graph.json`).
 
 use anyhow::{anyhow, Result};
-use opendomain_core::harness::{AgentSpec, Contract, Criteria, Dag, GraphFile};
+use opendomain_core::harness::{AgentSpec, Contract, Criteria, GraphFile};
 use serde_json::json;
 
 use crate::harness::common::{detect_language, extract_forbidden, resolve_spec, section_lines, title_of};
@@ -35,6 +35,11 @@ pub fn run(spec_input: &str, offline: bool, timeout_secs: u64) -> Result<()> {
         println!("plan : mode hors-ligne explicite — graphe déterministe (repli nommé, pas la voie réelle)");
         build_heuristic_graph(&sp.slug, &text)
     } else {
+        // Sonde d'amont AVANT le plan (leçon du 2026-10-23 / REQ-002) : le
+        // message d'erreur recommandait la sonde one-shot — le plan l'exécute
+        // désormais lui-même. Échec typé amont immédiat : aucune décomposition
+        // tentée sur un endpoint mort.
+        crate::harness::executors::LlmExecutor::probe_upstream(timeout_secs)?;
         crate::harness::adapters::plan_with_llm(&sp.slug, &text, detect_language(&text), timeout_secs)
             .map_err(|e| {
                 anyhow!(
@@ -49,12 +54,12 @@ le repli déterministe existe et se demande explicitement : `opendomain plan {sl
     // Vérification de construction (statique) — on n'écrit jamais un graphe
     // invalide ou incomplet : l'admission du plan exige la complétude de
     // chaque agent (le même contrôle que `build` — la Garantie 3 appartient
-    // au plan, pas à l'étape suivante).
-    let dag = Dag::build(&file)?;
+    // au plan, pas à l'étape suivante). Un seul moteur, dans core : la
+    // structure **et** la complétude y sont jugées en un appel.
+    let dag = opendomain_core::harness::admit(&file, &crate::harness::adapters::capabilities::gaps)?;
     let order = dag.topological_order()?;
-    admission_complete(&dag)?;
 
-    let graph_dir = std::path::Path::new("opendomain/harness/graph");
+    let graph_dir = std::path::Path::new(crate::harness::common::GRAPH_DIR);
     std::fs::create_dir_all(graph_dir)?;
     let archive = graph_dir.join(format!("{}.json", sp.slug));
     let active = graph_dir.join("graph.json");
@@ -73,33 +78,8 @@ le repli déterministe existe et se demande explicitement : `opendomain plan {sl
     Ok(())
 }
 
-/// Admission du plan : **complétude** de chaque agent avant écriture du
-/// graphe (Garantie 3 — « a plan is admitted only with complete contracts »).
-/// Une incomplétude sort typée, nœud et champ nommés.
-pub(crate) fn admission_complete(dag: &Dag) -> Result<()> {
-    let mut incomplets: Vec<String> = Vec::new();
-    for (id, spec) in &dag.nodes {
-        let manquants: Vec<String> = crate::harness::common::agent_completeness(spec)
-            .into_iter()
-            .filter(|(_, ok, _)| !ok)
-            .map(|(_, _, field)| field)
-            .collect();
-        if !manquants.is_empty() {
-            incomplets.push(format!("{id} : {}", manquants.join(", ")));
-        }
-    }
-    if incomplets.is_empty() {
-        Ok(())
-    } else {
-        anyhow::bail!(
-            "plan refusé — agents incomplets (contrat/critères) : {}\n  → corriger le graphe proposé, ou demander le repli déterministe : `opendomain plan <slug> --offline`",
-            incomplets.join(" ; ")
-        )
-    }
-}
-
 /// Décomposition canonique, spécialisée par la spec. Déterministe : renvoie
-/// toujours un graphe que `Dag::build` accepte.
+/// toujours un graphe que le moteur d'admission accepte.
 pub fn build_heuristic_graph(slug: &str, spec_text: &str) -> GraphFile {    let title = title_of(spec_text).unwrap_or_else(|| slug.to_string());
     let lang = detect_language(spec_text);
     let constraints = section_lines(spec_text, "Contraintes", 12);
@@ -280,6 +260,7 @@ fn dedupe(items: impl Iterator<Item = String>) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use opendomain_core::harness::Dag;
 
     const SAMPLE: &str = "# Spec 001 — migrer les logs\n\n## Contraintes\n- stack: rust\n- interdiction: appels `unwrap()` dans le parsing\n\n## Critères\n- [ ] tests verts\n";
 
@@ -335,9 +316,11 @@ mod tests {
                 },
             ],
         };
-        let dag = Dag::build(&bad).expect("structure OK, complétude en faute");
-        let err = admission_complete(&dag).expect_err("admission complète refuse");
-        let text = err.to_string();
+        let err = format!(
+            "{:#}",
+            opendomain_core::harness::admit(&bad, &opendomain_core::harness::no_caps).expect_err("admission refuse l'incomplet")
+        );
+        let text = err;
         assert!(text.contains("incomplets"), "message typé : {text}");
         assert!(text.contains("tools"), "champ fautif nommé : {text}");
         assert!(text.contains("contract"), "contrat nommé : {text}");

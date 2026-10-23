@@ -20,6 +20,8 @@ use std::path::Path;
 use anyhow::{Result, anyhow};
 use opendomain_core::harness::{AgentSpec, Dag, GraphFile};
 
+use crate::harness::common::LoopCfg;
+
 /// `opendomain build <spec> [--fetch]`.
 ///
 /// `--fetch` : autoriser le **rapatriement explicite** des composants du kit
@@ -42,7 +44,12 @@ pub fn run(spec_input: &str, fetch: bool) -> Result<()> {
     };
     let raw = std::fs::read_to_string(&graph_path)?;
     let file: GraphFile = serde_json::from_str(&raw).map_err(|e| anyhow!("{graph_path:?} : {e}"))?;
-    let dag = Dag::build(&file)?;
+    // L'admission, pas une re-vérification structurelle : `build` consomme le
+    // graphe comme `plan`, `run --graph` et `repatch` — le même moteur juge
+    // structure, complétude **et** expressivité (ancré opencode) avant
+    // d'écrire le moindre artefact. Une licence manuelle de `graph.json`
+    // entre `plan` et `build` tombe ici, typée.
+    let dag = opendomain_core::harness::admit(&file, &crate::harness::adapters::capabilities::gaps)?;
 
     // le kit d'exécution (6 piliers) est dérivé du graphe réel + de la config.
     let out_dir = crate::harness::adapters::agents_dir(&sp.slug);
@@ -50,7 +57,7 @@ pub fn run(spec_input: &str, fetch: bool) -> Result<()> {
     let lang = std::fs::read_to_string(&sp.spec)
         .map(|t| crate::harness::common::detect_language(&t).to_string())
         .unwrap_or_else(|_| "cible".to_string());
-    let loop_cfg = loop_config();
+    let loop_cfg = crate::harness::common::loop_config()?;
 
     // le kit de chaque nœud est RÉSOLU ici (phase 1 — avant tout artefact) :
     // skills/commandes du registre, protocoles fermés contre outils+binaires.
@@ -230,27 +237,10 @@ fn join_or_dash(items: &[String]) -> String {
 
 // -------------------------------------------------------------- kit complet –
 
-/// `[gates]` de `opendomain.toml` : strict + max_attempts — la config
-/// **générale** du workspace, il n'y a pas de second fichier.
-pub struct LoopCfg {
-    pub strict: bool,
-    pub max_attempts: u32,
-}
-
-impl Default for LoopCfg {
-    fn default() -> Self {
-        Self { strict: true, max_attempts: 3 }
-    }
-}
-
-/// Lit la config `[gates]` du projet — la CLI la branchera dans le runner
-/// (`[gates]` gouverne, il ne décore pas). La config ne parse pas : l'erreur
-/// se propage ; un harnais ne devine pas ses réglages.
-pub(crate) fn loop_config() -> LoopCfg {
-    let cfg = opendomain_core::config::Config::load(std::path::Path::new("opendomain"))
-        .unwrap_or_default();
-    LoopCfg { strict: cfg.gates.strict, max_attempts: cfg.gates.max_attempts }
-}
+// `[gates]` (`strict`, `max_attempts`) : la gouvernance de boucle vit dans
+// `common::loop_config` — partagée par `run`, `plan` (boucle LLM) et
+// `repatch --llm` ; `build` n'en est qu'un consommateur, un seul lecteur de
+// config, fail-loud (S2).
 
 /// `AGENTS.md` : le contrat d'exécution **partagé** des agents de la spec —
 /// les 6 piliers d'un runtime d'agent, rendus depuis le graphe réel.
@@ -275,7 +265,7 @@ fn render_agents_md(dag: &Dag, lang: &str, cfg: &LoopCfg) -> String {
     md.push_str("`opendomain run`) : il appelle chaque agent en ordre topologique, analyse\n");
     md.push_str("sa réponse, applique les gates, puis rejoue les tentatives ciblées.\n");
     md.push_str(&format!(
-        "Réglage : {} tentatives locales, propagation stricte : {} (voir\n`opendomain/harness/config.opendomain.toml` `[gates]`).\n\n",
+        "Réglage : {} tentatives locales, propagation stricte : {} (voir\n`opendomain/opendomain.toml` `[gates]`).\n\n",
         cfg.max_attempts,
         if cfg.strict { "oui" } else { "non" }
     ));
@@ -291,7 +281,7 @@ fn render_agents_md(dag: &Dag, lang: &str, cfg: &LoopCfg) -> String {
     md.push_str("  passé ; à consulter avant tout travail sensible.\n\n");
     md.push_str("## 4. Sandbox (isolation)\n");
     md.push_str("Les commandes de critères tournent dans la sandbox logique de\n");
-    md.push_str("`opendomain/harness/config.opendomain.toml` (`[sandbox]`) : allowlist de binaires et\n");
+    md.push_str("`opendomain/opendomain.toml` (`[sandbox]`) : allowlist de binaires et\n");
     md.push_str("dossier courant borné au dépôt. Un binaire hors liste produit une erreur\n");
     md.push_str("typée `SandboxViolation` — jamais de surprise.\n\n");
     md.push_str("## 5. Hooks & contrôles (gardes-fous)\n");
@@ -317,6 +307,14 @@ fn render_agents_md(dag: &Dag, lang: &str, cfg: &LoopCfg) -> String {
 
 /// Manifeste machine du kit par agent (pour les exécuteurs et adaptateurs) —
 /// inclut le kit résolu (skills/commandes/protocoles avec leurs textes).
+///
+/// **Statut tranché (S5)** : `<id>.kit.json`, `report.md` et `resolve.md`
+/// sont des artefacts d'**information** — aucun code ne les relit, et c'est
+/// maintenant écrit ici : la projection opérationnelle du kit est le
+/// fichier d'agent de nœud, qui, lui, est **relu et vérifié** à chaque
+/// matérialisation (`verify_materialized`). Si un jour un exécuteur lit ce
+/// manifeste, il devient un contrat versionné (le champ `standard` existe
+/// pour ça) — pas avant.
 fn kit_manifest(
     spec: &AgentSpec,
     cfg: &LoopCfg,
@@ -356,7 +354,7 @@ fn kit_manifest(
             "compaction": "borné à ~6000 caractères par le harnais",
         },
         "memory": { "lessons": "opendomain/harness/memory/registre.md", "runs": "opendomain/harness/runs/" },
-        "sandbox": { "config": "opendomain/harness/config.opendomain.toml [sandbox]" },
+        "sandbox": { "config": "opendomain/opendomain.toml [sandbox]" },
     })
 }
 

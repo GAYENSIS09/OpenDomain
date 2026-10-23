@@ -1,0 +1,7 @@
+# Généré par `opendomain init` — cet arbre est régénérable par le binaire.
+# Doctrine F14/L9 : les registres (opendomain/*.md) et les runs
+# (opendomain/harness/runs/) sont la preuve citée par `run = "…"`
+# (`opendomain provenance`) — un projet qui veut les versionner supprime
+# ce fichier .gitignore.
+*
+!.gitignore

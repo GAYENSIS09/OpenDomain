@@ -1,17 +1,21 @@
 ---
 description: Use when project context is missing or stale. Owns project.md + [project] + DOM-001/STK-001; delegates external research to domain-researcher.
 mode: subagent
-temperature: 0.2
-permission:
-  edit: allow
-  bash:
-    "*": deny
-    "opendomain *": allow
-    "ls *": allow
-    "rg *": allow
-    "cat *": allow
-    "git ls-files *": allow
-    "git log *": allow
+steps: 40
+permissions:
+  - { action: "*", resource: "*", effect: deny }
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: glob, resource: "*", effect: allow }
+  - { action: skill, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: subagent, resource: "domain-researcher", effect: allow }
+  - { action: shell, resource: "opendomain *", effect: allow }
+  - { action: shell, resource: "ls *", effect: allow }
+  - { action: shell, resource: "rg *", effect: allow }
+  - { action: shell, resource: "cat *", effect: allow }
+  - { action: shell, resource: "git ls-files *", effect: allow }
+  - { action: shell, resource: "git log *", effect: allow }
 ---
 
 # Who I am

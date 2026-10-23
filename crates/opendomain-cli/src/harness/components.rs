@@ -355,7 +355,7 @@ pub fn resolve_cmd(spec_input: &str) -> Result<()> {
 
     // des commandes de gate ? (besoin `terminal` automatique)
     let has_commands = std::fs::read_to_string(
-        Path::new("opendomain/harness/graph").join(format!("{}.json", sp.slug)),
+        Path::new(crate::harness::common::GRAPH_DIR).join(format!("{}.json", sp.slug)),
     )
     .or_else(|_| std::fs::read_to_string("opendomain/harness/graph/graph.json"))
     .ok()

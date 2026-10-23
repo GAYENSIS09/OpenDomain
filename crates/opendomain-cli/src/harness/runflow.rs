@@ -31,7 +31,7 @@ pub fn run(
     // Config `[gates]` : elle **gouverne** le runner (max_attempts branché
     // au dessous) ; `strict = false` est refusé bruyamment — aucune
     // sémantique consultative inventée, la doctrine est fail-closed.
-    let gate_cfg = crate::harness::build::loop_config();
+    let gate_cfg = crate::harness::common::loop_config()?;
     if !gate_cfg.strict {
         return Err(anyhow!(
             "gates.strict=false refusé : verdict consultatif interdit (fail-closed) — \
@@ -74,10 +74,14 @@ remettre `strict = true` dans opendomain/opendomain.toml, ou supprimer le régla
             };
             let raw = std::fs::read_to_string(&graph_path)?;
             let file: GraphFile = serde_json::from_str(&raw)?;
-            let dag = Dag::build(&file)?;
-            if graph_override.is_some() {
-                crate::harness::plan::admission_complete(&dag)?;
-            }
+            // Graphe avec `--graph` explicite : admission COMPLÈTE au même
+            // moteur que le plan — pas de porte dérobée. Graphe figé d'un
+            // run : structure seule (déjà admis au moment du run).
+            let dag = if graph_override.is_some() {
+                opendomain_core::harness::admit(&file, &crate::harness::adapters::capabilities::gaps)?
+            } else {
+                Dag::build(&file)?
+            };
             let verified = re_verify_archive(&dir, &dag)?;
             let source = format!("{graph_path:?}");
             (dag, dir, Some(verified), source)
@@ -89,11 +93,15 @@ remettre `strict = true` dans opendomain/opendomain.toml, ou supprimer le régla
             };
             let raw = std::fs::read_to_string(&graph_path)?;
             let file: GraphFile = serde_json::from_str(&raw)?;
-            let dag = Dag::build(&file)?;
-            if graph_override.is_some() {
-                crate::harness::plan::admission_complete(&dag)?;
-            }
-            let dir = next_run_dir(&sp.slug)?;
+            // Graphe avec `--graph` explicite : admission COMPLÈTE au même
+            // moteur que le plan — pas de porte dérobée. Graphe figé d'un
+            // run : structure seule (déjà admis au moment du run).
+            let dag = if graph_override.is_some() {
+                opendomain_core::harness::admit(&file, &crate::harness::adapters::capabilities::gaps)?
+            } else {
+                Dag::build(&file)?
+            };
+            let dir = crate::harness::runs::next_run_dir(&sp.slug)?;
             std::fs::create_dir_all(dir.join("context"))?;
             std::fs::write(dir.join("graph.json"), &raw)?;
             (dag, dir, None, format!("{graph_path:?}"))
@@ -101,6 +109,43 @@ remettre `strict = true` dans opendomain/opendomain.toml, ou supprimer le régla
     };
 
     println!("run {run_dir:?} — graphe : {graph_source} — exécuteur : {executor_name}");
+
+    // Read-back AU RUN (REQ-003 : avant toute exécution) — la construction
+    // a relu à l'écriture ; entre `build` et `run`, un fichier peut être
+    // édité à la main ou périmé. La relecture rejoue les mêmes contrôles
+    // sur le fichier réel : deny universel en tête, allows == whitelist
+    // projetée, épinglage conforme. Divergence → échec typé, jamais un run
+    // sur une matérialisation non prouvée.
+    {
+        let bindings = crate::harness::common::load_harness_bindings()?;
+        let mut relus = 0usize;
+        for id in dag.topological_order()? {
+            let spec = &dag.nodes[&id];
+            let agent_id = crate::harness::adapters::node_agent_id(spec, &sp.slug)?;
+            let path = Path::new(".opencode/agent").join(format!("{agent_id}.md"));
+            if !path.is_file() {
+                return Err(anyhow!(
+                    "MaterializationStale : agent `{agent_id}` absent du frontmatter de \
+l'éditeur — lancer `opendomain build {}` (la matérialisation précède le run, \
+toujours)",
+                    sp.slug
+                ));
+            }
+            let actions = crate::harness::adapters::capabilities::projected_actions(&spec.tools)?;
+            crate::harness::adapters::verify_materialized(&actions, &bindings, &path)
+                .map_err(|e| {
+                    anyhow!(
+                        "MaterializationStale : {e} — relancer `opendomain build {}` \
+(la matérialisation ne suit plus le graphe admis)",
+                        sp.slug
+                    )
+                })?;
+            relus += 1;
+        }
+        println!(
+            "read-back du run : {relus} agent(s) re-vérifié(s) contre le graphe admis"
+        );
+    }
 
     // Sonde d'amont (leçon du 2026-10-23 : 3 tentatives du nœud `analyste`
     // tuées par la même panne `opencode` — endpoint indisponible) : un
@@ -162,7 +207,7 @@ pas un mode de run."
     // En reprise, chaque artefact est un **fichier nouveau** (`*-resume-NN`)
     // : la preuve du run d'origine n'est jamais écrasée. Le `context/` est
     // l'état de travail — rafraîchi ; l'historique viv dans trace/gates/resume.
-    let resume_n = resume_map.as_ref().map(|_| next_resume_index(&run_dir));
+    let resume_n = resume_map.as_ref().map(|_| crate::harness::runs::next_resume_index(&run_dir));
     let rs = resume_n
         .map(|n| format!("-resume-{n:02}"))
         .unwrap_or_default();
@@ -227,8 +272,8 @@ pas un mode de run."
 
 /// Fichier graphe : archive de la spec si présente, sinon graphe actif.
 fn pick_graph(slug: &str) -> Result<PathBuf> {
-    let archive = Path::new("opendomain/harness/graph").join(format!("{slug}.json"));
-    let active = Path::new("opendomain/harness/graph/graph.json");
+    let archive = Path::new(crate::harness::common::GRAPH_DIR).join(format!("{slug}.json"));
+    let active = Path::new(crate::harness::common::GRAPH_DIR).join("graph.json");
     if archive.exists() {
         Ok(archive)
     } else if active.exists() {
@@ -236,40 +281,6 @@ fn pick_graph(slug: &str) -> Result<PathBuf> {
     } else {
         Err(anyhow!("aucun graphe — lancer `opendomain plan {slug}`"))
     }
-}
-
-/// Dossier du prochain run : `runs/run-NNN-<slug>` (NNN = max + 1).
-fn next_run_dir(slug: &str) -> Result<PathBuf> {
-    let base = Path::new("opendomain/harness/runs");
-    std::fs::create_dir_all(base)?;
-    let mut max = 0u32;
-    if let Ok(iter) = std::fs::read_dir(base) {
-        for e in iter.flatten() {
-            let name = e.file_name().to_string_lossy().to_string();
-            let eungs = name.strip_prefix("run-").map(|r| r.split('-').next().unwrap_or(""));
-            if let Some(n) = eungs.and_then(|s| s.parse::<u32>().ok()) {
-                max = max.max(n);
-            }
-        }
-    }
-    Ok(base.join(format!("run-{:03}-{slug}", max + 1)))
-}
-
-/// Numéro du prochain artefact de reprise (`resume-NN.*`) dans le dossier.
-fn next_resume_index(run_dir: &Path) -> u32 {
-    let mut max = 0u32;
-    if let Ok(iter) = std::fs::read_dir(run_dir) {
-        for e in iter.flatten() {
-            let name = e.file_name().to_string_lossy().to_string();
-            if let Some(rest) = name.strip_prefix("resume-") {
-                let num = rest.split_once('.').map(|(a, _)| a).unwrap_or(rest);
-                if let Ok(n) = num.parse::<u32>() {
-                    max = max.max(n);
-                }
-            }
-        }
-    }
-    max + 1
 }
 
 /// Reprise **re-vérifiée** (« verified at resumption », le miroir de « verified
@@ -347,7 +358,9 @@ pub fn load_context_values(run_dir: &Path) -> Result<BTreeMap<String, serde_json
 }
 
 /// Journal lisible des gates — commandes incluses (verdict par commande).
-fn gates_log(summary: &RunSummary) -> String {
+/// `pub(crate)` : le banc (M5) vérifie le round-trip écrivain → lecteur du
+/// contrat de provenance de core — le format n'est pas un détail local.
+pub(crate) fn gates_log(summary: &RunSummary) -> String {
     let mut out = String::from("# gates y_i ∈ C_i (par ordre d'exécution)\n");
     for e in &summary.events {
         match e {
@@ -387,4 +400,85 @@ fn gates_log(summary: &RunSummary) -> String {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use opendomain_core::harness::{Contract, Failure, FailureKind, RunSummary};
+    use serde_json::json;
+
+    fn node_complet(id: &str, deps: &[&str]) -> opendomain_core::harness::AgentSpec {
+        opendomain_core::harness::AgentSpec {
+            id: id.into(),
+            role: "rôle".into(),
+            tools: vec!["read".into()],
+            contract: Contract {
+                output_schema: json!({
+                    "type": "object", "required": ["value"],
+                    "properties": { "value": {"type": "number"} }
+                }),
+                ..Default::default()
+            },
+            depends_on: deps.iter().map(|d| d.to_string()).collect(),
+            ..Default::default()
+        }
+    }
+
+    /// La grammaire de `gates.log` est un **contrat cross-crate** : le pont
+    /// de provenance de core (`verification::provenance::parse_log`) lit
+    /// exactement `[ok|ko]`, `gate <nœud>`, `(repris` et `[!!] final`. Ce
+    /// test éping le l'écrivain sur la grammaire du lecteur.
+    #[test]
+    fn le_journal_gates_porte_la_grammaire_device_par_la_provenance() {
+        let summary = RunSummary {
+            passed: vec!["a".into()],
+            failed: None,
+            events: vec![
+                TraceEvent::Start { node: "a".into() },
+                TraceEvent::Retry {
+                    node: "a".into(),
+                    attempt: 1,
+                    kind: FailureKind::CriteriaFailure,
+                    message: "champ requis manquant".into(),
+                },
+                TraceEvent::Passed { node: "a".into(), attempts: 2 },
+                TraceEvent::Passed { node: "b".into(), attempts: 0 },
+                TraceEvent::Failed {
+                    failure: Failure::new("c", FailureKind::SpecMismatch, "raté"),
+                    directive: "reprendre".into(),
+                },
+            ],
+        };
+        let log = gates_log(&summary);
+        assert!(log.contains("[ ] start  a"), "start : {log}");
+        assert!(log.contains("[ko] gate   a (attempt 1)"), "retry : {log}");
+        assert!(log.contains("[ok] gate   a (attempts: 2)"), "passed : {log}");
+        assert!(log.contains("(repris"), "reprise ré-indexée marquée : {log}");
+        assert!(log.contains("[!!] final  c"), "terminal : {log}");
+    }
+
+    /// La reprise re-vérifiée : une sortie conforme est ré-indexée, une
+    /// sortie en défaut n'est PAS admise, et ce qui sort du graphe figé est
+    /// signalé sans jamais entrer dans le contexte.
+    #[test]
+    fn la_reprise_re_verify_archive_admet_et_refuse() {
+        use opendomain_core::harness::GraphFile;
+        let dir = std::env::temp_dir().join("opendomain-runflow-reverify");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("context")).unwrap();
+        std::fs::write(dir.join("context").join("a.json"), json!({ "value": 1 }).to_string()).unwrap();
+        std::fs::write(dir.join("context").join("b.json"), json!({ "value": "faux type" }).to_string()).unwrap();
+        std::fs::write(dir.join("context").join("zombie.json"), json!({"x": 1}).to_string()).unwrap();
+
+        let file = GraphFile { meta: json!({}), nodes: vec![node_complet("a", &[]), node_complet("b", &["a"])] };
+        let dag = Dag::build(&file).unwrap();
+
+        let (verified, log) = re_verify_archive(&dir, &dag).expect("re-vérification rejouable");
+        assert!(verified.contains_key("a"), "conforme admise : {verified:?}");
+        assert!(!verified.contains_key("b"), "défaut jamais admise");
+        assert!(log.contains("[ok] a — admise, ré-indexée"), "admis : {log}");
+        assert!(log.contains("[ko] b —"), "défaut → ré-exécution : {log}");
+        assert!(log.contains("[hors-graphe] zombie"), "hors graphe signalé : {log}");
+    }
 }

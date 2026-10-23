@@ -35,4 +35,5 @@ pub mod ground;
 pub mod plan;
 pub mod repatch;
 pub mod runflow;
+pub mod runs;
 pub mod workflows;

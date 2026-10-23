@@ -11,6 +11,9 @@ use opendomain_core::harness::{Dag, GraphFile};
 use opendomain_core::harness::{gate, TraceEvent};
 
 use crate::harness::executors::run_gate_command;
+// Le resolver de runs vit dans `runs` (S6) — un seul vocabulaire pour les
+// dossiers `run-NNN-<slug>` ; audit le ré-exporte pour ses 2 consommateurs.
+pub(crate) use crate::harness::runs::resolve_run;
 
 // ---------------------------------------------------------------- verify ---
 /// `opendomain verify <run-dir>` : rejoue `y_i ∈ C_i` sur les sorties archivées
@@ -73,12 +76,10 @@ pub fn verify(run_input: &str) -> Result<()> {
 /// directive de récupération, inscription dans la mémoire des leçons.
 pub fn attribute(run_input: &str) -> Result<()> {
     let (slug, run_dir) = resolve_run(run_input)?;
-    let trace = std::fs::read_to_string(run_dir.join("trace.jsonl"))?;
-    let events: Vec<TraceEvent> = trace
-        .lines()
-        .filter(|l| !l.trim().is_empty())
-        .filter_map(|l| serde_json::from_str(l).ok())
-        .collect();
+    // Fusion chronologique de TOUS les segments de trace (run + reprises) —
+    // l'attribut tardif ne perd plus la reprise (défaut corrigé : il ne
+    // lisait que le segment racine).
+    let events = crate::harness::runs::trace_events(&run_dir)?;
     if events.is_empty() {
         return Err(anyhow!("trace.jsonl vide ou illisible dans {run_dir:?}"));
     }
@@ -154,7 +155,7 @@ pub fn attribution_markdown(
 /// M4 — la mémoire des leçons : un échec typé y laisse une trace permanente
 /// (`opendomain/harness/memory/registre.md`) — « ne payer deux fois les mêmes erreurs ».
 pub fn remember(slug: &str, run_name: &str, f: &opendomain_core::harness::Failure) -> Result<()> {
-    let dir = Path::new("opendomain/harness/memory");
+    let dir = Path::new(crate::harness::common::MEMORY_DIR);
     std::fs::create_dir_all(dir)?;
     let path = dir.join("registre.md");
     let header = if !path.exists() {
@@ -225,43 +226,12 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 /// Accepte `runs/run-002-spec` (dossier direct) ou le seul nom du run ;
 /// renvoie (slug, dir). Le repli cherche le nom sous
 /// `opendomain/harness/runs/` — l'endroit unique où les runs sont archivés.
-pub(crate) fn resolve_run(run_input: &str) -> Result<(String, std::path::PathBuf)> {
-    let clean = run_input.trim().trim_matches('"');
-    let direct = Path::new(clean);
-    if direct.is_dir() && direct.join("trace.jsonl").exists() {
-        return run_dir_to_slug(direct);
-    }
-    let basename = direct
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_else(|| clean.to_string());
-    let archive = Path::new("opendomain/harness/runs").join(&basename);
-    if archive.is_dir() && archive.join("trace.jsonl").exists() {
-        return run_dir_to_slug(&archive);
-    }
-    Err(anyhow!(
-        "run introuvable : {clean} — chercher un dossier `opendomain/harness/runs/run-NNN-<slug>` (trace.jsonl présent)"
-    ))
-}
-
-fn run_dir_to_slug(dir: &Path) -> Result<(String, std::path::PathBuf)> {
-    let name = dir
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_default();
-    let slug = name
-        .strip_prefix("run-")
-        .and_then(|r| r.split_once('-').map(|(_, s)| s.to_string()))
-        .unwrap_or_else(|| "spec".into());
-    Ok((slug, dir.to_path_buf()))
-}
-
 /// Graphe figé dans le dossier de run (copie conservée lors du run).
 fn dag_of_run(run_dir: &Path) -> Result<Dag> {
     let graph = run_dir.join("graph.json");
     let raw = std::fs::read_to_string(&graph).map_err(|e| anyhow!("{graph:?} illisible : {e}"))?;
     let file: GraphFile = serde_json::from_str(&raw)?;
-    Dag::build(&file)
+    Ok(Dag::build(&file)?)
 }
 
 #[cfg(test)]

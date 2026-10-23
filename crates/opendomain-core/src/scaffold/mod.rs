@@ -268,6 +268,41 @@ mod tests {
     }
 
     #[test]
+    fn les_arbres_generes_portent_leur_gitignore() {
+        let dir = scratch("gitignore-arbres");
+        let opendomain = dir.join("opendomain");
+        let cfg = default_config("Demo", Profile::Core, AuthorityModel::SpecAnchored);
+        let report = scaffold(&opendomain, &cfg, false).unwrap();
+        // Les deux arbres générés portent leur propre .gitignore — écrits
+        // comme les autres fichiers, sans drapeau ; le .gitignore de la
+        // racine du projet n'appartient pas au scaffold.
+        assert!(report.created.contains(&".gitignore".to_string()));
+        assert!(report.agent_files.iter().any(|p| p == ".opencode/.gitignore"));
+        for tree in [
+            opendomain.join(".gitignore"),
+            dir.join(".opencode").join(".gitignore"),
+        ] {
+            let text = fs::read_to_string(&tree).unwrap();
+            assert!(
+                text.contains('*') && text.contains("!.gitignore"),
+                "{tree:?} n'ignore pas l'arbre : {text}"
+            );
+            assert!(
+                text.contains("F14/L9") || text.contains("régénérable"),
+                "{tree:?} porte la doctrine : {text}"
+            );
+        }
+        assert!(
+            !dir.join(".gitignore").exists(),
+            "le .gitignore racine n'appartient pas au scaffold"
+        );
+        // Idempotent : un re-run ne les réécrit pas.
+        let report2 = scaffold(&opendomain, &cfg, false).unwrap();
+        assert!(report2.skipped.contains(&".gitignore".to_string()));
+        assert!(report2.agent_files.iter().all(|p| p != ".opencode/.gitignore"));
+    }
+
+    #[test]
     fn never_overwrites_without_force() {
         let dir = scratch("no-overwrite");
         let opendomain = dir.join("opendomain");
@@ -287,7 +322,14 @@ mod tests {
     fn every_template_is_valid_utf8_and_non_empty() {
         for t in templates::all() {
             assert!(!t.contents.trim().is_empty(), "{} is empty", t.path);
-            assert!(t.path.ends_with(".md"), "{} is not markdown", t.path);
+            // Markdown pour les registres et les contrats ; le `.gitignore`
+            // porté par l'arbre généré est le seul fichier de versioning du
+            // scaffold — volontairement pas du markdown.
+            assert!(
+                t.path.ends_with(".md") || t.path.ends_with(".gitignore"),
+                "{} is neither markdown nor a tree gitignore",
+                t.path
+            );
         }
     }
 

@@ -87,10 +87,23 @@ impl LlmExecutor {
     /// la même panne — l'endpoint indisponible). La panne est typée
     /// immédiatement, avec la reprise conseillée.
     pub fn probe_upstream(timeout_secs: u64) -> Result<()> {
+        // Épinglage honnête de la sonde aussi : le défaut du CLI peut être
+        // en panne alors que le modèle réglé est sain — la sonde doit
+        // interroger le même amont que le run réel.
+        let model = crate::harness::common::load_harness_bindings()?.model;
+        let mut args = vec!["run".to_string(), "Réponds OK.".to_string()];
+        if let Some(m) = model {
+            args.push("-m".into());
+            args.push(m);
+        }
         let out = run_captured(
             "opencode",
-            &["run".to_string(), "Réponds OK.".to_string()],
-            timeout_secs.min(60),
+            &args,
+            // Leçon REQ-005 (portabilité) : la sonde mesure l'ATTEIGNABILITÉ
+            // de l'éditeur, pas sa vitesse. Un éditeur local qui charge son
+            // modèle à froid (Ollama, 14 B : ~1 min sur GPU portable) est
+            // légitime — 60 s l'assassinait avant son premier mot.
+            timeout_secs.min(240),
         )?;
         if !out.status_ok {
             return Err(anyhow!(
@@ -124,8 +137,14 @@ impl opendomain_core::harness::Executor for LlmExecutor {
             );
         }
         if !out.status_ok && out.stdout.trim().is_empty() {
+            // REQ-003 : exit non-zéro sans AUCUNE sortie contractuelle = le
+            // service n'a rien produit — faute amont, pas de l'agent. Le
+            // message est auto-typé (« panne amont » est reconnu par
+            // `classify_error`) : la leçon du run-002, trois retries
+            // morts-nés sur une panne d'endpoint, ne se reproduit plus.
             return Err(anyhow!(
-                "`{}` a échoué : {}",
+                "`{}` a échoué sans aucune sortie contractuelle (exit non-zéro) — \
+panne amont (l'endpoint n'a rien produit) : {}",
                 self.bin,
                 out.stderr.lines().last().unwrap_or("(cause inconnue)")
             ));
@@ -143,17 +162,22 @@ impl opendomain_core::harness::Executor for LlmExecutor {
 
     /// Canal d'erreurs typé : le parse d'enveloppe est une violation de
     /// contrat ; une panne du service LLM (quota épuisé, authentification,
-    /// indisponibilité) est une faute **amont** — la remédiation est «
-    /// reprendre plus tard », jamais trois relances à l'identique
-    /// (leçon du 2026-10-23) ; un dépassement de délai reste une faute
-    /// locale dirigée (hint d'augmentation de timeout).
+    /// indisponibilité, endpoint en panne) est une faute **amont** — la
+    /// remédiation est « reprendre plus tard », jamais trois relances à
+    /// l'identique (leçon du 2026-10-23) ; un dépassement de délai reste une
+    /// faute locale dirigée (hint d'augmentation de timeout). REQ-003 : la
+    /// chaîne exacte du run-002 (« Upstream request failed ») et le crash
+    /// sec du subprocess (exit non-zéro sans sortie contractuelle, message
+    /// auto-typé « panne amont » produit par `run`) sont reconnus.
     fn classify_error(&self, err: &anyhow::Error) -> FailureKind {
         let msg = format!("{err:#}");
         let low = msg.to_lowercase();
-        const AMONT: [&str; 7] = [
+        const AMONT: [&str; 9] = [
             "usage limit",
             "rate limit",
             "quota",
+            "upstream",
+            "panne amont",
             "unauthorized",
             "forbidden",
             "subscription",
@@ -400,6 +424,15 @@ Subscribe to OpenCode Go to keep going: https://opencode.ai/go");
         // indisponibilité / auth
         let down = anyhow!("amont `opencode` indisponible (sonde one-shot) : connection refused");
         assert_eq!(ex.classify_error(&down), opendomain_core::harness::FailureKind::UpstreamFailure);
+        // la chaîne exacte de la panne du run-002 — classée spec_mismatch ×3
+        // en session — est désormais reconnue amont (REQ-003)
+        let upstream = anyhow!("`opencode` a échoué : Upstream request failed");
+        assert_eq!(ex.classify_error(&upstream), opendomain_core::harness::FailureKind::UpstreamFailure);
+        // crash du subprocess : exit non-zéro, aucune sortie contractuelle —
+        // message auto-typé produit par `run` (REQ-003)
+        let crash = anyhow!("`opencode` a échoué sans aucune sortie contractuelle \
+(exit non-zéro) — panne amont (l'endpoint n'a rien produit) : process exited with code 1");
+        assert_eq!(ex.classify_error(&crash), opendomain_core::harness::FailureKind::UpstreamFailure);
         // enveloppe non JSON → violation de contrat (la réponse existait)
         let bad_json = anyhow!("JSON invalide : sortie non conforme");
         assert_eq!(ex.classify_error(&bad_json), opendomain_core::harness::FailureKind::ContractViolation);

@@ -57,10 +57,11 @@ pub const FILES: &[Template] = &[
         "opendomain/harness/memory/README.md",
         include_str!("../../templates/harness-memory-README.md"),
     ),
-    // Pas de .gitignore template : le harnais ne dépose pas de fichier de
-    // versioning — le .gitignore du PROJET lui-même liste les deux arbres
-    // générés (opendomain/, .opencode/). Un fichier de versioning appartient
-    // au projet, pas au scaffold.
+    // Pas de .gitignore pour le harnais lui-même : la politique de versioning
+    // est portée PAR les arbres générés — `opendomain/.gitignore` (régistries,
+    // harnais, runs) et `.opencode/.gitignore` (contrat d'agent), écrits par
+    // le scaffold de `init` comme les autres fichiers. Le .gitignore du
+    // PROJET n'est jamais touché.
     // Pas de contrat méta-agent : le harnais se pilote par les commandes
     // (/opendomain-implement → rôles → skills). La doctrine d'exécution vit
     // UNE fois, dans le skill `opendomain-harness` — aucune copie par
@@ -176,8 +177,8 @@ mod tests {
         // Pas de contrat méta-agent, dans AUCUN espace de noms : le harnais
         // se pilote par les commandes → rôles → skills ; la doctrine vit une
         // fois, dans le skill `opendomain-harness`.
-        assert!(!dir.join(".opencode/agent/opendomain-harnais.md").exists());
-        assert!(!dir.join(".claude/agents/opendomain-harnais.md").exists());
+        assert!(!dir.join(".opencode/agent/opendomain-harness.md").exists());
+        assert!(!dir.join(".claude/agents/opendomain-harness.md").exists());
         // Idempotence : un second passage ne réécrit rien et n'échoue pas.
         run(dir.to_str().unwrap()).unwrap();
         assert!(dir.join("opendomain/harness/README.md").exists());

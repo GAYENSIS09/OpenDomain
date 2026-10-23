@@ -6,8 +6,12 @@
 //! 3. convergeance du retry avec feedback,
 //! 4. attribution correcte par type d'échec,
 //! 5. reprise re-vérifiée : les sorties admises ne ré-exécutent pas,
-//! 6. sandbox : allowlist honorée AVANT exécution,
-//! 7. résolveur : un fournisseur par besoin, sinon échec typé.
+//! 6. sandbox : allowlist honorée AVANT exécution (parser général unique),
+//! 7. résolveur : un fournisseur par besoin, sinon échec typé ;
+//! 8. admission : un agent incomplet n'entre nulle part (parité offline
+//!    avec plan / run / repatch — S7) ;
+//! 9. preuve : le `gates.log` écrit passe le pont de provenance (round-trip
+//!    écrivain → lecteur du contrat cross-crate — S7).
 //!
 //! Un banc échoué ⇒ code de sortie non nul (utilisable en CI).
 
@@ -67,6 +71,16 @@ pub fn run() -> Result<()> {
         &mut b,
         "kit : une capacité sans fournisseur refuse la construction",
         &test_kit_typed,
+    );
+    check(
+        &mut b,
+        "admission : un agent incomplet n'entre nulle part (même loi offline)",
+        &test_admission_completeness,
+    );
+    check(
+        &mut b,
+        "preuve : gates.log écrit → pont de provenance (round-trip)",
+        &test_gates_log_provenance_contract,
     );
 
     println!(
@@ -230,11 +244,16 @@ fn test_resume_skips() -> bool {
 }
 
 /// La sandbox refuse l'inconnu AVANT l'exécution — et reflète `enabled`.
+/// Passe désormais par le **seul** parser du format (`Config::parse` de core).
 fn test_sandbox_allowlist() -> bool {
-    let on = crate::harness::common::parse_sandbox_config(
-        "[opendomain]\nversion = 1\n\n[sandbox]\nenabled = true\nallow = [\"cargo\", \"rustc\"]\n",
-    );
-    let off = crate::harness::common::parse_sandbox_config("[opendomain]\nversion = 1\n");
+    use opendomain_core::config::Config;
+    let from_cfg = |text: &str| {
+        Config::parse(text).map(|c| crate::harness::common::Sandbox::from_config(&c))
+    };
+    let on = from_cfg("version = 1\n\n[sandbox]\nenabled = true\nallow = [\"cargo\", \"rustc\"]\n").unwrap();
+    // Désactivée = décision écrite explicite (`enabled = false`) — le
+    // réglage réel ; plus de « section absente faussement désactivée ».
+    let off = from_cfg("[sandbox]\nenabled = false\n").unwrap();
     on.enabled
         && off.permits("curl").is_ok() // désactivée = fail-open assumé, explicite
         && on.permits("cargo").is_ok()
@@ -264,6 +283,66 @@ fn test_kit_typed() -> bool {
     err.contains("sans fournisseur")
         && err.contains("deploy.inconnu")
         && err.contains("kit add skill")
+}
+
+/// Parité offline de l'admission (S7) : un agent incomplet est refusé par le
+/// même moteur que plan / run --graph / repatch — le mode hors-ligne skewte
+/// la même loi, pas une affiche.
+fn test_admission_completeness() -> bool {
+    let fainéant = AgentSpec {
+        id: "fainéant".into(),
+        role: "rôle présent".into(),
+        ..Default::default()
+    };
+    let file = GraphFile { meta: Value::Null, nodes: vec![fainéant] };
+    let err = format!(
+        "{:#}",
+        opendomain_core::harness::admit(&file, &opendomain_core::harness::no_caps)
+            .expect_err("l'incomplet n'entre nulle part")
+    );
+    err.contains("incomplets") && err.contains("contract") && err.contains("fainéant")
+}
+
+/// Le round-trip du contrat `gates.log` (S7) : ce que `runflow::gates_log`
+/// écrit dans une archive et que `provenance::verify` lit — l'écrivain et
+/// le lecteur du format passent au banc, comme en CI, dans un tempdir.
+fn test_gates_log_provenance_contract() -> bool {
+    use crate::harness::runflow::gates_log;
+    use opendomain_core::harness::RunSummary;
+    use opendomain_core::provenance::{verify, RunCitation};
+
+    let base = std::env::temp_dir().join("opendomain-bench-provenance");
+    let _ = std::fs::remove_dir_all(&base);
+    let run = base.join("run-001-bench");
+    if std::fs::create_dir_all(run.join("context")).is_err() {
+        return false;
+    }
+    if std::fs::write(run.join("graph.json"), r#"{"meta":null,"nodes":[]}"#).is_err() {
+        return false;
+    }
+    let summary = RunSummary {
+        passed: vec!["probeur".into()],
+        failed: None,
+        events: vec![
+            opendomain_core::harness::TraceEvent::Start { node: "probeur".into() },
+            opendomain_core::harness::TraceEvent::Passed { node: "probeur".into(), attempts: 1 },
+        ],
+    };
+    if std::fs::write(run.join("gates.log"), gates_log(&summary)).is_err() {
+        return false;
+    }
+    if std::fs::write(run.join("context").join("probeur.json"), r#"{"ok":true}"#).is_err() {
+        return false;
+    }
+    let rv = verify(
+        &base,
+        &RunCitation { run: "run-001-bench".into(), node: Some("probeur".into()) },
+    );
+    rv.exists
+        && rv.frozen_graph
+        && rv.gates_log
+        && rv.outputs == 1
+        && rv.node_verdict.as_ref().map(|v| v.is_ok()).unwrap_or(false)
 }
 
 /// Un besoin = un fournisseur ; un besoin sans fournisseur est un `miss`

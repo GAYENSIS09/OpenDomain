@@ -66,9 +66,9 @@ opendomain init --name my-project
 opendomain status
 ```
 
-`opendomain init` **installs only** — registries + `opendomain.toml` + the execution harness + agent contract. It records no context: run `/opendomain-project` afterwards to fill `project.md`, `[project]`, `DOM-001`/`STK-001` from the repository, external research, then user answers. It never writes a `.gitignore` by itself — versioning belongs to the project. Inside a git repository it advises the split (registries and runs are the cited evidence, `run = "…"` via `opendomain provenance`); `--gitignore` lists the two regenerable trees on explicit request.
+`opendomain init` **installs only** — registries + `opendomain.toml` + the execution harness + agent contract. It records no context: run `/opendomain-project` afterwards to fill `project.md`, `[project]`, `DOM-001`/`STK-001` from the repository, external research, then user answers. Each generated tree carries its own `.gitignore` — regenerable like the rest of the scaffold, and the project's own `.gitignore` is never touched: a project that versions a tree (the registries and runs are the cited F14/L9 evidence) deletes that tree's `.gitignore`. Inside a git repository it advises the split (registries and runs are the cited evidence, `run = "…"` via `opendomain provenance`).
 
-It creates an `opendomain/` directory of **41 files** — 34 registry files (one per artifact kind, from `SRC` to `TEST`), six explanatory files (`README.md`, `project.md`, the research protocol, the architecture overview, the specs and changes READMEs) and `opendomain.toml` — plus the **execution harness** under `opendomain/harness/` (9 further files: the `specs/`, `graph/`, `runs/`, `grounding/`, `agents/`, `contracts/`, `memory/` directories with their contracts, and a worked example graph — the criteria `C_i` live inside `graph.json`, next to each node's contract, and the harness settings live in `opendomain.toml` under `[gates]`/`[sandbox]`). **In total, `opendomain init` writes 76 files.** It is idempotent — re-running it reports what already exists and changes nothing.
+It creates an `opendomain/` directory of **42 files** — 34 registry files (one per artifact kind, from `SRC` to `TEST`), six explanatory files (`README.md`, `project.md`, the research protocol, the architecture overview, the specs and changes READMEs), `opendomain.toml` and the tree's own `.gitignore` — plus the **execution harness** under `opendomain/harness/` (9 further files: the `specs/`, `graph/`, `runs/`, `grounding/`, `agents/`, `contracts/`, `memory/` directories with their contracts, and a worked example graph — the criteria `C_i` live inside `graph.json`, next to each node's contract, and the harness settings live in `opendomain.toml` under `[gates]`/`[sandbox]`/`[harness]`), and the **agent contract** at the project root (27 further files, `.opencode/.gitignore` included). **In total, `opendomain init` writes 78 files.** It is idempotent — re-running it reports what already exists and changes nothing.
 
 It also writes an **agent contract** to the project root, so the framework is usable by any coding agent rather than only by someone who has read the paper:
 
@@ -78,9 +78,9 @@ AGENTS.md                          # the rules, readable by any agent
                                    # /opendomain-audit, /opendomain-record, /opendomain-project, /opendomain-research,
                                    # /opendomain-domain, /opendomain-requirements, /opendomain-opportunity,
                                    # /opendomain-spec, /opendomain-plan, /opendomain-implement, /opendomain-complete,
-                                   # /opendomain-harnais (build from a TASK, or recover a run)
+                                   # /opendomain-harness (build from a TASK, or recover a run)
 .opencode/agent/                   # domain-researcher, context-completer,
-                                   # opendomain-harnais (subagent: builds the agent system from a TASK record)
+                                   # opendomain-harness (subagent: builds the agent system from a TASK record)
 .opencode/skills/                  # opendomain, -artifacts, -epistemics, -research, -gates, -harness
 ```
 
@@ -235,10 +235,15 @@ as gate criteria `commands` and executed **by the runner** in the project's
 sandbox, so a green suite counts only once it passed inside an archived run.
 
 The runtime config lives in `opendomain/harness/config.opendomain.toml` —
-`[gates]` (strict by default: no advisory verdict, `max_attempts`) and
+`[gates]` (strict by default: no advisory verdict, `max_attempts`),
 `[sandbox]`
 (an allowlist of binaries for the criteria commands — contributing a binary is
-an explicit `opendomain repatch --allow` decision, never automatic).
+an explicit `opendomain repatch --allow` decision, never automatic) and
+`[harness]` (the node-agents' execution bindings: a pinned `model` — a quota
+death on the CLI's default model no longer kills a run, `OPENCODE_MODEL` is
+honoured when unset — and the `steps` budget, 40 by default: on the final step
+OpenCode withdraws the tools and asks for a summary the gate judges like any
+output).
 
 ## Using it with opencode
 
@@ -261,9 +266,9 @@ This repository ships a working opencode integration. If you point opencode at a
 | `/opendomain-opportunity` | Gate 4 challenged concept + falsifiable hypothesis |
 | `/opendomain-spec` | Gate 5 observable-behaviour spec + acceptance criteria |
 | `/opendomain-plan` | Gate 6 bounded, ordered plan |
-| `/opendomain-implement <TASK/SPEC/AC>` | Gate 7 — routes through the verified harness (`opendomain-harnais`) |
+| `/opendomain-implement <TASK/SPEC/AC>` | Gate 7 — routes through the verified harness (`opendomain-harness`) |
 | `/opendomain-complete` | Gate 8 full alignment audit before release |
-| `/opendomain-harnais <TASK\|run>` | The harness's door: build from a TASK, or recover a run (verify → attribute → resume/repatch) — never a blind re-run |
+| `/opendomain-harness <TASK\|run>` | The harness's door: build from a TASK, or recover a run (verify → attribute → resume/repatch) — never a blind re-run |
 
 One command per gate keeps usage simple: run the command for the stage you are in; it loads the skill, delegates to the right subagent, then shows `opendomain gate` verbatim. No extra orchestration to learn.
 
@@ -271,7 +276,7 @@ One command per gate keeps usage simple: run the command for the stage you are i
 
 - `context-completer` — owns Phase 0 (`project.md` + `[project]` + `DOM-001`/`STK-001`). Reads the repo itself, **delegates external research to `domain-researcher`**, then asks human-only gaps. Called by `/opendomain-project`.
 - `domain-researcher` — evidence specialist. Called by `context-completer`, `/opendomain-research`, `/opendomain-domain`, `/opendomain-requirements`; fans out 3-6 axes in parallel itself. Bash `deny` by default with `opendomain *` + read-only repo commands allowed.
-- `opendomain-harnais` - the harness architect: a TASK record becomes a verified agent system (plan → ground → build → run under gates → attribution). Called by `/opendomain-implement` on a `TASK-`. Bash `deny` by default with `opendomain *` + read-only repo commands allowed. Doctrine: the `opendomain-harness` skill.
+- `opendomain-harness` - the harness architect: a TASK record becomes a verified agent system (plan → ground → build → run under gates → attribution). Called by `/opendomain-implement` on a `TASK-`. Bash `deny` by default with `opendomain *` + read-only repo commands allowed. Doctrine: the `opendomain-harness` skill.
 
 **Skills** (the framework's strength, loaded on demand by commands and agents)
 
@@ -288,7 +293,7 @@ commands (thin, UX) → subagents (roles, call each other) → skills (know-how)
 readonly:  /opendomain-status /opendomain-gate /opendomain-trace /opendomain-impact /opendomain-audit
 production:/opendomain-project /opendomain-research /opendomain-record /opendomain-domain /opendomain-requirements
            /opendomain-opportunity /opendomain-spec /opendomain-plan /opendomain-implement → /opendomain-complete
-           /opendomain-harnais (build from a TASK / recover a run)
+           /opendomain-harness (build from a TASK / recover a run)
                          ↘ calls /opendomain-audit for the diagnostic, then decides
 ```
 
@@ -296,7 +301,7 @@ Every command and agent renders **summary-first**: Verdict (1 line) → top-3 bl
 
 **Skill.** `.opencode/skills/opendomain/SKILL.md` loads on demand and carries the artifact format and the epistemic discipline. `AGENTS.md` holds the short version that is always in context, so the skill does not have to be.
 
-To adopt this in your own project, run `opendomain init` — it writes `AGENTS.md` and the twenty-five `.opencode/` files (16 commands, 3 role agents, 6 skills) for you, and puts the `opendomain` binary on `PATH`. There is no primary persona: the harness is driven by the commands (`/opendomain-implement TASK-012` → the `opendomain-harnais` subagent → skills), and the execution doctrine lives once, in the `opendomain-harness` skill. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
+To adopt this in your own project, run `opendomain init` — it writes `AGENTS.md` and the twenty-five `.opencode/` files (16 commands, 3 role agents, 6 skills) for you, and puts the `opendomain` binary on `PATH`. There is no primary persona: the harness is driven by the commands (`/opendomain-implement TASK-012` → the `opendomain-harness` subagent → skills), and the execution doctrine lives once, in the `opendomain-harness` skill. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
 
 ```json
 {

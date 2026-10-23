@@ -65,14 +65,17 @@ pub struct Config {
     #[serde(default)]
     pub verification: VerificationConfig,
 
-    /// The harness's at-rest settings — `[gates]` (strictness, retry budget)
-    /// and `[sandbox]` (the criteria commands' allowlist). One config file
+    /// The harness's at-rest settings — `[gates]` (strictness, retry budget),
+    /// `[sandbox]` (the criteria commands' allowlist) and `[harness]` (the
+    /// node-agents' pinned model and step budget). One config file
     /// for the whole workspace: the harness reads these, there is no second
     /// config to diverge from this one.
     #[serde(default)]
     pub gates: GatesConfig,
     #[serde(default)]
     pub sandbox: SandboxConfig,
+    #[serde(default)]
+    pub harness: HarnessConfig,
 }
 
 /// `[gates]` — the runner's propagation policy (defaults = the paper's).
@@ -99,6 +102,39 @@ pub struct SandboxConfig {
     pub enabled: bool,
     #[serde(default = "default_sandbox_allow")]
     pub allow: Vec<String>,
+}
+
+/// `[harness]` — the node-agents' execution bindings, projected into every
+/// `.opencode/agent/` frontmatter at `opendomain build` time, reviewable
+/// before any run. `model` pins `provider/model` per node-agent, so a quota
+/// death on the CLI's default model can no longer kill a whole run; when
+/// absent, the `OPENCODE_MODEL` environment variable is read at build time.
+/// `steps` bounds each node: on the final step OpenCode withdraws the tools
+/// and asks the model to summarize — and the gate judges that summary like
+/// any other output, so a node can no longer burn a run in silence.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct HarnessConfig {
+    /// `provider/model`, optionally `provider/model#variant`, baked into each
+    /// node-agent's frontmatter. Absent → `OPENCODE_MODEL` at build time,
+    /// else OpenCode's default (a subagent inherits its parent's model).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// Positive step budget per node-agent (default 40). `steps = 0` is
+    /// refused: a zero budget can never emit a summary, the failure would be
+    /// manufactured by the config, not observed by the gate.
+    #[serde(default = "default_harness_steps", skip_serializing_if = "Option::is_none")]
+    pub steps: Option<u32>,
+}
+
+fn default_harness_steps() -> Option<u32> {
+    Some(40)
+}
+
+impl Default for HarnessConfig {
+    fn default() -> Self {
+        HarnessConfig { model: None, steps: default_harness_steps() }
+    }
 }
 
 fn default_true() -> bool {
@@ -210,6 +246,7 @@ impl Default for Config {
             verification: VerificationConfig::default(),
             gates: GatesConfig::default(),
             sandbox: SandboxConfig::default(),
+            harness: HarnessConfig::default(),
         }
     }
 }
@@ -253,6 +290,22 @@ impl Config {
                     "`scan` contains an empty path".into(),
                 ));
             }
+        }
+        if let Some(model) = self.harness.model.as_deref() {
+            if model.trim().is_empty() {
+                return Err(OdError::ConfigInvalid(
+                    "`harness.model` is empty — set a `provider/model` or remove the key \
+                     (the node-agents then follow `OPENCODE_MODEL` or OpenCode's default)"
+                        .into(),
+                ));
+            }
+        }
+        if self.harness.steps == Some(0) {
+            return Err(OdError::ConfigInvalid(
+                "`harness.steps` must be at least 1 — a zero budget can never emit a summary, \
+                 the failure would be manufactured by the config instead of observed by the gate"
+                    .into(),
+            ));
         }
         Ok(())
     }
@@ -360,5 +413,39 @@ mod tests {
         assert_eq!(cfg.sandbox.allow, vec!["cargo"]);
         let err = Config::parse("[gates]\nnonsense = true\n").unwrap_err();
         assert!(err.to_string().contains("nonsense"), "{err}");
+    }
+
+    #[test]
+    fn harness_section_round_trips_with_defaults() {
+        // Absente → le budget de pas du papier de soin V2, aucun modèle
+        // épinglé (le nœud suit alors OPENCODE_MODEL ou le défaut OpenCode).
+        let cfg = Config::parse("").unwrap();
+        assert_eq!(cfg.harness.steps, Some(40));
+        assert_eq!(cfg.harness.model, None);
+        // Présente → lue, et stricte sur les clés inconnues.
+        let cfg = Config::parse(
+            "[harness]\nmodel = \"opencode-go/glm-5.3-flash\"\nsteps = 60\n",
+        )
+        .unwrap();
+        assert_eq!(cfg.harness.model.as_deref(), Some("opencode-go/glm-5.3-flash"));
+        assert_eq!(cfg.harness.steps, Some(60));
+        let err = Config::parse("[harness]\nnonsense = true\n").unwrap_err();
+        assert!(err.to_string().contains("nonsense"), "{err}");
+        // Le rendu (init, repatch --allow) réécrit la section telle quelle —
+        // un modèle absent ne se sérialise pas en chaîne vide.
+        let text = Config::default().render();
+        assert!(text.contains("steps = 40"), "{text}");
+        assert!(!text.contains("model"), "{text}");
+    }
+
+    #[test]
+    fn harness_section_refuses_les_valeurs_fabriquees() {
+        // steps = 0 : un budget nul ne peut jamais émettre de résumé — la
+        // panne serait fabriquée par la config, pas observée par le gate.
+        let err = Config::parse("[harness]\nsteps = 0\n").unwrap_err();
+        assert!(err.to_string().contains("at least 1"), "{err}");
+        // model vide : épingler du vide est une faute de frappe, pas un choix.
+        let err = Config::parse("[harness]\nmodel = \"\"\n").unwrap_err();
+        assert!(err.to_string().contains("empty"), "{err}");
     }
 }

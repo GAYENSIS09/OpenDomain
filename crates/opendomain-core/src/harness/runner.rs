@@ -12,8 +12,8 @@ use super::{validate_output, AgentSpec, Dag, Failure, FailureKind};
 /// (`[gates] max_attempts`) — le coût doit rester proportionnel à la localité.
 pub const MAX_ATTEMPTS: u32 = 3;
 
-/// Réglages d'exécution lus dans `opendomain/harness/config.opendomain.toml` par la CLI
-/// et branchés ici : la config **gouverne** le runner, elle ne le décore pas.
+/// Réglages d'exécution lus dans `opendomain/opendomain.toml` `[gates]` par la
+/// CLI et branchés ici : la config **gouverne** le runner, elle ne le décore pas.
 #[derive(Debug, Clone, Copy)]
 pub struct RunConfig {
     /// Tentatives locales max avant escalade d'attribution.
@@ -250,7 +250,7 @@ impl<'e> Runner<'e> {
     }
 
     /// Branche la config `[gates]` lue par la CLI : la valeur écrite dans
-    /// `config.opendomain.toml` décide du nombre de tentatives.
+    /// `opendomain/opendomain.toml` décide du nombre de tentatives.
     pub fn with_config(mut self, config: RunConfig) -> Self {
         self.config = config;
         self

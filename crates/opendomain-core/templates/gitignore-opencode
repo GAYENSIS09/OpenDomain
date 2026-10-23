@@ -1,0 +1,5 @@
+# Généré par `opendomain init` — tout cet arbre est régénérable par le
+# binaire (`opendomain init` réécrit le contrat d'agent). Supprimer ce
+# fichier pour versionner la doctrine.
+*
+!.gitignore

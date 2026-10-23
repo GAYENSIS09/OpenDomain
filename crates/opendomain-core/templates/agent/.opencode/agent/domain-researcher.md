@@ -1,17 +1,22 @@
 ---
 description: Use when a domain claim needs a real source. Evidence specialist: parallel keyword fan-out, triangulation, rich SRC/EVD records. Called by opendomain-project, opendomain-research, opendomain-domain, opendomain-requirements.
 mode: subagent
-temperature: 0.1
-permission:
-  edit: allow
-  bash:
-    "*": deny
-    "opendomain *": allow
-    "ls *": allow
-    "rg *": allow
-    "cat *": allow
-    "git ls-files *": allow
-    "git log *": allow
+steps: 40
+permissions:
+  - { action: "*", resource: "*", effect: deny }
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: glob, resource: "*", effect: allow }
+  - { action: skill, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: webfetch, resource: "*", effect: allow }
+  - { action: websearch, resource: "*", effect: allow }
+  - { action: shell, resource: "opendomain *", effect: allow }
+  - { action: shell, resource: "ls *", effect: allow }
+  - { action: shell, resource: "rg *", effect: allow }
+  - { action: shell, resource: "cat *", effect: allow }
+  - { action: shell, resource: "git ls-files *", effect: allow }
+  - { action: shell, resource: "git log *", effect: allow }
 ---
 
 # Who I am

@@ -109,12 +109,12 @@ pub const OD_COMPLETE: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/command/opendomain-complete.md"),
 };
 
-/// `.opencode/command/opendomain-harnais.md` — la porte unique du cycle du
+/// `.opencode/command/opendomain-harness.md` — la porte unique du cycle du
 /// harnais : construire depuis un TASK, ou récupérer un run (verify,
 /// attribute, resume, repatch) — jamais un re-run aveugle.
-pub const OD_HARNAIS: Template = Template {
-    path: ".opencode/command/opendomain-harnais.md",
-    contents: include_str!("../../templates/agent/.opencode/command/opendomain-harnais.md"),
+pub const OD_HARNESS: Template = Template {
+    path: ".opencode/command/opendomain-harness.md",
+    contents: include_str!("../../templates/agent/.opencode/command/opendomain-harness.md"),
 };
 
 /// `.opencode/agent/domain-researcher.md`.
@@ -129,7 +129,7 @@ pub const CONTEXT_COMPLETER: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/agent/context-completer.md"),
 };
 
-/// `.opencode/agent/opendomain-harnais.md` — l'architecte du harnais :
+/// `.opencode/agent/opendomain-harness.md` — l'architecte du harnais :
 /// un `TASK-###` du registre devient un système d'agents vérifié. Subagent
 /// borné (jamais persona principal), dans le moule du context-completer :
 /// permissions deny-all + allows explicites, phases, handback. La doctrine
@@ -137,8 +137,17 @@ pub const CONTEXT_COMPLETER: Template = Template {
 /// direct a été supprimé : TOUTE implémentation exécutée par des agents
 /// passe par le harnais vérifié — pas de voie qui le contourne.
 pub const HARNESS_ARCHITECT: Template = Template {
-    path: ".opencode/agent/opendomain-harnais.md",
-    contents: include_str!("../../templates/agent/.opencode/agent/opendomain-harnais.md"),
+    path: ".opencode/agent/opendomain-harness.md",
+    contents: include_str!("../../templates/agent/.opencode/agent/opendomain-harness.md"),
+};
+
+/// `.opencode/.gitignore` — la politique de versioning du contrat d'agent,
+/// portée par l'arbre lui-même : tout est régénérable par `opendomain init`,
+/// le `.gitignore` du projet n'est jamais touché. Généré comme les autres
+/// fichiers, sans drapeau.
+pub const OPENCODE_GITIGNORE: Template = Template {
+    path: ".opencode/.gitignore",
+    contents: include_str!("../../templates/gitignore-opencode"),
 };
 
 /// `.opencode/skills/opendomain/SKILL.md` — index.
@@ -201,10 +210,11 @@ pub fn all() -> Vec<Template> {
         OD_PLAN,
         OD_IMPLEMENT,
         OD_COMPLETE,
-        OD_HARNAIS,
+        OD_HARNESS,
         DOMAIN_RESEARCHER,
         CONTEXT_COMPLETER,
         HARNESS_ARCHITECT,
+        OPENCODE_GITIGNORE,
         SKILL,
         SKILL_EPISTEMICS,
         SKILL_ARTIFACTS,

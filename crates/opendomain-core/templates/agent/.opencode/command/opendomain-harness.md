@@ -1,5 +1,5 @@
 ---
-description: Drive the harness — build the agent system from a TASK record, or recover a run (verify, attribute, resume, repatch). Routes to opendomain-harnais.
+description: Drive the harness — build the agent system from a TASK record, or recover a run (verify, attribute, resume, repatch). Routes to opendomain-harness.
 agent: build
 ---
 
@@ -9,7 +9,7 @@ The verified-execution flow has one door: "$ARGUMENTS" tells me which. With no a
 
 ## A `TASK-` — build and execute
 
-I hand the task to the `opendomain-harnais` subagent (the harness architect; doctrine: the `opendomain-harness` skill): `opendomain plan TASK-012` → `ground` → `build` (the node-agents are defined here, reviewable) → `run` — the gates `y_i ∈ C_i` fire, everything archives. I relay its report résumé-first: the **Verdict** (run PASS + directory, or the terminal failure typed), the nodes validated, the blockers.
+I hand the task to the `opendomain-harness` subagent (the harness architect; doctrine: the `opendomain-harness` skill): `opendomain plan TASK-012` → `ground` → `build` (the node-agents are defined here, reviewable) → `run` — the gates `y_i ∈ C_i` fire, everything archives. I relay its report résumé-first: the **Verdict** (run PASS + directory, or the terminal failure typed), the nodes validated, the blockers.
 
 ## A `run-` — recover, never re-run blind
 

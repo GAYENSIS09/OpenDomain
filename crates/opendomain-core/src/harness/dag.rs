@@ -6,12 +6,19 @@
 
 use std::collections::{BTreeMap, VecDeque};
 
-use anyhow::{bail, Context};
+use anyhow::bail;
 use serde::{Deserialize, Serialize};
 
+use super::admission::AdmissionError;
 use super::model::AgentSpec;
 
 /// Fichier `graph.json` tel que stocké dans `opendomain/graph/`.
+///
+/// Tolérance racine assumée : des clés additionnelles au niveau du fichier
+/// (la `_note` du modèle d'exemple) restent ignorées — de la prose. C'est à
+/// l'intérieur d'un nœud que la refus doit être précis : [`AgentSpec`],
+/// `Contract`, `Criteria`, `Kit` refusent tout champ inconnu (une typo y
+/// dépouillerait un gate en silence).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraphFile {
     /// Métadonnées libres (nom, source, date…).
@@ -30,44 +37,56 @@ pub struct Dag {
 
 impl Dag {
     /// Construit un DAG depuis un [`GraphFile`] et le valide.
-    pub fn build(file: &GraphFile) -> anyhow::Result<Self> {
+    ///
+    /// Les refus sont typés ([`AdmissionError::Structure`]) et précisent
+    /// nœud et cause — une typo ne passe jamais tout seul.
+    pub fn build(file: &GraphFile) -> Result<Self, AdmissionError> {
         let mut nodes = BTreeMap::new();
         for n in &file.nodes {
             let id = n.id.trim();
             if id.is_empty() {
-                bail!("nœud sans `id`");
+                return Err(AdmissionError::structure("nœud sans `id`".into()));
             }
             if nodes.contains_key(id) {
-                bail!("id de nœud dupliqué : `{id}`");
+                return Err(AdmissionError::structure(format!("id de nœud dupliqué : `{id}`")));
             }
             let mut spec = n.clone();
             spec.id = id.to_string();
             nodes.insert(id.to_string(), spec);
         }
         let dag = Self { nodes };
-        dag.validate().context("graphe invalide")?;
+        dag.validate_typed()?;
         Ok(dag)
     }
 
-    /// Contrôles statiques : boucle sur soi, arêtes pendantes, acyclicité.
-    pub fn validate(&self) -> anyhow::Result<()> {
+    /// Contrôles statiques, typés : boucle sur soi, arêtes pendantes,
+    /// acyclicité.
+    fn validate_typed(&self) -> Result<(), AdmissionError> {
         for n in self.nodes.values() {
             if n.depends_on.iter().any(|d| d.trim() == n.id) {
-                bail!("`{}` dépend de lui-même", n.id);
+                return Err(AdmissionError::structure(format!("`{}` dépend de lui-même", n.id)));
             }
             for d in &n.depends_on {
                 if !self.nodes.contains_key(d.trim()) {
-                    bail!(
+                    return Err(AdmissionError::structure(format!(
                         "arête pendante : `{}` dépend de `{}` (nœud inexistant)",
                         n.id,
                         d.trim()
-                    );
+                    )));
                 }
             }
         }
-        self.topological_order()
-            .context("cycle détecté — le graphe n'est pas un DAG")?;
+        if let Err(e) = self.topological_order() {
+            return Err(AdmissionError::structure(format!(
+                "cycle détecté — le graphe n'est pas un DAG ({e})"
+            )));
+        }
         Ok(())
+    }
+
+    /// Contrôles statiques, à l'error `anyhow` historique.
+    pub fn validate(&self) -> anyhow::Result<()> {
+        self.validate_typed().map_err(anyhow::Error::from)
     }
 
     /// Tri topologique (Kahn). En cas de cycle, liste les nœuds piégés.

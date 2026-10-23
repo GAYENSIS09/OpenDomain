@@ -83,9 +83,11 @@ pub fn resolve_spec_in(root: &str, input: &str) -> Result<SpecPaths> {
 ///
 /// La spec est une *vue* générée une fois (titre + prose de l'enregistrement
 /// + provenance) : le harnais se déclenche sur le PLAN, pas sur un
-/// redoublement de spec. Idempotent : une vue existante est utilisée telle
-/// quelle (les mains de l'agent restent dessus) — la régénération est
-/// explicite (supprimer le fichier).
+/// redoublement de spec.
+///
+/// Idempotent : une vue existante est utilisée telle quelle (les mains de
+/// l'agent restent dessus) — la régénération est explicite (supprimer le
+/// fichier).
 fn task_spec_paths(
     root: &str,
     id: &opendomain_core::Id,
@@ -142,35 +144,12 @@ The harness plan compiles from this view; hand edits stay until a regen. -->\n\n
 pub const SPEC_DIR: &str = "opendomain/harness/specs";
 
 // ------------------------------------------------------------- complétude ---
-/// Vérifications de complétude d'un agent — la verification de construction
-/// de la phase 1, partagée par `plan` (admission du graphe) et `build`
-/// (refus du kit incomplet). `(libellé, verdict, champ en faute)`.
+/// Complétude d'un agent. La politique vit dans le **moteur d'admission** de
+/// core (`harness::admission`) — un seul contrôle, partagé par `plan`,
+/// `build`, `run --graph` et `repatch` ; ce wrapper historique reste pour les
+ /// appels CLI qui ne portent pas la décision d'admission (rapport de build).
 pub fn agent_completeness(spec: &AgentSpec) -> Vec<(String, bool, String)> {
-    let schema_ok = spec
-        .contract
-        .output_schema
-        .get("required")
-        .and_then(serde_json::Value::as_array)
-        .map(|r| !r.is_empty())
-        .unwrap_or(false)
-        || spec
-            .contract
-            .output_schema
-            .get("properties")
-            .and_then(serde_json::Value::as_object)
-            .map(|p| !p.is_empty())
-            .unwrap_or(false);
-    let criteria_ok = spec.criteria.schema_check
-        || !spec.criteria.contains.is_empty()
-        || !spec.criteria.contains_in.is_empty()
-        || !spec.criteria.not_contains.is_empty()
-        || !spec.criteria.commands.is_empty();
-    vec![
-        ("rôle non vide".into(), !spec.role.trim().is_empty(), "role".into()),
-        ("liste d'outils présente".into(), !spec.tools.is_empty(), "tools".into()),
-        ("contrat de sortie (required/properties)".into(), schema_ok, "contract".into()),
-        ("critères C_i non vides".into(), criteria_ok, "criteria".into()),
-    ]
+    opendomain_core::harness::completeness(spec)
 }
 
 /// Aiguilles d'un agent, toutes provenances confondues (`contains` brutes +
@@ -225,6 +204,13 @@ ajouter au [sandbox] allow de opendomain/opendomain.toml si légitime",
             ))
         }
     }
+
+    /// Depuis une config parsée par le parser **général** de core — un seul
+    /// parser du format (`Config::parse`/`Config::load`), jamais deux
+    /// lectures divergentes du même fichier.
+    pub fn from_config(cfg: &opendomain_core::config::Config) -> Self {
+        Sandbox { enabled: cfg.sandbox.enabled, allow: cfg.sandbox.allow.clone() }
+    }
 }
 
 /// Lit la sandbox du projet courant, depuis `opendomain.toml`.
@@ -233,50 +219,77 @@ ajouter au [sandbox] allow de opendomain/opendomain.toml si légitime",
 /// l'erreur se propage — une sandbox *silencieusement* désactivée ressemble
 /// à un contournement. Hors workspace (usage hors projet, tests) : désactivée.
 pub fn load_sandbox() -> Result<Sandbox> {
-    if Path::new("opendomain/opendomain.toml").exists() {
+    if Path::new(opendomain_core::harness::WORKSPACE_CONFIG).exists() {
         let cfg = opendomain_core::config::Config::load(Path::new("opendomain"))?;
         return Ok(Sandbox { enabled: cfg.sandbox.enabled, allow: cfg.sandbox.allow });
     }
     Ok(Sandbox { enabled: false, allow: Vec::new() })
 }
 
-/// Parse le **texte** d'une config `opendomain.toml` et en extrait la sandbox.
-///
-/// Sans section `[sandbox]`, la sandbox est désactivée — le fail-open assumé
-/// et explicite que le banc (`bench`) épinglait : une clé absente ne doit
-/// jamais se lire comme une politique fermée par défaut silencieuse.
-pub fn parse_sandbox_config(text: &str) -> Sandbox {
-    let mut enabled = false;
-    let mut allow: Vec<String> = Vec::new();
-    let mut in_sandbox = false;
-    for line in text.lines() {
-        let t = line.trim();
-        if t.starts_with('[') {
-            in_sandbox = t == "[sandbox]";
-            continue;
-        }
-        if !in_sandbox || t.is_empty() || t.starts_with('#') {
-            continue;
-        }
-        if let Some((key, raw)) = t.split_once('=') {
-            // clé et valeur trimées : `enabled = true` comme `enabled=true`,
-            // et une valeur tronquée à son premier commentaire `#`.
-            let value = raw.split('#').next().unwrap_or("").trim();
-            let key = key.trim();
-            if key == "enabled" {
-                enabled = value == "true";
-            } else if key == "allow" {
-                allow = value
-                    .trim_start_matches('[')
-                    .trim_end_matches(']')
-                    .split(',')
-                    .map(|s| s.trim().trim_matches('"').to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect();
-            }
-        }
+// ---------------------------------------------------------------- bindings -
+/// Liaisons d'exécution projetées dans le frontmatter de chaque agent de
+/// nœud à la construction (`opendomain build`) : le modèle épinglé
+/// (`model: provider/model#variant`) et le budget de pas (`steps:` — au
+/// dernier pas, OpenCode retire les outils et demande un résumé, que le
+/// gate juge comme toute sortie). Source unique : la section `[harness]` de
+/// la config générale ; sans `model` configuré, la variable `OPENCODE_MODEL`
+/// est lue à la construction — l'épinglage par exécution, sans éditer la
+/// config. Hors workspace : les défauts (aucun modèle épinglé, 40 pas).
+pub struct NodeBindings {
+    pub model: Option<String>,
+    pub steps: Option<u32>,
+}
+
+/// Lit les liaisons `[harness]` du projet courant. Fail-loud comme la
+/// sandbox : une config qui refuse de parser se propage — jamais de lecture
+/// silencieuse qui ressemble à un contournement.
+pub fn load_harness_bindings() -> Result<NodeBindings> {
+    let harness = if Path::new("opendomain/opendomain.toml").exists() {
+        opendomain_core::config::Config::load(Path::new("opendomain"))?.harness
+    } else {
+        <opendomain_core::config::Config as Default>::default().harness
+    };
+    let model = harness
+        .model
+        .or_else(|| std::env::var("OPENCODE_MODEL").ok())
+        .map(|m| m.trim().to_string())
+        .filter(|m| !m.is_empty());
+    Ok(NodeBindings { model, steps: harness.steps })
+}
+
+// --------------------------------------------------------------- chemins ---
+/// DAG : archive `<slug>.json` + graphe actif `graph.json`.
+pub const GRAPH_DIR: &str = "opendomain/harness/graph";
+/// Archive des runs — append-only, `runs/run-NNN-<slug>/`.
+pub const RUNS_DIR: &str = "opendomain/harness/runs";
+/// Mémoire des leçons typées (M4) — dossier ; `registre.md` vit dedans.
+pub const MEMORY_DIR: &str = "opendomain/harness/memory";
+
+// ------------------------------------------------------- gouvernance de boucle -
+/// `[gates]` de la config générale : `strict` + `max_attempts` — la config
+/// **gouverne** la boucle du harnais (run, plan LLM, révision `--llm`) ; il
+/// n'y a pas de second fichier de réglages.
+pub struct LoopCfg {
+    pub strict: bool,
+    pub max_attempts: u32,
+}
+
+impl Default for LoopCfg {
+    fn default() -> Self {
+        Self { strict: true, max_attempts: opendomain_core::harness::MAX_ATTEMPTS }
     }
-    Sandbox { enabled, allow }
+}
+
+/// Lit la config `[gates]` du projet — l'appelant la branche dans le runner.
+/// Fail-loud conservé : un fichier présent qui refuse de parser se propage
+/// (un harnais ne devine pas ses réglages) ; hors workspace : les défauts du
+/// moteur (`MAX_ATTEMPTS`, strict).
+pub fn loop_config() -> Result<LoopCfg> {
+    if std::path::Path::new(opendomain_core::harness::WORKSPACE_CONFIG).exists() {
+        let cfg = opendomain_core::config::Config::load(std::path::Path::new("opendomain"))?;
+        return Ok(LoopCfg { strict: cfg.gates.strict, max_attempts: cfg.gates.max_attempts });
+    }
+    Ok(LoopCfg::default())
 }
 
 /// Premier titre `# Titre` d'un Markdown.
@@ -389,20 +402,23 @@ mod tests {
     }
 
     #[test]
-    fn sandbox_parse_tolerant_aux_espaces_autour_du_signe_egal() {
-        // forme écrite par le scaffold / un humain : espaces autour du `=`
-        let cfg = parse_sandbox_config(
-            "[opendomain]\nversion = 1\n\n[sandbox]\nenabled = true\nallow = [\"cargo\", \"rustc\"]\n",
-        );
-        assert!(cfg.enabled, "espaces avant le `=` ne doivent pas casser enabled");
-        assert_eq!(cfg.allow, vec!["cargo".to_string(), "rustc".to_string()]);
-        // forme compacte, et commentaire en fin de ligne
-        let compact = parse_sandbox_config("[sandbox]\nenabled=true\nallow=[\"npm\"] # registre\n");
-        assert!(compact.enabled);
-        assert_eq!(compact.allow, vec!["npm".to_string()]);
-        // absent → désactivée (fail-open assumé)
-        let absent = parse_sandbox_config("[opendomain]\nversion = 1\n");
-        assert!(!absent.enabled);
-        assert!(absent.allow.is_empty());
+    fn sandbox_depuis_le_parser_general_de_la_config() {
+        // Le seul parser est celui de core (`Config::parse`) — le parser
+        // manuscrit de common est supprimé (S2) : une seule loi du format.
+        use opendomain_core::config::Config;
+        let on = Config::parse("version = 1\n\n[sandbox]\nenabled = true\nallow = [\"cargo\", \"rustc\"]\n")
+            .map(|c| Sandbox::from_config(&c))
+            .expect("config simple doit parser");
+        assert!(on.enabled);
+        assert_eq!(on.allow, vec!["cargo".to_string(), "rustc".to_string()]);
+        let absent = Config::parse("version = 1\n")
+            .map(|c| Sandbox::from_config(&c))
+            .expect("config sans sandbox doit parser");
+        // Défaut du **moteur** : une section `[sandbox]` absente hérite du
+        // réglage par défaut de la config générale (enabled = true + sa
+        // allowlist). L'ancien parser manuscrit « section absente →
+        // désactivée » était une divergence silencieuse; S2 l'élimine.
+        assert!(absent.enabled);
+        assert_eq!(absent.allow, opendomain_core::config::Config::default().sandbox.allow);
     }
 }

@@ -92,7 +92,7 @@ unreadable; raise `--limit` if you need the whole graph and accept the output.
 
 | Command | What it does |
 |---|---|
-| `opendomain init [--name N] [--profile lean\|core\|full] [--gitignore]` | Writes `opendomain/` and the agent contract; `--gitignore` lists the two regenerable trees (opendomain/, .opencode/) in `.gitignore` — opt-in: versioning belongs to the project. |
+| `opendomain init [--name N] [--profile lean\|core\|full]` | Writes `opendomain/` and the agent contract; each generated tree (opendomain/, .opencode/) carries its own `.gitignore` — regenerable like the rest, delete it to version that tree (registries + runs are the F14/L9 evidence). |
 | `opendomain gate <gate>` | Runs one gate. Exits non-zero on a blocking finding. |
 | `opendomain gate --through <n>` | Runs every gate up to and including number `n` (0–8). |
 | `opendomain link <ID> <relation> <TARGET>` | Records a link declared by the dependent artifact. |
@@ -136,9 +136,12 @@ of retried blind.
 The canonical loop is *Generate → Verify → Attribute → Refine*. A local
 failure retries with typed feedback; an upstream failure re-runs the dependent
 agent first; a structural one comes back to the plan via `opendomain repatch`. The
-gate config (`opendomain/opendomain.toml`, sections `[gates]` and `[sandbox]`) governs the
-runner: `gates.strict` stays on, and `opendomain run` refuses a workspace that
-disables it. The execution doctrine lives once, in the `opendomain-harness`
+gate config (`opendomain/opendomain.toml`, sections `[gates]`, `[sandbox]` and
+`[harness]`) governs the
+runner: `gates.strict` stays on, `opendomain run` refuses a workspace that
+disables it, and `[harness]` pins each node-agent's `model` (`OPENCODE_MODEL`
+honoured when unset) and its `steps` budget — bounded runs, reviewable in the
+emitted agent files. The execution doctrine lives once, in the `opendomain-harness`
 skill — the harness is driven by the commands (`/opendomain-implement` →
 roles → skills), not by a persona.
 

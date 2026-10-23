@@ -170,8 +170,9 @@
       <ul>
         <li><code class="inline">[gates]</code> — <code class="inline">strict = true</code> (fail-closed: a green verdict is never advisory; the CLI refuses loudly a config that says otherwise) and <code class="inline">max_attempts</code> (the retry budget, proportional to locality).</li>
         <li><code class="inline">[sandbox]</code> — <code class="inline">enabled</code> + an <code class="inline">allow</code> list of binaries for criteria commands (template starts closed; <code class="inline">opendomain repatch --allow</code> records an explicit widening into the general config and the run log).</li>
+        <li><code class="inline">[harness]</code> — the node-agents' execution bindings, projected into every <code class="inline">.opencode/agent/</code> frontmatter at <code class="inline">opendomain build</code> time: a pinned <code class="inline">model</code> (<code class="inline">provider/model</code>; <code class="inline">OPENCODE_MODEL</code> is honoured when unset) and the positive <code class="inline">steps</code> budget (40 by default — on the final step OpenCode withdraws the tools and asks for a summary, which the gate judges like any output).</li>
       </ul>
-      <p>Both sections have defaults in the engine, so a workspace that omits them runs exactly as the paper prescribes.</p>
+      <p>All three sections have defaults in the engine, so a workspace that omits them runs exactly as the paper prescribes.</p>
 
       <div class="note"><strong class="label">Note</strong>See also: <a href="gates.html">the nine gates</a> for the at-rest checks, <a href="theory.html">Theory</a> for the epistemic framework's full specification, and <a href="cli-reference.html">the CLI reference</a> for the registry commands. The harness directory structure is documented by the contract shipped into every workspace: <code class="inline">opendomain/harness/README.md</code>, written by <code class="inline">opendomain init</code>.</div>
     </article>

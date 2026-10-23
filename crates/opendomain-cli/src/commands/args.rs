@@ -250,11 +250,6 @@ pub struct InitArgs {
     /// Report what would happen without writing anything.
     #[arg(long)]
     pub dry_run: bool,
-    /// List the two generated trees (opendomain/, .opencode/) in .gitignore.
-    /// Opt-in: a versioning file belongs to the project — the scaffold
-    /// advises, it never rewrites the project's policy silently.
-    #[arg(long)]
-    pub gitignore: bool,
 }
 
 #[derive(Args)]

@@ -245,9 +245,21 @@ pub const CHANGES_README: Template = Template {
     contents: include_str!("../../templates/changes-README.md"),
 };
 
+/// `opendomain/.gitignore` — la politique de versioning de l'arbre généré,
+/// portée PAR l'arbre lui-même : `opendomain init` génère les deux arbres
+/// (`opendomain/`, `.opencode/`) avec leur `.gitignore` — plus de drapeau
+/// opt-in à connaître, et le `.gitignore` du projet n'est jamais touché.
+/// Un projet qui versionne ses registres (la preuve F14/L9) supprime le
+/// fichier.
+pub const GITIGNORE: Template = Template {
+    path: ".gitignore",
+    contents: include_str!("../../templates/gitignore-opendomain"),
+};
+
 /// Templates written for every profile.
 pub fn core() -> Vec<Template> {
     vec![
+        GITIGNORE,
         README,
         PROJECT,
         GLOSSARY,

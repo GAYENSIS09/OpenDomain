@@ -40,12 +40,27 @@
 //! La boucle canonique — [`failure::LOOP`] — est
 //! *Generate → Verify → Attribute → Refine*.
 
+pub mod admission;
 pub mod dag;
 pub mod failure;
 pub mod model;
 pub mod runner;
 pub mod validate;
 
+/// Le chemin de la config unique, depuis la racine du dépôt.
+///
+/// Une seule config (`opendomain/opendomain.toml`, sections `[gates]`,
+/// `[sandbox]`, `[harness]`) — pas de second fichier de réglages. La
+/// constante vit ici parce que les directives d'échec du runner (core) la
+/// citent et que le harnais n'importe pas les registres (frontière de
+/// discipline) ; la CLI et le scaffold l'utilisent telle quelle. Au commit
+/// historique la directive de sandbox nommait encore un
+/// `opendomain/harness/config.opendomain.toml` — fichier que le scaffold
+/// refuse d'écrire : c'est une directive sur un chemin fantôme, réglée au
+/// S3 de la refonte.
+pub const WORKSPACE_CONFIG: &str = "opendomain/opendomain.toml";
+
+pub use admission::{admit, completeness, no_caps, AdmissionError};
 pub use dag::{Dag, GraphFile};
 pub use failure::{attribute, Attribution, Failure, FailureKind, LOOP};
 pub use model::{AgentSpec, Contract, Criteria, Intent, Kit};

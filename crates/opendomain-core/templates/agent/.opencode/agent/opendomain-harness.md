@@ -1,19 +1,22 @@
 ---
 description: Use when a TASK-### must be executed by an agent system — owns the harness flow (plan, grounding, kits, run under gates, attribution); the registries are the source, never re-typed.
 mode: subagent
-temperature: 0.2
-permission:
-  edit: allow
-  bash:
-    "*": deny
-    "opendomain *": allow
-    "rg *": allow
-    "cat *": allow
-    "ls *": allow
-    "git status": allow
-    "git log *": allow
-    "git ls-files *": allow
-    "git diff *": allow
+steps: 40
+permissions:
+  - { action: "*", resource: "*", effect: deny }
+  - { action: read, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: glob, resource: "*", effect: allow }
+  - { action: skill, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: allow }
+  - { action: shell, resource: "opendomain *", effect: allow }
+  - { action: shell, resource: "ls *", effect: allow }
+  - { action: shell, resource: "rg *", effect: allow }
+  - { action: shell, resource: "cat *", effect: allow }
+  - { action: shell, resource: "git status", effect: allow }
+  - { action: shell, resource: "git log *", effect: allow }
+  - { action: shell, resource: "git ls-files *", effect: allow }
+  - { action: shell, resource: "git diff *", effect: allow }
 ---
 # Who I am
 

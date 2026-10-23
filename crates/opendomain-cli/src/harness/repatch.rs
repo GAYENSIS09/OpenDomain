@@ -34,11 +34,10 @@
 //! désigne le graphe explicitement : `run <slug> --resume <run> --graph …`.
 
 use std::collections::BTreeSet;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::{anyhow, bail, Result};
 use opendomain_core::harness::{AgentSpec, Failure, FailureKind, GraphFile};
-use opendomain_core::harness::TraceEvent;
 use serde_json::Value;
 
 /// `opendomain repatch <run> [--llm] [--allow <binaire>]`.
@@ -143,7 +142,7 @@ par le méta-agent est re-vérifiée par le harnais : `opendomain repatch {run} 
     let downstream: Vec<String> = file
         .nodes
         .iter()
-        .filter(|n| n.id != failure.node && n.depends_on.iter().any(|d| *d == failure.node))
+        .filter(|n| n.id != failure.node && n.depends_on.contains(&failure.node))
         .map(|n| n.id.clone())
         .collect();
 
@@ -151,9 +150,9 @@ par le méta-agent est re-vérifiée par le harnais : `opendomain repatch {run} 
     file.nodes[pos] = revised;
     let after = required_of(&file.nodes[pos].contract.output_schema);
 
-    // Le graphe révisé reste un DAG admissible.
-    let dag = opendomain_core::harness::Dag::build(&file)?;
-    crate::harness::plan::admission_complete(&dag)?;
+    // Le graphe révisé reste admissible — même moteur que plan / build /
+    // run : structure + complétude en un seul appel déterministe.
+    let _dag = opendomain_core::harness::admit(&file, &crate::harness::adapters::capabilities::gaps)?;
 
     // Écriture : état de travail, comme sous `plan`. Les runs figés
     // (`runs/*/graph.json`) ne bougent PAS — append-only.
@@ -408,93 +407,10 @@ fn append_repatch_log(run_dir: &Path, line: &str) -> Result<()> {
 
 // ------------------------------------------------------------------- traces ---
 
-/// L'échec terminal : fichiers `trace*.jsonl` du run, ordre chronologique →
-/// le DERNIER `Failed` toutes traces confondues.
-struct TerminalFailure {
-    failure: Failure,
-    /// Messages des refus du gate pour ce nœud, tentatives incluses.
-    evidence: Vec<String>,
-    /// Le nœud a repassé son gate à l'exécution RÉELLE après ce terminal
-    /// (tentative ≥ 1 — un `Passed(0)` n'est qu'une reprise ré-indexée).
-    healed: bool,
-}
-
-fn gather_terminal(run_dir: &Path) -> Result<TerminalFailure> {
-    let files = trace_files(run_dir)?;
-    let mut events: Vec<TraceEvent> = Vec::new();
-    for file in &files {
-        let text = std::fs::read_to_string(file)?;
-        for line in text.lines() {
-            if line.trim().is_empty() {
-                continue;
-            }
-            let ev: TraceEvent = serde_json::from_str(line)
-                .map_err(|e| anyhow!("trace illisible ({}) : {e}", file.display()))?;
-            events.push(ev);
-        }
-    }
-
-    let Some(idx) = events
-        .iter()
-        .rposition(|e| matches!(e, TraceEvent::Failed { .. }))
-    else {
-        bail!(
-            "aucun échec terminal dans les traces de {} — rien à re-planifier \
-(si l'échec antérieur est déjà réglé, lancer un run neuf)",
-            run_dir.display()
-        );
-    };
-    let failure = match &events[idx] {
-        TraceEvent::Failed { failure, .. } => failure.clone(),
-        _ => unreachable!(),
-    };
-    let healed = events[idx + 1..].iter().any(|e| matches!(
-        e,
-        TraceEvent::Passed { node, attempts } if node == &failure.node && *attempts >= 1
-    ));
-    let evidence: Vec<String> = {
-        let mut ev: Vec<String> = events
-            .iter()
-            .filter_map(|e| match e {
-                TraceEvent::Retry { node, message, .. } if node == &failure.node => {
-                    Some(message.clone())
-                }
-                _ => None,
-            })
-            .collect();
-        // L'évidence inclut le terminal — chronologie complète des refus.
-        ev.push(failure.message.clone());
-        ev
-    };
-
-    Ok(TerminalFailure { failure, evidence, healed })
-}
-
-/// Fichiers de trace ordonnés du plus ancien au plus récent :
-/// `trace.jsonl` (0), `trace-resume-01.jsonl` (1), …
-fn trace_files(run_dir: &Path) -> Result<Vec<PathBuf>> {
-    let mut files: Vec<(usize, PathBuf)> = Vec::new();
-    if let Ok(rd) = std::fs::read_dir(run_dir) {
-        for e in rd.flatten() {
-            let name = e.file_name().to_string_lossy().into_owned();
-            let idx = if name == "trace.jsonl" {
-                Some(0)
-            } else if let Some(rest) = name.strip_prefix("trace-resume-") {
-                rest.trim_end_matches(".jsonl").parse::<usize>().ok()
-            } else {
-                None
-            };
-            if let Some(n) = idx {
-                files.push((n, run_dir.join(&name)));
-            }
-        }
-    }
-    files.sort_by_key(|(n, _)| *n);
-    if files.is_empty() {
-        bail!("aucune trace dans {}", run_dir.display());
-    }
-    Ok(files.into_iter().map(|(_, p)| p).collect())
-}
+// L'échec terminal : fusion chronologique de tous les segments `trace*.jsonl`
+// du run — implémentation unifiée dans `runs` (S6), partagée avec `attribute`
+// (qui, elle aussi, lit désormais toutes les reprises).
+use crate::harness::runs::gather_terminal;
 
 // ------------------------------------------------------------------- LLM ---
 
@@ -511,9 +427,13 @@ fn revise_with_llm(
     // attribute → memoria → re-plan, fermé ici).
     let lessons = lessons_for(&orig.id);
     let mut feedback = String::from("(première tentative)");
-    for _attempt in 1..=3 {
+    // Le budget de la boucle de révision est celui du harnais : la config
+    // `[gates] max_attempts` gouverne — plus de littéral.
+    let max = crate::harness::common::loop_config()?.max_attempts;
+    for _ in 1..=max {
         let prompt = revise_prompt(orig, failure, evidence, &lessons, &feedback);
-        let out = crate::harness::adapters::opencode_run(&prompt, timeout_secs)?;
+        let model = crate::harness::common::load_harness_bindings()?.model;
+        let out = crate::harness::adapters::opencode_run(&prompt, timeout_secs, model.as_deref())?;
         let Some(json) = crate::harness::adapters::extract_json(&out.stdout).map(|s| s.to_string()) else {
             feedback = String::from(
                 "aucun objet JSON dans la sortie — renvoyer UNIQUEMENT l'objet JSON du nœud révisé",
@@ -548,7 +468,9 @@ role, tools, contract, criteria, depends_on"
 
 /// Leçons M4 pour ce nœud (registre mémoire) — ≤ 5, du plus récent au plus ancien.
 fn lessons_for(node: &str) -> Vec<String> {
-    let Ok(text) = std::fs::read_to_string(Path::new("opendomain/harness/memory/registre.md")) else {
+    let Ok(text) =
+        std::fs::read_to_string(Path::new(crate::harness::common::MEMORY_DIR).join("registre.md"))
+    else {
         return Vec::new();
     };
     let needle = format!(" | {node} | ");

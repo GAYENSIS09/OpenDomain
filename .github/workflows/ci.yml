@@ -1,0 +1,88 @@
+# REQ-001 (change : ci-build-gate) — la gate d'installation du dépôt lui-même.
+# Le cas 7b82228 (push cassé installable, découvert par l'utilisateur final
+# ~4 min après cargo install) ne doit plus pouvoir se répéter : aucun push
+# n'atterrit sans build --locked, tests, bench du harnais et e2e offline.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-test-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: fmt (exigé par le readme : cargo fmt --all -- --check)
+        run: cargo fmt --all -- --check
+
+      - name: build (--locked)
+        run: cargo build --locked --workspace
+
+      - name: tests
+        run: cargo test --workspace --locked
+
+      # Rapporté, non bloquant au départ : 13 findings clippy actuels dans
+      # opendomain-core (ex. clippy::manual_contains, runner.rs:384).
+      # Escalade en bloquant après nettoyage — ne pas laissé en advisory.
+      - name: clippy (rapporté, non bloquant — escalade à prévoir)
+        run: cargo clippy --workspace
+        continue-on-error: true
+
+      # M5 : auto-vérification déterministe du harnais, offline, sans LLM.
+      - name: bench (invariants du harnais, offline)
+        run: cargo run --locked -p opendomain-cli -- bench
+
+      # E2E offline — la séquence exacte vérifiée en local le 2026-10-23
+      # (init → spec new → plan --offline → validate). Aucun LLM, aucun
+      # réseau : c'est la chaîne d'installation qui est sous gate, pas le
+      # contenu.
+      - name: e2e offline (init → spec new → plan --offline → validate)
+        run: |
+          E2E=$(mktemp -d)
+          cargo run --locked -p opendomain-cli -- -C "$E2E" init --name e2e-smoke --repository greenfield --no-color
+          cargo run --locked -p opendomain-cli -- -C "$E2E" spec new 001-smoke --no-color
+          cargo run --locked -p opendomain-cli -- -C "$E2E" plan 001-smoke --offline --no-color
+          cargo run --locked -p opendomain-cli -- -C "$E2E" validate --no-color
+
+  # Binaires précompilés : chaque utilisateur recompile ~3-4 min aujourd'hui.
+  # Sur tag v*, chaque plateforme produit son binaire et l'attache à la
+  # release. (v1 : binaire brut ; cross-compilation et checksums à suivre.)
+  release-binaries:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-test-bench
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: opendomain-linux-x64
+          - os: windows-latest
+            artifact: opendomain-windows-x64.exe
+          - os: macos-latest
+            artifact: opendomain-macos-arm64
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release --locked -p opendomain-cli
+      # Le produit s'appelle `opendomain` (`.exe` sous Windows) — renommé
+      # vers le nom d'artefact de la matrice, unique par plateforme.
+      - name: rename to matrix artifact
+        shell: bash
+        run: |
+          BIN=target/release/opendomain
+          [ -f "$BIN.exe" ] && BIN="$BIN.exe"
+          cp "$BIN" "${{ matrix.artifact }}"
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact }}

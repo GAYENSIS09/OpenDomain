@@ -51,9 +51,8 @@ impl FailureKind {
             // même agent serait un retry aveugle. L'inscription de la
             // décision est un `repatch` explicite, jamais automatique.
             Self::SandboxViolation => Some(
-                "corriger la sandbox — allowlist `[sandbox]` de \
-`opendomain/harness/config.opendomain.toml` ; l'inscrire explicitement : \
-`opendomain repatch <run> --allow <binaire>` — puis relancer le nœud",
+                "corriger la sandbox — allowlist `[sandbox]` de `opendomain/opendomain.toml` ; \
+l'inscrire explicitement : `opendomain repatch <run> --allow <binaire>` — puis relancer le nœud",
             ),
             // Panne amont : relancer le même agent trois fois ne change rien
             // (leçon du 2026-10-23) — la reprise est différée, ciblée.
@@ -180,5 +179,22 @@ impl Failure {
             .directive()
             .map(String::from)
             .unwrap_or_else(|| self.attribution().action().to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Honnêteté de duplication : la directive de sandbox cite la config
+    /// unique au chemin vivant (`harness::WORKSPACE_CONFIG`). Le chemin
+    /// fantôme `config.opendomain.toml` n'a plus le droit d'apparaître.
+    #[test]
+    fn la_directive_sandbox_cite_la_config_unique_au_chemin_vivant() {
+        let f = Failure::new("x", FailureKind::SandboxViolation, "binaire hors liste");
+        let d = f.directive();
+        assert!(d.contains(crate::harness::WORKSPACE_CONFIG), "chemin vivant attendu : {d}");
+        assert!(!d.contains("config.opendomain.toml"), "chemin fantôme interdit : {d}");
+        assert!(d.contains("allowlist") && d.contains("--allow"), "directive : {d}");
     }
 }

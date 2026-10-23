@@ -75,10 +75,10 @@ pub fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
             println!("  {}", t.path);
         }
         // The agent files go to the project root and follow different rules from
-        // the registries, so the preview has to follow them too. Listing the
-        // twenty-four outright as "would create" would be wrong twice over: a
-        // fresh run does not create them all, and an existing `AGENTS.md` is
-        // never replaced even under `--force`.
+        // the registries, so the preview has to follow them too. Listing them all
+        // outright as "would create" would be wrong twice over: a fresh run does
+        // not create them all, and an existing `AGENTS.md` is never replaced
+        // even under `--force`.
         let root = start.clone();
         let mut would_write = 0usize;
         let mut would_keep = 0usize;
@@ -153,42 +153,20 @@ pub fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
 
     // The execution harness scaffolds under the same workspace directory:
     // `opendomain/harness/` — spec/graph/runs/config.opendomain.toml — and
-    // the meta-agent contract (the architect `opendomain-harnais`), which the
+    // the meta-agent contract (the architect `opendomain-harness`), which the
     // run invokes via opencode. Idempotent: it never overwrites an existing file.
     opendomain_core::scaffold::harness::run(&start.to_string_lossy())?;
 
-    // Versionnement : le scaffold ne dépose JAMAIS de .gitignore de lui-même
-    // (un fichier de versioning appartient au projet — cf. harness.rs) ; la
-    // doctrine est **conseillée** ici, et écrite seulement sur demande
-    // explicite (`--gitignore`), idempotente (des lignes déjà présentes ne
-    // sont pas dupliquées).
-    let gitignore = start.join(".gitignore");
-    if args.gitignore {
-        let mut to_add = vec![
-            "# OpenDomain — arbres régénérables par `opendomain init` / `opendomain build` :".to_string(),
-            "# les registres et les runs restent committables (la preuve F14/L9) ;".to_string(),
-            "# retirer ces lignes si le projet versionne ses registres.".to_string(),
-            "/opendomain/".to_string(),
-            "/.opencode/".to_string(),
-        ];
-        if let Ok(existing) = std::fs::read_to_string(&gitignore) {
-            to_add.retain(|l| !existing.lines().any(|e| e.trim() == l.trim()));
-        }
-        if !to_add.is_empty() {
-            let mut text = std::fs::read_to_string(&gitignore).unwrap_or_default();
-            if !text.is_empty() && !text.ends_with('\n') {
-                text.push('\n');
-            }
-            text.push_str(&to_add.join("\n"));
-            text.push('\n');
-            std::fs::write(&gitignore, text)?;
-            println!("  + {} (les deux arbres ancrés — votre décision, toujours réversible)", gitignore.display());
-        } else {
-            println!("  = .gitignore déjà à jour");
-        }
-    } else if start.join(".git").exists() {
+    // Versionnement : les deux arbres générés portent DÉSORMAIS leur propre
+    // .gitignore (`opendomain/.gitignore`, `.opencode/.gitignore`) — écrits
+    // par le scaffold comme les autres fichiers, sans drapeau, et le
+    // .gitignore du projet n'est jamais touché. La doctrine F14/L9 (les
+    // registres et les runs sont la preuve citée par `run = "…"`,
+    // `opendomain provenance`) vit dans le texte de chaque fichier généré :
+    // un projet qui versionne un arbre supprime son .gitignore.
+    if start.join(".git").exists() {
         println!(
-            "\nversionnement : les registres (opendomain/*.md) et les runs\n(opendomain/harness/runs/) sont la preuve citée par `run = \"…\"`\n(opendomain provenance) — à commiter ; les arbres régénérables\n(.opencode/, opendomain/) peuvent être ignorés dans .gitignore.\nÉcrire ces lignes : `opendomain init --gitignore` (opt-in, idempotent)."
+            "\nversionnement : les deux arbres générés portent leur propre\n.gitignore (régénérable — supprimer celui d'un arbre pour le\nversionner). Les registres (opendomain/*.md) et les runs\n(opendomain/harness/runs/) sont la preuve citée par `run = \"…\"`\n(opendomain provenance) — à commiter : supprimer opendomain/.gitignore."
         );
     }
 

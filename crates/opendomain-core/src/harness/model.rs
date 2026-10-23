@@ -24,7 +24,12 @@ pub struct Intent {
 /// Le harnais n'admet un agent dans le système que si cette spec est
 /// complète ( rôle, whitelist d'outils, contrat, critères ) — la
 /// « construction-time verification » avant tout passage en aval.
+///
+/// `deny_unknown_fields` : une clé typo dans un nœud (`"contrat"` pour
+/// `contract`, `"cmd"` pour `commands`…) est **refusée avec une erreur
+/// précise** — elle señalait autrement un gate silencieusement dépouillé.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AgentSpec {
     /// Identifiant unique dans le DAG.
     pub id: String,
@@ -70,6 +75,7 @@ pub struct AgentSpec {
 /// avec provenance source+date) ou `build --fetch` ; un run ne télécharge
 /// jamais en silence.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Kit {
     /// Ids de skills du registre composants, attachées au prompt du nœud.
     #[serde(default)]
@@ -91,6 +97,7 @@ impl Kit {
 
 /// Contrat E/S : schémas JSON + motifs interdits.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Contract {
     /// JSON Schema de l'attendu en entrée (peut rester null).
     #[serde(default)]
@@ -109,6 +116,7 @@ pub struct Contract {
 /// Note : `schema_check` vaut **true** par défaut (aussi hors sérialisation)
 /// — un gate ne désarme que sur décision explicite.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct Criteria {
     /// Valider la sortie contre `contract.output_schema` (défaut : oui).
     #[serde(default = "bool_true")]
