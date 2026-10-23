@@ -1,11 +1,14 @@
 //! `opendomain plan` — la spec `T` devient un DAG d'agents `σ_i`.
 //!
 //! Deux voies :
-//! 1. **hors-ligne** (défaut, déterministe, testable) : décomposition
-//!    canonique `analyste → strategie → synthese → verificateur`, spécialisée
-//!    par la spec (langue, contraintes, interdits nommés).
-//! 2. **`--llm`** : `opencode run` propose le graphe ; le harnais le VÉRIFIE
-//!    et, en cas de défaut typé, relance l'étape amont (boucle de correction).
+//! 1. **via opencode** (défaut, la voie réelle) : `opencode run` propose le
+//!    graphe ; le harnais le VÉRIFIE et, en cas de défaut typé, relance
+//!    l'étape amont (boucle de correction). La panne amont sort typée —
+//!    jamais un repli silencieux vers le déterministe.
+//! 2. **`--offline`** (demandé explicitement) : décomposition canonique
+//!    déterministe `analyste → strategie → synthese → verificateur`,
+//!    spécialisée par la spec (langue, contraintes, interdits nommés) —
+//!    CI, pas de réseau.
 //!
 //! Dans les deux cas, la sortie est validée par `opendomain-harness` avant écriture
 //! (archive `graph/<slug>.json` + graphe actif `graph/graph.json`).
@@ -89,7 +92,7 @@ pub(crate) fn admission_complete(dag: &Dag) -> Result<()> {
         Ok(())
     } else {
         anyhow::bail!(
-            "plan refusé — agents incomplets (contrat/critères) : {}\n  → corriger le graphe proposé, ou lancer `opendomain plan <slug>` hors --llm",
+            "plan refusé — agents incomplets (contrat/critères) : {}\n  → corriger le graphe proposé, ou demander le repli déterministe : `opendomain plan <slug> --offline`",
             incomplets.join(" ; ")
         )
     }
@@ -254,9 +257,9 @@ verdict PASS/FAIL motivé — jamais ambigu, jamais optimiste."
     GraphFile {
         meta: json!({
             "name": slug,
-            "generator": "opendomain plan (hors-ligne)",
+            "generator": "opendomain plan (déterministe --offline)",
             "langue": lang,
-            "source": "plan hors-ligne ou --llm"
+            "source": "plan via opencode (défaut), ou --offline demandé explicitement"
         }),
         nodes: vec![analyste, strategie, synthese, verificateur],
     }

@@ -152,9 +152,9 @@ pub fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
     }
 
     // The execution harness scaffolds under the same workspace directory:
-    // `opendomain/harness/` — spec/graph/runs/config.opendomain.toml and the
-    // meta-agent contract, installed into the agent the `--executor` flag
-    // names. Idempotent: it never overwrites an existing file.
+    // `opendomain/harness/` — spec/graph/runs/config.opendomain.toml — and
+    // the meta-agent contract (the architect `opendomain-harnais`), which the
+    // run invokes via opencode. Idempotent: it never overwrites an existing file.
     opendomain_core::scaffold::harness::run(&start.to_string_lossy())?;
 
     println!("\nnext: run /opendomain-project to complete context, then `opendomain status` + `opendomain gate context`");

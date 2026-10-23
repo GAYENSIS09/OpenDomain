@@ -73,9 +73,9 @@ opendomain archive tighter-reservation</pre>
       <a href="brownfield.html">Brownfield</a>.</p>
 <pre>opendomain spec new 001-migrate-invoice       # the task, its constraints, its criteria
 opendomain ground 001-migrate-invoice         # repo scan + fingerprint, replayed before every run
-opendomain plan 001-migrate-invoice           # the DAG (offline, or --llm via OpenCode, verified)
-opendomain build 001-migrate-invoice          # each agent's execution kit, construction-verified
-opendomain run 001-migrate-invoice --executor opencode | claude | mock
+opendomain plan 001-migrate-invoice           # the DAG (via opencode, verified; --offline = deterministic fallback)
+opendomain build 001-migrate-invoice          # each agent's kit + node-agents defined, construction-verified
+opendomain run 001-migrate-invoice            # the run — executor opencode — gated and archived
 opendomain verify runs/run-001-…              # replay every gate on the archived run, offline
 opendomain attribute runs/run-001-…           # typed attribution + lesson memory
 opendomain repatch runs/run-001-… --allow BIN # partial re-plan: faulty node only, upstreams frozen

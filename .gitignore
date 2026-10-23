@@ -12,11 +12,13 @@ docs-site/.docusaurus
 *.tsbuildinfo
 
 # OpenDomain runtime
-# Les deux arbres que `opendomain init` génère : le workbench et le contrat
-# agent. La doctrine y vit, mais tout est régénérable par le binaire — un
-# projet qui veut versionner ses registres retire ces lignes.
-opendomain/
-.opencode/
+# Les deux arbres que `opendomain init` génère — ANCRÉS à la racine du dépôt
+# (`/`), pour ne pas avaler les templates du contrat d'agent qui vivent dans
+# crates/opendomain-core/templates/agent/.opencode/. La doctrine y vit, mais
+# tout est régénérable par le binaire — un projet qui veut versionner ses
+# registres retire ces lignes.
+/opendomain/
+/.opencode/
 .opendomain-cache/
 *.opendomain.lock
 

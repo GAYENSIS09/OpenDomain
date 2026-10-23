@@ -13,8 +13,8 @@ use opendomain_core::harness::{gate, Executor, RunConfig, Runner, RunSummary, Tr
 use crate::harness::common::resolve_spec;
 use crate::harness::executors::LlmExecutor;
 
-/// `opendomain run <spec> [--executor opencode|claude|mock] [--timeout S]
-///                  [--resume runs/run-NNN-…] [--graph <fichier>]
+/// `opendomain run <spec> [--timeout S] [--resume runs/run-NNN-…]
+///                  [--graph <fichier>]` — l'exécuteur est opencode (unique).
 ///
 /// `--graph` : graphe alternatif (ex. révisé par `repatch`) — admis comme
 /// un graphe de plan (complétude re-vérifiée), figé dans le dossier de run.

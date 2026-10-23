@@ -54,7 +54,7 @@ pub fn provenance(
     println!("Run provenance (F14/L9) — le pont de l'exécution vérifiée vers les registres :\n");
     if !report.runs_dir_exists {
         if report.rows.is_empty() {
-            println!("aucune archive de run (`opendomain/harness/runs/` n'existe) et aucun\nenregistrement n'en cite : `opendomain run … --executor mock` produit la première,\npuis `run = \"…\"` cite l'archive qui a vérifié l'étape.");
+            println!("aucune archive de run (`opendomain/harness/runs/` n'existe) et aucun\nenregistrement n'en cite : la première archive naît d'un run réel —\n`opendomain run <spec>` (exécuteur opencode),\npuis `run = \"…\"` cite l'archive qui a vérifié l'étape.");
             return Ok(());
         }
         println!(

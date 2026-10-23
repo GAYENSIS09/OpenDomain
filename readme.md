@@ -12,7 +12,7 @@
  </p>
  <p>
  <img src="https://img.shields.io/badge/rust-1.75%2B-orange" alt="Rust 1.75+" />
- <img src="https://img.shields.io/badge/tests-198_passing-green" alt="198 tests passing" />
+ <img src="https://img.shields.io/badge/tests-220_passing-green" alt="220 tests passing" />
  <img src="https://img.shields.io/badge/gates-9_deterministic-blue" alt="9 deterministic gates" />
  <img src="https://img.shields.io/badge/artifacts-37_kinds-red" alt="37 artifact kinds" />
  <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT license" />
@@ -184,8 +184,10 @@ runtime from *Meta-Agent: From Task Descriptions to Verified Multi-Agent
 Systems*. A task is compiled into a DAG
 of agents, and **no agent output ever reaches downstream context before its
 gate passes** (`yᵢ ∈ Cᵢ` — schema, forbidden patterns, bounded needles, and
-criteria commands executed by the runner itself). Agents are executor-agnostic
-(opencode, claude, or a deterministic `--executor mock`), and each failure is
+criteria commands executed by the runner itself). The run's executor is
+**opencode** — the real, visible, archived path; the deterministic mock
+executor remains the harness's **internal self-check** (`opendomain bench`),
+and claude sits behind the same trait without a run surface. Each failure is
 *typed* with an attribution — local, upstream, or structural — so recovery
 costs only what the error costs.
 
@@ -193,8 +195,8 @@ costs only what the error costs.
 opendomain spec new 001-migrate-invoice   # a task spec (objective, constraints, criteria)
 opendomain ground 001-migrate-invoice     # repo scan + manifests + toolchain fingerprint
 opendomain plan 001-migrate-invoice       # the DAG: analyste → strategie → synthese → verificateur
-opendomain build 001-migrate-invoice      # each agent's execution kit, construction-verified
-opendomain run 001-migrate-invoice --executor opencode   # the run, gated and archived
+opendomain build 001-migrate-invoice      # each agent's kit, node-agents defined in .opencode/agent/, construction-verified
+opendomain run 001-migrate-invoice        # the run — executor opencode — gated and archived
 opendomain attribute opendomain/harness/runs/run-001-…   # typed attribution + lesson memory
 ```
 
@@ -215,12 +217,12 @@ The lifecycle is the seven milestones the harness was built and proven against:
 
 | # | Command | What was proven |
 |---|---|---|
-| **M1** | `opendomain plan` | spec → DAG; `--llm` proposals go through the same Generate → Verify → Refine loop; **incomplete contracts never get written** |
+| **M1** | `opendomain plan` | spec → DAG — via opencode by default, the proposal verified by the same Generate → Verify → Refine loop; `--offline` is the explicit deterministic fallback; **incomplete contracts never get written** |
 | **M2** | `opendomain run` | gates before propagation, **append-only archiving**, repository drift caught by the grounding fingerprint *before any LLM spend*, resumption that re-verifies archives |
 | **M3** | `opendomain verify` / `opendomain attribute` | verification replayable offline; failures typed Local / Upstream / Structural with directives; healed fixes not re-planned twice |
 | **M4** | (in `run`, `attribute`) | the memory of lessons — never pay twice for the same error |
 | **M5** | `opendomain bench` | the harness's mechanical invariants, offline and deterministic, CI-ready |
-| **M6** | `opendomain skill` / `opendomain resolve` | components registry + resolution: one provider per need, requirements closed against the machine, misses typed |
+| **M6** | `opendomain skill` / `opendomain kit` / `opendomain resolve` | components registry + resolution: one provider per need, requirements closed against the machine, misses typed; `kit add` installs from the web with provenance (source + date) |
 | **M7** | `opendomain repatch` | partial re-planning with a **defined partiality**: `id`, edges and input contracts frozen; `schema_check` never disarmed; offline relaxation only when carried by evidence |
 
 Every generated agent receives the **six pillars** — loop, tools (projected
@@ -233,10 +235,10 @@ as gate criteria `commands` and executed **by the runner** in the project's
 sandbox, so a green suite counts only once it passed inside an archived run.
 
 The runtime config lives in `opendomain/harness/config.opendomain.toml` —
-`[gates]` (strict by default: no advisory verdict, `max_attempts`), `[sandbox]`
+`[gates]` (strict by default: no advisory verdict, `max_attempts`) and
+`[sandbox]`
 (an allowlist of binaries for the criteria commands — contributing a binary is
-an explicit `opendomain repatch --allow` decision, never automatic), and
-`[executor]`.
+an explicit `opendomain repatch --allow` decision, never automatic).
 
 ## Using it with opencode
 

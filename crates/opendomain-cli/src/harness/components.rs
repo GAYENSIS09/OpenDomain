@@ -26,7 +26,7 @@ pub const SKILLS_DIR: &str = "opendomain/harness/skills";
 // -------------------------------------------------------------- registre ---
 
 /// Un composant du harnais — l'unité de modularité.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Component {
     pub id: String,
     /// skill | tool | mcp | executor | validator

@@ -1,6 +1,6 @@
 //! Adaptateur d'exécuteur LLM (OpenCode d'abord) + boucle de raffinement de
 //! construction : `Generate → Verify → Attribute → Refine`, appliqué à la
-//! génération d'un `graph.json` par le planificateur `--llm`.
+//! génération d'un `graph.json` par le planificateur via opencode (défaut).
 
 use std::io::Read;
 use std::path::Path;
@@ -145,7 +145,7 @@ pub fn plan_with_llm(
             "  ↻ tentative {attempt}: raffinement déclenché — {feedback}"
         );
     }
-    Err(anyhow!("plan --llm : 3 tentatives épuisées sans graphe valide"))
+    Err(anyhow!("plan via opencode : 3 tentatives épuisées sans graphe valide"))
 }
 
 fn build_plan_prompt(

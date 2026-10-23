@@ -67,6 +67,7 @@
 #![warn(missing_debug_implementations)]
 
 pub mod analysis;
+pub mod docs_fidelity;
 pub mod error;
 pub mod harness;
 pub mod model;

@@ -99,7 +99,7 @@ impl Attribution {
             Self::Structural => {
                 "re-planifier le sous-graphe concerné — révision partielle \
 `opendomain repatch <run>` (nœud fautif révisé, amonts vérifiés ancrés) \
-ou regénération `opendomain plan --llm`"
+ou regénération `opendomain plan <slug>` (via opencode ; `--offline` en repli explicite)"
             }
         }
     }
