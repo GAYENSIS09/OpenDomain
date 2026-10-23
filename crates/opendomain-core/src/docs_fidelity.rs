@@ -47,6 +47,7 @@ pub const SURFACES: &[(&str, &str)] = &[
 ];
 
 /// Les occurrences de `needle` qui **n'admettent pas** `allowed` sur leur ligne.
+#[cfg(test)]
 fn violations(content: &str, needle: &str, allowed: Option<&str>) -> Vec<String> {
     content
         .lines()
