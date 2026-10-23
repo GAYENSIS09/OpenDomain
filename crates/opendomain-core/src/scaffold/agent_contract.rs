@@ -109,6 +109,14 @@ pub const OD_COMPLETE: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/command/opendomain-complete.md"),
 };
 
+/// `.opencode/command/opendomain-harnais.md` — la porte unique du cycle du
+/// harnais : construire depuis un TASK, ou récupérer un run (verify,
+/// attribute, resume, repatch) — jamais un re-run aveugle.
+pub const OD_HARNAIS: Template = Template {
+    path: ".opencode/command/opendomain-harnais.md",
+    contents: include_str!("../../templates/agent/.opencode/command/opendomain-harnais.md"),
+};
+
 /// `.opencode/agent/domain-researcher.md`.
 pub const DOMAIN_RESEARCHER: Template = Template {
     path: ".opencode/agent/domain-researcher.md",
@@ -193,6 +201,7 @@ pub fn all() -> Vec<Template> {
         OD_PLAN,
         OD_IMPLEMENT,
         OD_COMPLETE,
+        OD_HARNAIS,
         DOMAIN_RESEARCHER,
         CONTEXT_COMPLETER,
         HARNESS_ARCHITECT,

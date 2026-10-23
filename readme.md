@@ -77,7 +77,8 @@ AGENTS.md                          # the rules, readable by any agent
 .opencode/command/                 # /opendomain-status, /opendomain-gate, /opendomain-trace, /opendomain-impact,
                                    # /opendomain-audit, /opendomain-record, /opendomain-project, /opendomain-research,
                                    # /opendomain-domain, /opendomain-requirements, /opendomain-opportunity,
-                                   # /opendomain-spec, /opendomain-plan, /opendomain-implement, /opendomain-complete
+                                   # /opendomain-spec, /opendomain-plan, /opendomain-implement, /opendomain-complete,
+                                   # /opendomain-harnais (build from a TASK, or recover a run)
 .opencode/agent/                   # domain-researcher, context-completer,
                                    # opendomain-harnais (subagent: builds the agent system from a TASK record)
 .opencode/skills/                  # opendomain, -artifacts, -epistemics, -research, -gates, -harness
@@ -260,6 +261,7 @@ This repository ships a working opencode integration. If you point opencode at a
 | `/opendomain-plan` | Gate 6 bounded, ordered plan |
 | `/opendomain-implement <TASK/SPEC/AC>` | Gate 7 — routes through the verified harness (`opendomain-harnais`) |
 | `/opendomain-complete` | Gate 8 full alignment audit before release |
+| `/opendomain-harnais <TASK\|run>` | The harness's door: build from a TASK, or recover a run (verify → attribute → resume/repatch) — never a blind re-run |
 
 One command per gate keeps usage simple: run the command for the stage you are in; it loads the skill, delegates to the right subagent, then shows `opendomain gate` verbatim. No extra orchestration to learn.
 
@@ -284,6 +286,7 @@ commands (thin, UX) → subagents (roles, call each other) → skills (know-how)
 readonly:  /opendomain-status /opendomain-gate /opendomain-trace /opendomain-impact /opendomain-audit
 production:/opendomain-project /opendomain-research /opendomain-record /opendomain-domain /opendomain-requirements
            /opendomain-opportunity /opendomain-spec /opendomain-plan /opendomain-implement → /opendomain-complete
+           /opendomain-harnais (build from a TASK / recover a run)
                          ↘ calls /opendomain-audit for the diagnostic, then decides
 ```
 
@@ -291,7 +294,7 @@ Every command and agent renders **summary-first**: Verdict (1 line) → top-3 bl
 
 **Skill.** `.opencode/skills/opendomain/SKILL.md` loads on demand and carries the artifact format and the epistemic discipline. `AGENTS.md` holds the short version that is always in context, so the skill does not have to be.
 
-To adopt this in your own project, run `opendomain init` — it writes `AGENTS.md` and the twenty-five `.opencode/` files (15 commands, 4 role agents, 6 skills) for you, and puts the `opendomain` binary on `PATH`. There is no primary persona: the harness is driven by the commands (`/opendomain-implement TASK-012` → the `opendomain-harnais` subagent → skills), and the execution doctrine lives once, in the `opendomain-harness` skill. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
+To adopt this in your own project, run `opendomain init` — it writes `AGENTS.md` and the twenty-six `.opencode/` files (16 commands, 4 role agents, 6 skills) for you, and puts the `opendomain` binary on `PATH`. There is no primary persona: the harness is driven by the commands (`/opendomain-implement TASK-012` → the `opendomain-harnais` subagent → skills), and the execution doctrine lives once, in the `opendomain-harness` skill. It does **not** write `opencode.json`: the permission file below is this repository's own, and copying it is your decision.
 
 ```json
 {

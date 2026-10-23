@@ -66,6 +66,7 @@
         <tr><td><code class="inline">/opendomain-plan</code></td><td>Plan</td><td>Produces one bounded, ordered plan with decisions.</td></tr>
         <tr><td><code class="inline">/opendomain-implement</code></td><td>Implementation</td><td>Routes through the verified harness — a TASK to the architect, a SPEC/AC through its TASK record.</td></tr>
         <tr><td><code class="inline">/opendomain-complete</code></td><td>Completion</td><td>Reuses the audit, then calls the release: ship or stop.</td></tr>
+        <tr><td><code class="inline">/opendomain-harnais</code></td><td>The harness</td><td>One door for the whole verified-execution cycle: a TASK builds the agent system; a run recovers (verify → attribute → resume/repatch) — never a blind re-run.</td></tr>
       </table>
       <p>Every command answers summary-first — verdict, top blockers, one next action — with the tool's full output in an appendix. No wall-of-gates noise.</p>
 
