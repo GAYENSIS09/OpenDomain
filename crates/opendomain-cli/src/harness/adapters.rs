@@ -195,25 +195,32 @@ pub fn node_agent_id(spec: &AgentSpec, slug: &str) -> Result<String> {
 
 /// **Définit** l'agent de nœud — phase 1 (construction), l'étape de
 /// l'architecte : le fichier dans `.opencode/agent/` porte les permissions
-/// projetées ET le contrat de sortie. Visible, reviewable, AVANT le run —
-/// l'exécution invoque, elle ne réécrit pas.
-pub fn define_opencode_agent(spec: &AgentSpec, slug: &str) -> Result<String> {
+/// projetées, le contrat de sortie ET les sections du kit résolu (skills,
+/// commandes, protocoles). Visible, reviewable, AVANT le run — l'exécution
+/// invoque, elle ne réécrit pas.
+pub fn define_opencode_agent(spec: &AgentSpec, slug: &str, kit_sections: &str) -> Result<String> {
     let agent_id = node_agent_id(spec, slug)?;
     let rel = format!(".opencode/agent/{agent_id}.md");
     let path = Path::new(&rel);
     let parent = path.parent().ok_or_else(|| anyhow!("chemin d'agent inattendu : {rel}"))?;
     std::fs::create_dir_all(parent)?;
-    std::fs::write(path, agent_yaml_body(spec))?;
+    std::fs::write(path, agent_yaml_body(spec, kit_sections))?;
     Ok(agent_id)
 }
 
 /// Définit **tous** les nœuds d'un graphe, dans l'ordre topologique — le pas
-/// de construction de l'architecte du harnais. Renvoie les ids définis.
-pub fn define_node_agents(dag: &opendomain_core::harness::Dag, slug: &str) -> Result<Vec<String>> {
+/// de construction de l'architecte du harnais, avec le kit résolu de chaque
+/// nœud (vide pour un nœud sans kit). Renvoie les ids définis.
+pub fn define_node_agents(
+    dag: &opendomain_core::harness::Dag,
+    slug: &str,
+    resolved_kit: &[crate::harness::components::NodeKit],
+) -> Result<Vec<String>> {
     let order = dag.topological_order()?;
     let mut ids = Vec::with_capacity(order.len());
     for id in &order {
-        ids.push(define_opencode_agent(&dag.nodes[id], slug)?);
+        let kit = resolved_kit.iter().find(|k| &k.node == id);
+        ids.push(define_opencode_agent(&dag.nodes[id], slug, &crate::harness::components::kit_sections(kit))?);
     }
     Ok(ids)
 }
@@ -221,7 +228,7 @@ pub fn define_node_agents(dag: &opendomain_core::harness::Dag, slug: &str) -> Re
 /// Frontmatter (permissions V2) + corps du fichier d'agent : les
 /// permissions projetées ET le contrat de sortie — l'agent se définit en
 /// entier (outils, sorties), reviewable avant le run.
-fn agent_yaml_body(spec: &AgentSpec) -> String {
+fn agent_yaml_body(spec: &AgentSpec, kit_sections: &str) -> String {
     let mut yaml = String::from(
         "---\ndescription: Nœud du harnais OpenDomain — permissions projetées de la spec\nmode: primary\npermissions:\n  - action: \"*\"\n    resource: \"*\"\n    effect: deny\n",
     );
@@ -236,10 +243,11 @@ fn agent_yaml_body(spec: &AgentSpec) -> String {
         yaml.push_str(&format!("  - action: {action}\n    resource: \"*\"\n    effect: allow\n"));
     }
     yaml.push_str(&format!(
-        "---\n\n# Agent `{}` (nœud du harnais OpenDomain)\n\nTu es le nœud `{}` du harnais OpenDomain. Ta production est l'objet JSON du\ncontrat de sortie ci-dessous — rien d'autre. Les commandes de\ncritères tournent hors de toi (le coordinator les exécute sous sandbox).\n\n## SORTIE (contrat)\n\n```json\n{}\n```\n",
+        "---\n\n# Agent `{}` (nœud du harnais OpenDomain)\n\nTu es le nœud `{}` du harnais OpenDomain. Ta production est l'objet JSON du\ncontrat de sortie ci-dessous — rien d'autre. Les commandes de\ncritères tournent hors de toi (le coordinator les exécute sous sandbox).\n\n## SORTIE (contrat)\n\n```json\n{}\n```\n{}\n",
         spec.id.trim(),
         spec.id.trim(),
-        spec.contract.output_schema
+        spec.contract.output_schema,
+        kit_sections,
     ));
     yaml
 }
@@ -302,7 +310,7 @@ mod tests {
             tools: vec!["read".into(), "write".into(), "bash".into()],
             ..Default::default()
         };
-        let agent = define_opencode_agent(&spec, "task-001").unwrap();
+        let agent = define_opencode_agent(&spec, "task-001", "").unwrap();
         assert_eq!(agent, "opendomain-task-001-synthese");
         let file = std::fs::read_to_string(format!(".opencode/agent/{agent}.md")).unwrap();
         // opencode (défaut) : refus-first puis allow — l'agent file_id est
@@ -324,7 +332,7 @@ mod tests {
             tools: vec!["bash".into(), "terminal".into(), "bash".into()],
             ..Default::default()
         };
-        let agent = define_opencode_agent(&spec, "task-001").unwrap();
+        let agent = define_opencode_agent(&spec, "task-001", "").unwrap();
         assert_eq!(agent, "opendomain-task-001-noeud-setname-action");
         let file = std::fs::read_to_string(format!(".opencode/agent/{agent}.md")).unwrap();
         assert_eq!(file.matches("action: shell").count(), 1, "actions déduplicables");

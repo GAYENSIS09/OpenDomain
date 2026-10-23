@@ -13,7 +13,7 @@
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use commands::args::{Cli, Command, HarnessSpecOp, SkillOp, WorkflowOp};
+use commands::args::{Cli, Command, HarnessSpecOp, KitOp, SkillOp, WorkflowOp};
 use commands::changes::{cmd_apply, cmd_archive, cmd_propose};
 use commands::context::with_index;
 use commands::gates::cmd_gate;
@@ -99,9 +99,9 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
             enter(cli)?;
             harness::ground::run(spec_path)
         }
-        Command::Build { spec_path } => {
+        Command::Build { spec_path, fetch } => {
             enter(cli)?;
-            harness::build::run(spec_path)
+            harness::build::run(spec_path, *fetch)
         }
         Command::Run { spec_path, timeout, resume, graph } => {
             enter(cli)?;
@@ -139,6 +139,17 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
                     harness::components::skill_add(source, id.clone(), forced)
                 }
                 SkillOp::New { id } => harness::components::skill_new(id),
+            }
+        }
+        Command::Kit { op } => {
+            enter(cli)?;
+            match op {
+                // la providence modulaire : le kit du nœud cite des ids,
+                // cette commande les fournit (web ou disque, avec provenance)
+                KitOp::Add { kind, source, id, provides } => {
+                    let forced = if provides.is_empty() { None } else { Some(provides.clone()) };
+                    harness::components::kit_add(kind, source, id.clone(), forced).map(|_| ())
+                }
             }
         }
         Command::Resolve { spec_path } => {

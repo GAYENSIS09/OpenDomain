@@ -116,15 +116,16 @@ of retried blind.
 | `opendomain spec new <slug>` | Creates `opendomain/harness/specs/<slug>/spec.md` from the template. |
 | `opendomain workflow new <kind> <slug>` | Pre-fills a spec from a playbook (migration, refactor, tests, doc). |
 | `opendomain ground <slug>` | Design-time grounding: repo scan, manifests, toolchain, fingerprint. |
-| `opendomain plan <slug> [--llm]` | Compiles the spec into an agent DAG; incomplete agents are refused at admission. |
-| `opendomain build <slug>` | Writes each agent's execution kit and verifies the construction. |
+| `opendomain plan <slug> [--offline]` | Compiles the spec into an agent DAG — via opencode by default (the real decomposition); `--offline` asks the deterministic fallback explicitly. Incomplete agents are refused at admission. |
+| `opendomain build <slug> [--fetch]` | Writes each agent's execution kit, resolves every node's kit (skills, commands, protocols) against the component registry, and defines the node-agents in `.opencode/agent/` — reviewable before the run. `--fetch` admits explicit web-provisioning with provenance. |
 | `opendomain validate [<graph.json>]` | Replays the static graph checks (ids, dangling edges, cycles, contracts). |
-| `opendomain run <slug> [--executor opencode\|claude\|mock]` | Executes the DAG under the gates and archives the run. |
+| `opendomain run <slug> [--resume <run>]` | Executes the DAG under the gates via opencode — the real, visible, archived path — and archives the run. |
 | `opendomain verify <run>` | Replays every gate on an archived run's outputs — offline, at any time. |
 | `opendomain attribute <run>` | Types the failure, names the recovery, records the lesson in memory. |
 | `opendomain repatch <run> [--allow BIN]` | Partial re-planning: revise the faulty node, verified upstream outputs stay frozen. |
 | `opendomain resolve <slug>` | Matches each spec need to exactly one component; a missed need is a typed error, never an invention. |
 | `opendomain skill add <url\|path>` · `opendomain skill new <id>` | Installs or starts a reusable procedure (skill). |
+| `opendomain kit add <kind> <url\|path>` | Installs a kit component (skill \| command \| tool) from the web or a local file, with provenance (source + date). The agent kit cites ids; this command provides them. |
 | `opendomain doctor` | Checks that executors and toolchains are present. |
 | `opendomain bench` | Runs the harness's deterministic invariants — usable as a CI step. |
 | `opendomain rigour` | Prints the Section 9.7 rigour table; audits which requirement records declare a rigour today. |
@@ -193,7 +194,7 @@ is recorded as a change rather than as an unexplained diff.
 
 Only `init`, `link`, `advance`, `propose`, `apply`, `archive` and the harness's
 producing commands (`spec`, `workflow`, `ground`, `plan`, `build`, `run`,
-`verify`, `attribute`, `repatch`, `skill`, `resolve`) write. Every other
+`verify`, `attribute`, `repatch`, `skill`, `kit`, `resolve`) write. Every other
 command only reads, and reads the registries as they are.
 
 ## Gates are not a formality

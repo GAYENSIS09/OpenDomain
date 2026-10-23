@@ -48,7 +48,7 @@ pub mod validate;
 
 pub use dag::{Dag, GraphFile};
 pub use failure::{attribute, Attribution, Failure, FailureKind, LOOP};
-pub use model::{AgentSpec, Contract, Criteria, Intent};
+pub use model::{AgentSpec, Contract, Criteria, Intent, Kit};
 pub use runner::{
     gate, CommandGate, ContextStore, Executor, RunConfig, RunSummary, Runner, TraceEvent,
     MAX_ATTEMPTS,
@@ -126,5 +126,26 @@ mod tests {
         let directive = f.directive();
         assert!(directive.contains("reprendre plus tard"));
         assert!(directive.contains("--resume"));
+    }
+
+    #[test]
+    fn un_graphe_sans_kit_se_lit_tel_que_kit_vide() {
+        // rétrocompatibilité : les graphes écrits avant le kit restent valides
+        let raw = r#"{
+            "meta": null,
+            "nodes": [{
+                "id": "analyste",
+                "role": "analyse",
+                "tools": ["read"],
+                "contract": {"input_schema": null, "output_schema": null, "forbidden": []},
+                "criteria": {"schema_check": true, "contains": [], "not_contains": [],
+                             "commands": [], "contains_in": {}},
+                "depends_on": []
+            }]
+        }"#;
+        let file: GraphFile = serde_json::from_str(raw).unwrap();
+        let dag = Dag::build(&file).unwrap();
+        let spec = &dag.nodes[&"analyste".to_string()];
+        assert!(spec.kit.is_empty(), "kit par défaut : vide");
     }
 }

@@ -36,6 +36,13 @@ pub struct AgentSpec {
     /// Whitelist d'outils (moindre privilège) : `read`, `bash`, …
     #[serde(default)]
     pub tools: Vec<String>,
+    /// Le kit du nœud — tout ce qu'il voit, touche et convoque au-delà des
+    /// outils (`skills`, `commands`, `protocols`). Résolu à la construction
+    /// contre le registre des composants, projeté dans l'agent de nœud,
+    /// vérifié AVANT le run. Vide par défaut : un graphe sans kit se lit tel
+    /// quel (rétrocompatibilité).
+    #[serde(default)]
+    pub kit: Kit,
     /// Contrat entrée/sortie explicite (« explicit input/output contract »).
     #[serde(default)]
     pub contract: Contract,
@@ -45,6 +52,41 @@ pub struct AgentSpec {
     /// Arêtes entrantes : les agents dont la sortie est requise avant exécution.
     #[serde(default)]
     pub depends_on: Vec<String>,
+}
+
+/// Le kit d'un nœud — la modularité **autour** de l'agent (moule « tout est
+/// plugin » du harnais) : non seulement créer des agents, mais les équiper.
+///
+/// - `skills` : capacités procédurales (ids du registre composants,
+///   `kind: "skill"`) — locales ou **sourcées du web** ; la construction les
+///   résout, l'exécution les reçoit dans le prompt (bornées).
+/// - `commands` : procédures commandées (`kind: "command"`) — vérifiées à la
+///   construction, briefées dans le prompt.
+/// - `protocols` : vocabulaire d'accès externe déclaré (`http`, `git`,
+///   `npm`) — fermé à la construction contre les outils et binaires du nœud.
+///
+/// Doctrine : l'usage du web est **dynamique mais déclaré** — une source
+/// distante ne s'installe que par un pas explicite (`opendomain kit add`,
+/// avec provenance source+date) ou `build --fetch` ; un run ne télécharge
+/// jamais en silence.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Kit {
+    /// Ids de skills du registre composants, attachées au prompt du nœud.
+    #[serde(default)]
+    pub skills: Vec<String>,
+    /// Ids de commandes du registre composants, briefées au nœud.
+    #[serde(default)]
+    pub commands: Vec<String>,
+    /// Protocoles d'accès externe déclarés (vocabulaire fermé du harnais).
+    #[serde(default)]
+    pub protocols: Vec<String>,
+}
+
+impl Kit {
+    /// Le kit est-il vide (aucune capacité au-delà des outils) ?
+    pub fn is_empty(&self) -> bool {
+        self.skills.is_empty() && self.commands.is_empty() && self.protocols.is_empty()
+    }
 }
 
 /// Contrat E/S : schémas JSON + motifs interdits.

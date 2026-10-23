@@ -131,6 +131,16 @@ pas un mode de run."
         ex.raw_dir = Some(run_dir.join("context"));
         // skills du registre → prompts des nœuds ciblés (pillar 6)
         ex.skills = crate::harness::components::attach_for_run(&spec_text, false);
+        // kit résolu de chaque nœud (fetch interdit au run : la construction
+        // a déjà fourni ; une source distante ici est une faute de construction)
+        let kit_résolu = crate::harness::components::resolve_kit(
+            &dag,
+            &crate::harness::components::registry_or_empty(),
+            false,
+        )?;
+        for nk in &kit_résolu {
+            ex.skills.extend(nk.skills.clone());
+        }
         if !ex.skills.is_empty() {
             let ids: Vec<&str> = ex.skills.iter().map(|s| s.id.as_str()).collect();
             println!("skills chargées : {}", ids.join(", "));

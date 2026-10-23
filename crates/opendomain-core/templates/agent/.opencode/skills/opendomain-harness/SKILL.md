@@ -19,27 +19,31 @@ run — never an unverified claim.
 2. **Grounding**: `opendomain ground <slug>` collects repo, manifests and
    toolchain into `grounding/<slug>/repo-scan.md` + fingerprint. Manual notes
    go in the same folder.
-3. **DAG**: `opendomain plan <slug>` compiles offline (deterministic);
-   `opendomain plan <slug> --llm` runs your proposal through the
-   Generate → Verify → Refine loop itself. Incomplete agents are refused at
-   admission.
+3. **DAG**: `opendomain plan <slug>` compiles via opencode (the real
+   decomposition, verified by the loop); `opendomain plan <slug> --offline`
+   asks the deterministic fallback explicitly (CI, no network). Incomplete
+   agents are refused at admission.
 4. **Execution kit**: `opendomain build <slug>` equips every agent in
    `agents/<slug>/` — `AGENTS.md` (the shared contract: loop, tools, context
    & memory, sandbox, hooks, skills), `<id>.md` (σ_i: role, tool whitelist,
-   I/O contract, criteria), `<id>.kit.json` (machine manifest) — and
-   **defines the node-agents** in `.opencode/agent/`: one file per node,
-   deny-universal first, one allow per whitelisted tool, the output contract
-   in the body. Visible and reviewable BEFORE the run; the run invokes them,
-   it never rewrites them. Targeted fixes only; `opendomain validate`
-   replays the static graph checks.
+   I/O contract, criteria), `<id>.kit.json` (machine manifest) —
+   **resolves every node's kit** against the component registry (`kit`:
+   skills, commands, protocols — a capacity without a provider is a typed
+   construction fault; `--fetch` admits explicit web-provisioning with
+   provenance), and **defines the node-agents** in `.opencode/agent/`: one
+   file per node, deny-universal first, one allow per whitelisted tool, the
+   output contract and the resolved kit in the body. Visible and reviewable
+   BEFORE the run; the run invokes them, it never rewrites them. Targeted
+   fixes only; `opendomain validate` replays the static graph checks.
 
 ## Phase 2 — Execution under gates
 
-5. `opendomain run <slug> --executor opencode|claude|mock` — agents run in
-   topological order; the coordinator applies the gate `y_i ∈ C_i` (schema,
-   patterns, test commands executed in the sandbox) **before** any
-   propagation; attempts replay with typed feedback, bounded by
-   `[gates] max_attempts` in `opendomain.toml`.
+5. `opendomain run <slug>` — the executor is opencode, the real, visible,
+   archived path (mock stays the offline self-check via `opendomain bench`);
+   agents run in topological order; the coordinator applies the gate
+   `y_i ∈ C_i` (schema, patterns, test commands executed in the sandbox)
+   **before** any propagation; attempts replay with typed feedback, bounded
+   by `[gates] max_attempts` in `opendomain.toml`.
 6. The run archives append-only under `runs/run-NNN-<slug>/`:
    `trace.jsonl` (Start/Passed/Retry/Failed), `context/` (the `y_i`),
    `gates.log`, the frozen graph. Nothing is lost; everything replays.

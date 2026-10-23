@@ -20,8 +20,12 @@ use std::path::Path;
 use anyhow::{Result, anyhow};
 use opendomain_core::harness::{AgentSpec, Dag, GraphFile};
 
-/// `opendomain build <spec>`.
-pub fn run(spec_input: &str) -> Result<()> {
+/// `opendomain build <spec> [--fetch]`.
+///
+/// `--fetch` : autoriser le **rapatriement explicite** des composants du kit
+/// sourcés du web (avec provenance, installation locale) — sans le drapeau,
+/// une source distante reste une faute de construction typée.
+pub fn run(spec_input: &str, fetch: bool) -> Result<()> {
     let sp = crate::harness::common::resolve_spec(spec_input)?;
 
     // graphe de la spec (archive) sinon graphe actif
@@ -47,6 +51,33 @@ pub fn run(spec_input: &str) -> Result<()> {
         .map(|t| crate::harness::common::detect_language(&t).to_string())
         .unwrap_or_else(|_| "cible".to_string());
     let loop_cfg = loop_config();
+
+    // le kit de chaque nœud est RÉSOLU ici (phase 1 — avant tout artefact) :
+    // skills/commandes du registre, protocoles fermés contre outils+binaires.
+    // Échec typé : une capacité sans fournisseur refuse la construction.
+    let reg = crate::harness::components::registry_or_empty();
+    let resolved_kit = crate::harness::components::resolve_kit(&dag, &reg, fetch)?;
+    for nk in &resolved_kit {
+        let équipements: Vec<String> = {
+            let mut v: Vec<String> = nk.skills.iter().map(|s| s.id.clone()).collect();
+            v.extend(nk.commands.iter().map(|(id, _)| id.clone()));
+            v
+        };
+        if !équipements.is_empty() || !nk.protocols.is_empty() {
+            println!("  kit résolu [{}] : {}", nk.node, équipements.join(", "));
+            if !nk.protocols.is_empty() {
+                let protos: Vec<&str> = nk
+                    .protocols
+                    .iter()
+                    .filter_map(|p| p.split(' ').find(|w| w.starts_with('`')))
+                    .collect();
+                println!("    protocoles fermés : {}", protos.join(", "));
+            }
+        }
+    }
+    let kit_of =
+        |id: &str| resolved_kit.iter().find(|k| k.node == id);
+
     std::fs::write(out_dir.join("AGENTS.md"), render_agents_md(&dag, &lang, &loop_cfg))?;
     println!("  + {}", out_dir.join("AGENTS.md").display());
     for spec in dag.nodes.values() {
@@ -56,16 +87,16 @@ pub fn run(spec_input: &str) -> Result<()> {
         let kit_path = out_dir.join(format!("{}.kit.json", spec.id));
         std::fs::write(
             &kit_path,
-            serde_json::to_string_pretty(&kit_manifest(spec, &loop_cfg))?,
+            serde_json::to_string_pretty(&kit_manifest(spec, &loop_cfg, kit_of(&spec.id)))?,
         )?;
         println!("  + {kit_path:?}");
     }
 
     // La construction DÉFINIT les agents de nœud (phase 1 de l'architecte) :
     // chaque nœud → un fichier dans `.opencode/agent/` (permissions projetées
-    // + contrat de sortie), visible et reviewable AVANT le run — l'exécution
-    // invoquera ces ids, elle ne réécrira pas.
-    let defined = crate::harness::adapters::define_node_agents(&dag, &sp.slug)?;
+    // + contrat de sortie + kit résolu), visible et reviewable AVANT le run —
+    // l'exécution invoquera ces ids, elle ne réécrira pas.
+    let defined = crate::harness::adapters::define_node_agents(&dag, &sp.slug, &resolved_kit)?;
     for id in &defined {
         println!("  agent défini : {id}");
     }
@@ -284,8 +315,23 @@ fn render_agents_md(dag: &Dag, lang: &str, cfg: &LoopCfg) -> String {
     md
 }
 
-/// Manifeste machine du kit par agent (pour les exécuteurs et adaptateurs).
-fn kit_manifest(spec: &AgentSpec, cfg: &LoopCfg) -> serde_json::Value {
+/// Manifeste machine du kit par agent (pour les exécuteurs et adaptateurs) —
+/// inclut le kit résolu (skills/commandes/protocoles avec leurs textes).
+fn kit_manifest(
+    spec: &AgentSpec,
+    cfg: &LoopCfg,
+    nk: Option<&crate::harness::components::NodeKit>,
+) -> serde_json::Value {
+    let kit = serde_json::json!({
+        "skills": nk.iter().flat_map(|k| k.skills.iter().map(|s| serde_json::json!({
+            "id": s.id, "applies_to": s.applies_to, "text": s.text,
+        }))).collect::<Vec<_>>(),
+        "commands": nk.iter().flat_map(|k| k.commands.iter().map(|(id, text)| serde_json::json!({
+            "id": id, "text": text,
+        }))).collect::<Vec<_>>(),
+        "protocols": nk.iter().flat_map(|k| k.protocols.iter().map(|p| serde_json::Value::String(p.clone()))).collect::<Vec<_>>(),
+        "declared": { "skills": spec.kit.skills, "commands": spec.kit.commands, "protocols": spec.kit.protocols },
+    });
     serde_json::json!({
         "agent": spec.id,
         "standard": "opendomain-kit",
@@ -296,6 +342,7 @@ fn kit_manifest(spec: &AgentSpec, cfg: &LoopCfg) -> serde_json::Value {
             "gate": "y_i ∈ C_i avant propagation",
         },
         "tools": spec.tools,
+        "kit": kit,
         "hooks": {
             "schema_check": spec.criteria.schema_check,
             "contains": spec.criteria.contains,
@@ -383,15 +430,17 @@ mod tests {
             id: "x".into(),
             role: "r".into(),
             tools: vec!["bash".into()],
+            kit: Default::default(),
             contract: Default::default(),
             criteria: Default::default(),
             depends_on: vec!["y".into()],
             prompt: Default::default(),
         };
-        let kit = kit_manifest(&spec, &LoopCfg::default());
+        let kit = kit_manifest(&spec, &LoopCfg::default(), None);
         assert_eq!(kit["agent"], "x");
         assert_eq!(kit["loop"]["max_attempts"], 3);
         assert_eq!(kit["tools"], serde_json::json!(["bash"]));
+        assert_eq!(kit["kit"]["skills"], serde_json::json!([]));
         assert_eq!(kit["context"]["deps"], serde_json::json!(["y"]));
         assert_eq!(kit["memory"]["lessons"], "opendomain/harness/memory/registre.md");
     }

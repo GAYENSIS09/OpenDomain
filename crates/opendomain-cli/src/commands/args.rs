@@ -97,7 +97,14 @@ pub enum Command {
     /// Design-time grounding: scan the repo, manifests, toolchain.
     Ground { spec_path: String },
     /// Build each agent's execution kit and verify the construction.
-    Build { spec_path: String },
+    Build {
+        spec_path: String,
+        /// Admit explicit web-provisioning at build: remote kit components
+        /// are fetched (with provenance, installed locally). Off: a remote
+        /// source is a typed construction fault.
+        #[arg(long)]
+        fetch: bool,
+    },
     /// Run the agent graph under the gates, archiving the whole run.
     /// The executor is OpenCode — the real, visible, archived path; the raw
     /// response of every node is saved into the run's `context/`.
@@ -141,6 +148,14 @@ pub enum Command {
     Workflow { #[command(subcommand)] op: WorkflowOp },
     /// Add a reusable procedure (skill) or start one from a template.
     Skill { #[command(subcommand)] op: SkillOp },
+    /// Install a kit component from the web or a local file — skills,
+    /// commands, tools — with provenance (source + date). The modular
+    /// provisioning step of the harness: the agent kit cites ids, this
+    /// command provides them.
+    Kit {
+        #[command(subcommand)]
+        op: KitOp,
+    },
     /// Match every spec need to exactly one component, then check its requirements.
     Resolve { spec_path: String },
     /// Print the §9.7 rigour table and audit the workspace's rigour
@@ -178,6 +193,23 @@ pub enum WorkflowOp {
         /// migration | refactor | tests | doc
         kind: String,
         slug: String,
+    },
+}
+
+#[derive(clap::Subcommand)]
+pub enum KitOp {
+    /// Install a kit component from a URL (curl) or a local file.
+    Add {
+        /// skill | command | tool (closed vocabulary)
+        kind: String,
+        /// `https://…` URL or local path of the component markdown.
+        source: String,
+        /// Force the id (else: frontmatter or file name).
+        #[arg(long)]
+        id: Option<String>,
+        /// Provided capabilities (else: frontmatter `provides:`).
+        #[arg(long, value_delimiter = ',')]
+        provides: Vec<String>,
     },
 }
 

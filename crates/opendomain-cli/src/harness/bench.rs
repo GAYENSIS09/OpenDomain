@@ -63,6 +63,11 @@ pub fn run() -> Result<()> {
         "resolver : un fournisseur par besoin, sinon échec typé",
         &test_resolver_per_need,
     );
+    check(
+        &mut b,
+        "kit : une capacité sans fournisseur refuse la construction",
+        &test_kit_typed,
+    );
 
     println!(
         "bench : {}/{} invariants vérifiés (harnais offline)",
@@ -235,6 +240,30 @@ fn test_sandbox_allowlist() -> bool {
         && on.permits("cargo").is_ok()
         && on.permits("curl").is_err()
         && on.permits("curl").err().unwrap().to_string().contains("SandboxViolation")
+}
+
+/// Le kit d'un nœud se résout à la construction : une capacité (skill,
+/// commande) sans fournisseur est une erreur typée qui nomme le pas.
+fn test_kit_typed() -> bool {
+    use crate::harness::components::{resolve_kit, Registry};
+    let spec = AgentSpec {
+        id: "deployeur".into(),
+        role: "rôle".into(),
+        kit: opendomain_core::harness::Kit {
+            skills: vec!["deploy.inconnu".into()],
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let file = GraphFile { meta: Value::Null, nodes: vec![spec] };
+    let Ok(dag) = Dag::build(&file) else { return false };
+    let err = match resolve_kit(&dag, &Registry::default(), false) {
+        Ok(_) => return false,
+        Err(e) => e.to_string(),
+    };
+    err.contains("sans fournisseur")
+        && err.contains("deploy.inconnu")
+        && err.contains("kit add skill")
 }
 
 /// Un besoin = un fournisseur ; un besoin sans fournisseur est un `miss`
