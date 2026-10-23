@@ -57,6 +57,10 @@ pub const FILES: &[Template] = &[
         "opendomain/harness/memory/README.md",
         include_str!("../../templates/harness-memory-README.md"),
     ),
+    // Pas de .gitignore template : le harnais ne dépose pas de fichier de
+    // versioning — le .gitignore du PROJET lui-même liste les deux arbres
+    // générés (opendomain/, .opencode/). Un fichier de versioning appartient
+    // au projet, pas au scaffold.
     // Pas de contrat méta-agent : le harnais se pilote par les commandes
     // (/opendomain-implement → rôles → skills). La doctrine d'exécution vit
     // UNE fois, dans le skill `opendomain-harness` — aucune copie par
