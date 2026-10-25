@@ -4,15 +4,18 @@ Static **OpenDomain** documentation — no build step, deployable to GitHub Page
 
 ## Style
 
-Palette drawn from `../opendomain.svg`:
+Quasi-monochrome palette — neutral paper, near-black ink, and a single desaturated accent (the structural red of `../opendomain.svg`) reserved for links, active markers and blocking verdicts:
 
 | Role | Token | Hex |
 |---|---|---|
-| paper | `--paper` | `#FBF8F1` |
-| paper-2 | `--paper-2` | `#F1ECE1` |
-| sand | `--sand` | `#D9CFBA` |
-| ink | `--ink` | `#1B1A17` |
-| structural red | `--red` | `#D9432B` |
+| paper | `--paper` | `#F8F8F7` |
+| paper-2 | `--paper-2` | `#EFEFEC` |
+| sand | `--sand` | `#E2E1DC` |
+| card | `--card` | `#FFFFFF` |
+| ink | `--ink` | `#1B1B19` |
+| accent | `--accent` | `#9E3D2B` |
+
+Dark theme (`html[data-theme="dark"]`): `--paper #141413`, `--ink #E8E6E1`, `--accent #D0704C`. The theme is decided before first paint by a small inline head script — stored choice wins, otherwise the OS preference — so no wrong-theme flash ever shows.
 
 Logo: `assets/opendomain.svg` (copy of `../opendomain.svg`).
 
@@ -25,9 +28,11 @@ docs-site/
     getting-started.html  # install, init, first verdict
     concepts.html         # knowledge states, evidence, anti-whitewashing
     artifacts.html        # record format + annotated example
+    brownfield.html       # adopting the framework on an existing repository
     gates.html            # the 9 gates + rules
     cli-reference.html    # the registry commands, on one page
     opencode.html         # commands, roles, permissions
+    harness.html          # agent-executed flow: six phases, run archive
     theory.html           # full specification (v0.20.26)
   css/style.css           # restrained theme + dark mode + responsive details
   js/main.js              # copy, theme toggle, skip link, scrim, mobile sidebar,

@@ -45,6 +45,9 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Tooling sessions (Playwright MCP captures, audit files temporaires)
+.playwright-mcp/
 opendomain-paper.tex
 opendomain-paper.pdf
 opendomain-paper.txt

@@ -1,21 +1,35 @@
-/* OpenDomain docs — mise en page sobre (esprit opencode docs), palette opendomain.svg */
+/* OpenDomain docs — mise en page sobre (esprit opencode docs).
+   Palette quasi-monochrome : encre quasi noire, papier neutre, un seul
+   accent (le rouge structurel du logo, désaturé, réservé aux liens,
+   à l'état actif et aux verdicts bloquants). Les rôles de connaissance
+   (ok / warn / info / teal / violet) restent possibles mais restent
+   grisés pendant la lecture. */
 :root {
-  --paper: #FBF8F1;
-  --paper-2: #F1ECE1;
-  --sand: #D9CFBA;
-  --ink: #1B1A17;
-  --ink-soft: #5A564E;
-  --ink-faint: #8A8478;
-  --black: #0F0E0C;
-  --red: #D9432B;
-  --red-soft: rgba(217, 67, 43, 0.08);
-  --line: rgba(27, 26, 23, 0.12);
-  --card: #FFFDF8;
-  --code-bg: #14120E;
-  --code-head: #0F0D0B;
-  --radius: 10px;
+  --paper: #F8F8F7;
+  --paper-2: #EFEFEC;
+  --sand: #E2E1DC;
+  --card: #FFFFFF;
+  --ink: #1B1B19;
+  --ink-soft: #57544E;
+  --ink-faint: #8B8880;
+  --black: #111110;
+  --accent: #9E3D2B;
+  --accent-soft: rgba(158, 61, 43, 0.07);
+  --ok: #3F7050;
+  --ok-soft: rgba(63, 112, 80, 0.10);
+  --warn: #96742E;
+  --warn-soft: rgba(150, 116, 46, 0.10);
+  --info: #55697E;
+  --info-soft: rgba(85, 105, 126, 0.10);
+  --teal: #3C6F68;
+  --teal-soft: rgba(60, 111, 104, 0.10);
+  --violet: #63567F;
+  --violet-soft: rgba(99, 86, 127, 0.10);
+  --line: rgba(20, 20, 18, 0.10);
+  --code-bg: #151412;
+  --code-head: #0E0D0C;
+  --radius: 8px;
   --font-body: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Fraunces", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -32,7 +46,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--red); text-decoration: none; }
+a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- barre supérieure fine ---------- */
@@ -81,11 +95,10 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   font-size: 13px;
   color: var(--ink-faint);
   min-width: 210px;
-  box-shadow: 0 1px 3px rgba(15, 14, 12, 0.06);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
 }
-.search:hover { border-color: var(--ink-faint); box-shadow: 0 2px 6px rgba(15, 14, 12, 0.09); }
-.search:focus-within { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+.search:hover { border-color: var(--ink-faint); }
+.search:focus-within { border-color: var(--accent); }
 .search input {
   border: 0;
   outline: 0;
@@ -150,7 +163,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   margin-bottom: 12px;
   outline: none;
 }
-.sidebar input.filter:focus { border-color: var(--red); }
+.sidebar input.filter:focus { border-color: var(--accent); }
 .sidebar h4 {
   margin: 18px 0 6px;
   font-size: 12px;
@@ -172,8 +185,8 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .sidebar a.active {
   color: var(--ink);
   font-weight: 600;
-  background: var(--red-soft);
-  border-left-color: var(--red);
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
 }
 .sidebar a.hidden { display: none; }
 
@@ -181,7 +194,7 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .prose { min-width: 0; max-width: min(78ch, 920px); }
 .prose h1 {
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 750;
   letter-spacing: -0.02em;
   line-height: 1.2;
   margin: 0 0 8px;
@@ -191,13 +204,13 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  margin: 40px 0 10px;
-  padding-top: 8px;
+  margin: 42px 0 10px;
+  padding-top: 10px;
   border-top: 1px solid var(--line);
 }
-.prose h2:first-of-type { border-top: 0; }
+.prose h2:first-of-type { margin-top: 0; border-top: 0; }
 .prose h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; }
-.prose p, .prose ul, .prose ol { margin: 12px 0; }
+.prose p, .prose ul, .prose ol { margin: 13px 0; }
 .prose li { margin: 6px 0; }
 .prose li::marker { color: var(--ink-faint); }
 .prose img { max-width: 100%; }
@@ -221,24 +234,33 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
   font-weight: 600;
   color: var(--ink-soft);
 }
+.prose tbody tr:hover { background: var(--paper-2); }
+/* Code en ligne : pastille sans bordure — la page respire, aucun cadre
+   ne rivalise avec le texte. Le rendu tient au fond, très légèrement
+   plus sombre que le papier. */
 .prose code, code.inline {
   font-family: var(--font-mono);
-  font-size: 0.86em;
-  background: var(--paper-2);
-  border: 1px solid var(--line);
-  padding: 1.5px 7px;
-  border-radius: 7px;
-  white-space: nowrap;
+  font-size: 0.85em;
+  background: rgba(20, 20, 18, 0.055);
+  border: 0;
+  padding: 1.5px 5px;
+  border-radius: 4px;
 }
-/* Le code inline doit pouvoir se couper : sinon une longue commande
-   ou URL élargit la page et casse le layout sur écran étroit. */
-.prose p code, .prose li code, .prose td code {
+/* Le code inline doit pouvoir se couper dans un paragraphe : sinon une
+   longue commande ou URL élargit la page et casse le layout étroit. */
+.prose p code, .prose li code, .prose h3 code {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+/* Dans une cellule, en revanche, ni « researc-h » ni coupe en plein
+   identifiant : la pastille reste d'un bloc et la table défile. */
+.prose td code, .prose th code {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 pre {
   background: var(--code-bg);
-  color: #F1ECE1;
+  color: #EFEEEA;
   border-radius: var(--radius);
   padding: 16px 18px;
   overflow: auto;
@@ -248,15 +270,14 @@ pre {
   position: relative;
   margin: 14px 0;
 }
-pre code { background: none; border: 0; padding: 0; font-feature-settings: "calt" 1, "liga" 1; }
+pre code { background: none; border: 0; padding: 0; border-radius: 0; font-feature-settings: "calt" 1, "liga" 1; }
 /* Bloc de code composé par main.js : en-tête (langage + copie) au-dessus. */
 .codeblock {
-  margin: 16px 0;
+  margin: 20px 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--code-bg);
-  box-shadow: 0 2px 12px rgba(15, 14, 12, 0.09);
 }
 .codeblock pre { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
 .codehead {
@@ -285,12 +306,14 @@ pre code { background: none; border: 0; padding: 0; font-feature-settings: "calt
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.22);
   background: transparent;
-  color: #F1ECE1;
+  color: #EFEEEA;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  opacity: 0.55;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
-.copy:hover { background: rgba(255, 255, 255, 0.08); color: #FFFDF8; }
-.copy:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.copy:hover { background: rgba(255, 255, 255, 0.08); color: #FFFFFF; opacity: 1; }
+.copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; opacity: 1; }
+pre:hover .copy { opacity: 1; }
 /* Le bouton flottant d'avant l'en-tête reste supportable si jamais un
    `pre` échappe à la composition (JS désactivé) : même style, posé ailleurs. */
 pre > .copy { position: absolute; top: 10px; right: 10px; }
@@ -302,24 +325,28 @@ pre > .copy { position: absolute; top: 10px; right: 10px; }
   font-size: 14.5px;
 }
 
-/* encadrés sobres façon Tip / Note */
-.tip, .note {
+/* ---------- encadrés : rail à gauche, pas d'icône, pas de teinte ---------- */
+.tip, .note, .warn {
   border: 1px solid var(--line);
+  border-left: 2px solid var(--ink-faint);
   border-radius: var(--radius);
   background: var(--card);
-  padding: 12px 16px;
-  margin: 16px 0;
+  padding: 13px 16px;
+  margin: 18px 0;
   font-size: 14.5px;
 }
-.tip strong.label, .note strong.label {
+.tip { border-left-color: var(--accent); }
+.warn { border-left-color: var(--warn); }
+.tip strong.label, .note strong.label, .warn strong.label {
   display: block;
-  font-size: 12px;
+  font-size: 11.5px;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--red);
-  margin-bottom: 4px;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  margin: 0 0 4px;
 }
-.note strong.label { color: var(--ink-soft); }
+.tip strong.label { color: var(--accent); }
+.warn strong.label { color: var(--warn); }
 
 /* ---------- sommaire droit ---------- */
 .toc { position: sticky; top: 89px; font-size: 13px; }
@@ -339,6 +366,11 @@ pre > .copy { position: absolute; top: 10px; right: 10px; }
 }
 .toc nav a:hover { color: var(--ink); text-decoration: none; }
 .toc nav a.lvl3 { padding-left: 24px; }
+.toc nav a.active {
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
 
 /* ---------- pied de page ---------- */
 .footer {
@@ -381,7 +413,7 @@ pre > .copy { position: absolute; top: 10px; right: 10px; }
     transition: transform 0.2s ease;
     z-index: 40;
   }
-  .sidebar.open { transform: none; box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
+  .sidebar.open { transform: none; box-shadow: 0 12px 40px rgba(0,0,0,0.14); }
   .menu-btn { display: block; }
   /* La recherche reste accessible en icône : main.js ouvre le tiroir
      et focalise le filtre depuis ce bouton, même sur mobile. */
@@ -411,7 +443,7 @@ pre > .copy { position: absolute; top: 10px; right: 10px; }
 }
 .skip-link:focus { top: 8px; color: #fff; }
 :focus-visible {
-  outline: 2px solid var(--red);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -424,7 +456,7 @@ pre > .copy { position: absolute; top: 10px; right: 10px; }
 .scrim {
   position: fixed;
   inset: 0;
-  background: rgba(15, 14, 12, 0.38);
+  background: rgba(17, 17, 16, 0.40);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
@@ -444,77 +476,38 @@ body.sidebar-open .scrim { opacity: 1; pointer-events: auto; }
 }
 .theme-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
 
-/* ---------- sommaire droit : section active ---------- */
-.toc nav a.active {
-  color: var(--red);
-  border-left-color: var(--red);
-  font-weight: 600;
+/* ---------- sidebar / toc : sticky MAIS scrollables sur petits écrans ---------- */
+.sidebar, .toc {
+  max-height: calc(100vh - 105px);
+  overflow: auto;
+  scrollbar-width: thin;
+  padding-right: 4px;
+  scrollbar-color: var(--sand) transparent;
 }
 
-/* ---------- tableaux : lisibilité ---------- */
-.prose tbody tr:hover { background: var(--red-soft); }
-
-/* ---------- thème sombre ---------- */
-html[data-theme="dark"] {
-  --paper: #151310;
-  --paper-2: #221E18;
-  --sand: #3A342A;
-  --ink: #EDE5D3;
-  --ink-soft: #C2B7A4;
-  --ink-faint: #958D7E;
-  --black: #000;
-  --red: #E86A48;
-  --red-soft: rgba(224, 96, 63, 0.13);
-  --line: rgba(237, 229, 211, 0.16);
-  --card: #1D1915;
-  --code-bg: #0D0C0A;
-  --code-head: #080706;
-  color-scheme: dark;
+/* ---------- diagrammes inline (SVG) ---------- */
+.diagram { margin: 20px 0 6px; }
+.diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
-html[data-theme="dark"] .brand img { background: var(--paper-2); }
-html[data-theme="dark"] pre { color: #EDE5D3; }
-html[data-theme="dark"] .codeblock {
-  border-color: rgba(237, 229, 211, 0.14);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+.diagram .d-node   { fill: var(--card); stroke: var(--line); }
+.diagram .d-node-2 { fill: var(--paper-2); stroke: var(--line); }
+.diagram .d-soft   { fill: var(--accent-soft); stroke: var(--accent); }
+.diagram .d-ok     { fill: var(--ok-soft); stroke: var(--ok); }
+.diagram .d-line   { stroke: var(--ink-faint); }
+.diagram .d-arrow  { fill: var(--ink-faint); }
+.diagram .d-t-main { fill: var(--ink); font: 600 12px var(--font-mono); }
+.diagram .d-t-sub  { fill: var(--ink-soft); font: 500 10px var(--font-mono); }
+.diagram .d-t-tiny { fill: var(--ink-faint); font: 500 9.5px var(--font-mono); }
+.diagram .d-t-num  { fill: var(--ink); font: 600 11px var(--font-mono); }
+.diagram .d-t-red  { fill: var(--accent); font: 500 9.5px var(--font-mono); }
+.diagram .d-dashed { stroke: var(--accent); stroke-dasharray: 5 4; }
+@media (max-width: 800px) {
+  .diagram { overflow-x: auto; }
+  .diagram svg { min-width: 640px; }
 }
-html[data-theme="dark"] .sidebar.open { box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
-
-/* =====================================================================
-   Polish v2 — verdicts, callouts, stepper, diagrams, breathing
-   (additive: nothing above is redefined; tokens below cascade into
-   light and dark because they are plain variables)
-   ===================================================================== */
-:root {
-  --ok: #2E7D46;
-  --ok-soft: rgba(46, 125, 70, 0.10);
-  --warn: #B07C22;
-  --warn-soft: rgba(176, 124, 34, 0.10);
-}
-html[data-theme="dark"] {
-  --ok: #5FBF7F;
-  --ok-soft: rgba(95, 191, 127, 0.12);
-  --warn: #D9A855;
-  --warn-soft: rgba(217, 168, 85, 0.12);
-}
-
-/* ---------- respiration typographique ---------- */
-.prose { line-height: 1.72; }
-.prose p, .prose ul, .prose ol { margin: 14px 0; }
-.prose li { margin: 7px 0; }
-.prose h2 { margin-top: 46px; }
-.prose h2:first-of-type { margin-top: 0; }
-
-/* ---------- blocs de code : lisibles, bouton toujours atteignable ---------- */
-pre {
-  box-shadow: 0 2px 10px rgba(15, 14, 12, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-pre .copy {
-  opacity: 0.55;
-  transition: opacity 0.15s ease;
-  font-family: var(--font-body);
-}
-pre:hover .copy, pre .copy:focus-visible { opacity: 1; }
 
 /* ---------- verdicts : mini-badges ---------- */
 .pill {
@@ -529,88 +522,16 @@ pre:hover .copy, pre .copy:focus-visible { opacity: 1; }
   vertical-align: 1px;
   white-space: nowrap;
 }
-.pill.pass { color: var(--ok); background: var(--ok-soft); border-color: var(--ok); }
-.pill.fail { color: var(--red); background: var(--red-soft); border-color: var(--red); }
-.pill.adv  { color: var(--warn); background: var(--warn-soft); border-color: var(--warn); }
+.pill.pass { color: var(--ok);   background: var(--ok-soft);   border-color: rgba(63, 112, 80, 0.35); }
+.pill.fail { color: var(--accent); background: var(--accent-soft); border-color: rgba(158, 61, 43, 0.35); }
+.pill.adv  { color: var(--warn); background: var(--warn-soft); border-color: rgba(150, 116, 46, 0.35); }
 .pill.mono { color: var(--ink-soft); background: var(--paper-2); border-color: var(--line); }
+/* Les 7 statuts de connaissance : chacun son rôle, tous grisés. */
+.pill.info   { color: var(--info);   background: var(--info-soft);   border-color: rgba(85, 105, 126, 0.35); }
+.pill.teal   { color: var(--teal);   background: var(--teal-soft);   border-color: rgba(60, 111, 104, 0.35); }
+.pill.violet { color: var(--violet); background: var(--violet-soft); border-color: rgba(99, 86, 127, 0.35); }
 
-/* ---------- encadrés : rail coloré + icône SVG (Tip / Note / Warn) ---------- */
-.tip, .note, .warn {
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--red);
-  border-radius: var(--radius);
-  background: var(--card);
-  padding: 14px 16px 13px 46px;
-  margin: 18px 0;
-  font-size: 14.5px;
-  position: relative;
-}
-.tip::before, .note::before, .warn::before {
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 1;
-}
-.tip::before { content: "✦"; color: var(--red); background: var(--red-soft); }
-.note::before { content: "ⓘ"; color: var(--ink-soft); background: var(--paper-2); border-left: 0; }
-.warn::before { content: "⚠"; color: var(--warn); background: var(--warn-soft); }
-/* Navigateurs qui portent mask-image : vraies icônes SVG (ampoule / info /
-   attention) teintées par le rail, à la place des glyphes textuels. */
-@supports ((mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E")) or (-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E"))) {
-  .tip::before, .note::before, .warn::before {
-    content: "";
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-  }
-  .tip::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.7 1.3-2.2A6 6 0 0 0 12 3z'/%3E%3C/svg%3E");
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.7 1.3-2.2A6 6 0 0 0 12 3z'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 21h4'/%3E%3Cpath d='M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.3 2.2h4.6c.2-.9.6-1.7 1.3-2.2A6 6 0 0 0 12 3z'/%3E%3C/svg%3E") center / contain no-repeat;
-    background-color: var(--red);
-  }
-  .note::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8h.01'/%3E%3Cpath d='M12 11.5v4.5'/%3E%3C/svg%3E");
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8h.01'/%3E%3Cpath d='M12 11.5v4.5'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8h.01'/%3E%3Cpath d='M12 11.5v4.5'/%3E%3C/svg%3E") center / contain no-repeat;
-    background-color: var(--ink-soft);
-  }
-  .warn::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 2.5 20h19L12 3z'/%3E%3Cpath d='M12 9.5v5'/%3E%3Cpath d='M12 17.5h.01'/%3E%3C/svg%3E");
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 2.5 20h19L12 3z'/%3E%3Cpath d='M12 9.5v5'/%3E%3Cpath d='M12 17.5h.01'/%3E%3C/svg%3E") center / contain no-repeat;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 2.5 20h19L12 3z'/%3E%3Cpath d='M12 9.5v5'/%3E%3Cpath d='M12 17.5h.01'/%3E%3C/svg%3E") center / contain no-repeat;
-    background-color: var(--warn);
-  }
-}
-.tip { border-left-color: var(--red); }
-.note { border-left-color: var(--ink-faint); }
-.warn { border-left-color: var(--warn); }
-.tip strong.label, .note strong.label, .warn strong.label {
-  display: block;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--red);
-  margin: 0 0 5px;
-}
-.note strong.label { color: var(--ink-soft); }
-.warn strong.label { color: var(--warn); }
-/* Sombre : les encadrés vivent sur une carte ; une bordure légèrement
-   plus claire et un filet interne tracent la profondeur (layered). */
-html[data-theme="dark"] .tip, html[data-theme="dark"] .note, html[data-theme="dark"] .warn {
-  background: var(--paper-2);
-  border-color: rgba(237, 229, 211, 0.18);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
-}
-
-/* ---------- stepper : étapes numérotées (Getting started) ---------- */
+/* ---------- étapes numérotées : anneau d'encre, pas de pastille rouge ---------- */
 .stepnum {
   display: inline-flex;
   align-items: center;
@@ -619,104 +540,22 @@ html[data-theme="dark"] .tip, html[data-theme="dark"] .note, html[data-theme="da
   height: 1.65em;
   margin-right: 12px;
   border-radius: 50%;
-  background: var(--red);
-  color: #FFFDF8;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   vertical-align: -2px;
 }
-html[data-theme="dark"] .stepnum { color: var(--paper); }
 
-/* ---------- sidebar / toc : sticky MAIS scrollables sur petits écrans ---------- */
-.sidebar, .toc {
-  max-height: calc(100vh - 105px);
-  overflow: auto;
-  scrollbar-width: thin;
-  padding-right: 4px;
-  scrollbar-color: var(--sand) transparent;
-}
-
-/* ---------- diagrams inline (SVG) ---------- */
-.diagram { margin: 20px 0 6px; }
-.diagram svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.diagram .d-node   { fill: var(--card); stroke: var(--line); }
-.diagram .d-node-2 { fill: var(--paper-2); stroke: var(--line); }
-.diagram .d-soft   { fill: var(--red-soft); stroke: var(--red); }
-.diagram .d-ok     { fill: var(--ok-soft); stroke: var(--ok); }
-.diagram .d-line   { stroke: var(--ink-faint); }
-.diagram .d-arrow  { fill: var(--ink-faint); }
-.diagram .d-t-main { fill: var(--ink); font: 600 12px var(--font-mono); }
-.diagram .d-t-sub  { fill: var(--ink-soft); font: 500 10px var(--font-mono); }
-.diagram .d-t-tiny { fill: var(--ink-faint); font: 500 9.5px var(--font-mono); }
-.diagram .d-t-num  { fill: var(--ink); font: 600 11px var(--font-mono); }
-.diagram .d-t-red  { fill: var(--red); font: 500 9.5px var(--font-mono); }
-.diagram .d-dashed { stroke: var(--red); stroke-dasharray: 5 4; }
-@media (max-width: 800px) {
-  .diagram { overflow-x: auto; }
-  .diagram svg { min-width: 640px; }
-}
-
-/* =====================================================================
-   Polish v3 — page Concepts : badges de statut de connaissance, chemin
-   de preuve en stations, cartes de synthèse, note teintée, pagination
-   de fin de page. Additif : nouveaux composants ; les règles
-   ci-dessus continuent de gérer le balisage hérité des autres pages.
-   ===================================================================== */
-:root {
-  --info: #3B6EA5;
-  --info-soft: rgba(59, 110, 165, 0.10);
-  --teal: #24766D;
-  --teal-soft: rgba(36, 118, 109, 0.10);
-  --violet: #7A5AA8;
-  --violet-soft: rgba(122, 90, 168, 0.10);
-  --note-soft: rgba(176, 124, 34, 0.06);
-}
-html[data-theme="dark"] {
-  --info: #8FB4DE;
-  --info-soft: rgba(143, 180, 222, 0.14);
-  --teal: #63C2B6;
-  --teal-soft: rgba(99, 194, 182, 0.12);
-  --violet: #B49BE4;
-  --violet-soft: rgba(180, 155, 228, 0.14);
-  --note-soft: rgba(217, 168, 85, 0.08);
-}
-
-/* ---------- 7 statuts de connaissance, 7 badges ---------- */
-/* pass (EXPLICIT), adv (ASSUMED), fail (CONFLICTING) et mono (UNKNOWN)
-   existent déjà ; ici : TACIT, HYBRID, INFERRED. */
-.pill.info   { color: var(--info);   background: var(--info-soft);   border-color: var(--info); }
-.pill.teal   { color: var(--teal);   background: var(--teal-soft);   border-color: var(--teal); }
-.pill.violet { color: var(--violet); background: var(--violet-soft); border-color: var(--violet); }
-
-/* ---------- Note : panneau teinté ambré, rail marqué, icône assortie ---------- */
-.note {
-  background: var(--note-soft);
-  border-left-color: var(--warn);
-}
-.note strong.label { color: var(--warn); }
-.note::before { background-color: var(--warn); }
-html[data-theme="dark"] .note {
-  background: var(--note-soft);
-  border-color: rgba(237, 229, 211, 0.18);
-  border-left-color: var(--warn);
-}
-
-/* ---------- tableau de connaissances : enveloppe pleine largeur ---------- */
-/* Contrairement à `.prose table` (display:block, replié à gauche), la
-   table vit dans une enveloppe qui gère le défilement sur écran étroit
-   et laisse la table s'étendre sur toute la colonne. */
+/* ---------- tableau enveloppé : pleine largeur, en-tête neutre ---------- */
 .tablewrap {
   margin: 18px 0;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--card);
   overflow-x: auto;
-  box-shadow: 0 1px 3px rgba(15, 14, 12, 0.05);
 }
 .tablewrap table {
   display: table;
@@ -743,15 +582,14 @@ html[data-theme="dark"] .note {
   line-height: 1.55;
 }
 .tablewrap tbody tr:last-child td { border-bottom: 0; }
-.tablewrap tbody tr:hover { background: var(--red-soft); }
+.tablewrap tbody tr:hover { background: var(--paper-2); }
 .tablewrap td:first-child { white-space: nowrap; }
 @media (max-width: 800px) {
-  .tablewrap { box-shadow: none; }
   .tablewrap table { font-size: 13px; }
   .tablewrap thead th, .tablewrap tbody td { padding: 8px 10px; }
 }
 
-/* ---------- les cinq stations du chemin de preuve ---------- */
+/* ---------- chemin de preuve : stations reliées, numéros neutres ---------- */
 ol.stations {
   margin: 18px 0 6px;
   padding: 0;
@@ -776,9 +614,9 @@ ol.stations > li::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--red-soft);
-  color: var(--red);
-  border: 1px solid rgba(217, 67, 43, 0.35);
+  background: var(--paper-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
   font: 600 12.5px var(--font-mono);
 }
 /* le fil qui relie les stations, interrompu après la dernière */
@@ -793,9 +631,8 @@ ol.stations > li::after {
 }
 ol.stations > li:last-child::after { display: none; }
 ol.stations strong { display: block; margin-bottom: 2px; }
-html[data-theme="dark"] ol.stations > li::before { border-color: rgba(224, 96, 63, 0.5); }
 
-/* ---------- cartes de synthèse (« the rest of the picture ») ---------- */
+/* ---------- cartes de synthèse : kickers neutres ---------- */
 .card-grid {
   margin: 18px 0 6px;
   display: grid;
@@ -811,13 +648,12 @@ html[data-theme="dark"] ol.stations > li::before { border-color: rgba(224, 96, 6
   border-radius: var(--radius);
   padding: 15px 16px 13px;
   color: inherit;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 .card:hover, .card:focus-visible {
   text-decoration: none;
   border-color: var(--ink-faint);
   background: var(--paper-2);
-  box-shadow: 0 3px 14px rgba(15, 14, 12, 0.07);
 }
 .card .kicker {
   font-size: 11px;
@@ -826,12 +662,10 @@ html[data-theme="dark"] ol.stations > li::before { border-color: rgba(224, 96, 6
   letter-spacing: 0.09em;
   margin-bottom: 1px;
 }
-.card .kicker.k-red  { color: var(--red); }
-.card .kicker.k-warn { color: var(--warn); }
-.card .kicker.k-ok   { color: var(--ok); }
+.card .kicker.k-red, .card .kicker.k-warn, .card .kicker.k-ok { color: var(--ink-faint); }
 .card .ct { font-size: 15px; font-weight: 700; color: var(--ink); line-height: 1.35; }
 .card .cd { font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
-.card .cf { margin-top: auto; padding-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--red); }
+.card .cf { margin-top: auto; padding-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--accent); }
 .creed { color: var(--ink-soft); font-size: 15px; }
 
 /* ---------- pagination : cartes précédent / suivant ---------- */
@@ -852,13 +686,12 @@ html[data-theme="dark"] ol.stations > li::before { border-color: rgba(224, 96, 6
   border-radius: var(--radius);
   padding: 14px 16px;
   color: inherit;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 .page-card:hover, .page-card:focus-visible {
   text-decoration: none;
   border-color: var(--ink-faint);
   background: var(--paper-2);
-  box-shadow: 0 3px 14px rgba(15, 14, 12, 0.08);
 }
 .page-card .dir {
   font-size: 11px;
@@ -875,5 +708,34 @@ html[data-theme="dark"] ol.stations > li::before { border-color: rgba(224, 96, 6
   .page-card.next { text-align: left; }
 }
 
-/* ---------- aération des blocs de code ---------- */
-.codeblock { margin: 20px 0; }
+/* ---------- thème sombre : neutre, même hiérarchie ---------- */
+html[data-theme="dark"] {
+  --paper: #141413;
+  --paper-2: #1F1F1D;
+  --sand: #2A2A27;
+  --card: #191918;
+  --ink: #E8E6E1;
+  --ink-soft: #B7B3AB;
+  --ink-faint: #8B8780;
+  --black: #000;
+  --accent: #D0704C;
+  --accent-soft: rgba(208, 112, 76, 0.12);
+  --ok: #7DBB8E;
+  --ok-soft: rgba(125, 187, 142, 0.12);
+  --warn: #D0AC60;
+  --warn-soft: rgba(208, 172, 96, 0.12);
+  --info: #8FA7BD;
+  --info-soft: rgba(143, 167, 189, 0.12);
+  --teal: #6FBFB2;
+  --teal-soft: rgba(111, 191, 178, 0.12);
+  --violet: #A99BD0;
+  --violet-soft: rgba(169, 155, 208, 0.12);
+  --line: rgba(232, 230, 225, 0.13);
+  --code-bg: #0D0D0C;
+  --code-head: #070706;
+  color-scheme: dark;
+}
+html[data-theme="dark"] pre { color: #E8E6E1; }
+html[data-theme="dark"] .codeblock { border-color: rgba(232, 230, 225, 0.14); }
+html[data-theme="dark"] .sidebar.open { box-shadow: 0 12px 40px rgba(0,0,0,0.55); }
+html[data-theme="dark"] .brand img { background: var(--paper-2); }
