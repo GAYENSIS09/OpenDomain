@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The harness — OpenDomain</title>
+  <link rel="icon" href="../assets/opendomain.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <button class="menu-btn" id="menuBtn">Menu</button>
+      <a class="brand" href="../index.html"><img src="../assets/opendomain.svg" alt="OpenDomain" /><span>OpenDomain</span></a>
+      <nav class="top-links">
+        <a href="../index.html" class="hide-mobile">Documentation</a>
+        <a href="https://github.com/GAYENSIS09/OpenDomain">GitHub</a>
+      </nav>
+      <button class="search" id="searchBtn"><span>Search</span><kbd>Ctrl K</kbd></button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" id="sidebar">
+      <input class="filter" id="sideFilter" placeholder="Filter…" autocomplete="off" />
+      <h4>Guide</h4>
+      <a href="../index.html">Introduction</a>
+      <a href="getting-started.html">Getting started</a>
+      <a href="concepts.html">Concepts</a>
+      <a href="artifacts.html">Artifacts</a>
+      <a href="brownfield.html">Brownfield</a>
+      <h4>Reference</h4>
+      <a href="gates.html">The 9 gates</a>
+      <a href="cli-reference.html">CLI reference</a>
+      <a href="opencode.html">With opencode</a>
+      <a href="harness.html">The harness</a>
+      <a href="theory.html">Theory</a>
+    </aside>
+
+    <article class="prose">
+      <h1>The harness</h1>
+      <p class="subtitle">When the work must be executed by agents — one door, gates everywhere, evidence archived.</p>
+
+      <p>The gates guard what a project <em>claims</em>. The harness is the framework's answer to the other half: work <em>executed</em> by agents. It turns one <code class="inline">TASK-###</code> record — the task description, living in the registries with its objective, constraints and acceptance criteria — into a <strong>verified agent system</strong>: planned, grounded, equipped, executed, archived. There is one door, <code class="inline">/opendomain-harness</code>, and no free-standing implementer beside it: the framework deliberately struck that role off. Anything agents execute enters the claims world through it — through the same <a href="gates.html">nine gates</a>, including <code class="inline">implementation</code> (gate 7), which still polices every "done" with cited evidence.</p>
+
+      <h2>The flow, in six phases</h2>
+      <p>The harness agent carries these as phases; the CLI commands do the writing:</p>
+      <table>
+        <tr><th>Phase</th><th>Commands</th><th>What it produces</th></tr>
+        <tr><td><strong>0 — Inventory</strong></td><td><code class="inline">opendomain status</code>, <code class="inline">audit</code>, <code class="inline">doctor</code>, <code class="inline">opencode auth list</code>, <code class="inline">opencode mcp list</code></td><td>Ground truth before anything writes: what stands, what runs, what is missing — recorded as worded unknowns, never filled in.</td></tr>
+        <tr><td><strong>1 — Needs are records</strong></td><td><code class="inline">opendomain new</code>, <code class="inline">spec new &lt;slug&gt;</code></td><td>A task that cannot be traced to a record with acceptance criteria is refused: back to the caller, nothing invented.</td></tr>
+        <tr><td><strong>2 — Ground & construct</strong></td><td><code class="inline">opendomain plan TASK-012</code>, <code class="inline">ground &lt;slug&gt;</code>, <code class="inline">build &lt;slug&gt;</code></td><td>A DAG compiled from the record; a repository fingerprint that must replay before any model runs; every node equipped with a role, a tool whitelist and acceptance criteria, and every node-agent written to <code class="inline">.opencode/agent/</code> — reviewable before the run.</td></tr>
+        <tr><td><strong>3 — Verification loop</strong></td><td><code class="inline">opendomain validate</code>, <code class="inline">doctor</code>, the bound gate commands</td><td>After every build, no exceptions: graph checks, executor checks, a live round-trip for every pinned model. Structural questions go back to the caller, never retried blind.</td></tr>
+        <tr><td><strong>4 — Execution under gates</strong></td><td><code class="inline">opendomain run &lt;slug&gt;</code></td><td>Node-agents run in topological order; each gate check must replay before context propagates to the next node; retries carry typed feedback only.</td></tr>
+        <tr><td><strong>5 — Attribution & archive</strong></td><td><code class="inline">opendomain attribute</code>, <code class="inline">verify</code>, <code class="inline">resume</code>, <code class="inline">repatch</code></td><td>Even a failed run ends in evidence, typed — local, upstream, structural — and archived as it ran.</td></tr>
+      </table>
+
+      <h2>What a run leaves behind</h2>
+      <p>Each run archives append-only under <code class="inline">opendomain/harness/runs/run-NNN-&lt;slug&gt;/</code> — the frozen graph, <code class="inline">trace.jsonl</code> (Start/Passed/Retry/Failed per node), <code class="inline">context/</code> (every propagated gate check), and <code class="inline">gates.log</code>. <code class="inline">opendomain verify &lt;run&gt;</code> replays every gate on the archived outputs at any time, without an LLM; <code class="inline">opendomain provenance</code> verifies each record's citation <code class="inline">run = "…"</code> against the archive it names. A run without evidence is a run that did not happen.</p>
+      <p>Recovery follows the typed attribution, and costs what the fault costs:</p>
+      <table>
+        <tr><th>Attribution</th><th>Meaning</th><th>Recovery</th></tr>
+        <tr><td><code class="inline">criteria_failure</code> / <code class="inline">spec_mismatch</code> — <strong>local</strong></td><td>The node wrote wrong code or ignored its contract.</td><td>Fix the node; <code class="inline">run &lt;slug&gt; --resume &lt;run&gt;</code> keeps validated nodes frozen.</td></tr>
+        <tr><td><code class="inline">grounding_failure</code> — <strong>upstream</strong></td><td>The world moved under a node: drift or stale grounding.</td><td>Re-ground, then re-plan that node alone.</td></tr>
+        <tr><td><code class="inline">contract_violation</code> — <strong>structural</strong></td><td>The decomposition itself is wrong.</td><td><code class="inline">repatch &lt;run&gt;</code>: a partial return to the plan; the revised node is re-admitted like any other.</td></tr>
+      </table>
+
+      <h2>The principles</h2>
+      <p>Seven commitments carry the harness; they are the framework's face toward agent work:</p>
+      <p><strong>No new runtime.</strong> Everything assembles from OpenCode primitives — agent files (<code class="inline">mode</code>, <code class="inline">model</code>, <code class="inline">permissions</code> frontmatter), skills and commands as the install-and-swap layer, MCP servers as the tool layer, ordered permissions as the sandbox — all reloading from disk on save.</p>
+      <p><strong>Framed autonomy.</strong> Every agent recipe is deny-first and least-privilege (one allow per whitelisted tool), <code class="inline">steps</code> are bounded, and delegation depth ≤ 2 is enforced by omission: a parent admits children only through its own <code class="inline">subagent</code> permission, an allowlist of child ids. Least privilege is projected into the executor itself.</p>
+      <p><strong>Models are pinned, not defaulted.</strong> The free tier is the default tier; the strongest authenticated coding model goes only where verified output is executed code. Every pin cites its tier and its reason, and one cheap round-trip proves the upstream alive before it carries real work. A refusing quota is a typed failure credited to the account — never re-tried at the identical shape.</p>
+      <p><strong>Nothing propagates unverified.</strong> Before context moves between nodes, its gate replays: schema, patterns, tests — executed in the sandbox. This is the discipline of the nine gates, turned into the executor.</p>
+      <p><strong>Every failure ends in evidence.</strong> Attempts replay only with typed feedback from the gate that failed them, and runs are archived exactly as they ran. No blind retries, no rewritten history.</p>
+      <p><strong>Recovery costs what the fault costs.</strong> A local error never re-plans the whole system; a structural one never hand-edits a generated file — it re-enters the flow through <code class="inline">repatch</code>.</p>
+      <p><strong>Self-improvement through the flow.</strong> Lessons land in an append-only memory as typed, dated rows; changes go through <code class="inline">propose</code>/<code class="inline">apply</code>; rollbacks are git plus a new row. The harness improves by recorded change, never by silent diff.</p>
+
+      <h2>Where the authority on OpenCode lives</h2>
+      <p>OpenCode evolves; the installed version decides. When opencode itself misbehaves — a permission that did not bite, an MCP server that will not start, a definition that did not reload — the authority is ordered: the installed binary first (<code class="inline">opencode --help</code>, <code class="inline">--version</code>, <code class="inline">opencode mcp list</code>, <code class="inline">opencode auth list</code>), then the doc index at <a href="https://opencode.ai/v2/llms.txt">opencode.ai/v2/llms.txt</a> (agents, skills, commands, permissions, MCP servers, config, troubleshooting), then the <code class="inline">opencode</code> skill when a project installs it. The templates are the frame; the binary is the fact.</p>
+
+      <h2>Using it</h2>
+      <p>After <code class="inline">opendomain init</code> — the contract comes with the harness role, its command, and its skill — and one opencode restart, since it reads definitions at startup:</p>
+<pre>/opendomain-harness TASK-012</pre>
+      <p>…returns the <strong>verdict first</strong>: PASS with the run directory, or the terminal failure typed and attributed; then up to three blockers with node identifiers, what was built, the archived run path and what should cite it, the run inventory, and the <strong>human-only gaps</strong> — disputed rules, missing acceptance criteria, scope calls: what no DAG can decide. The caller then records the TEST (or DRIFT) record citing the run, checks it with <code class="inline">opendomain provenance</code>, and moves the work with <code class="inline">opendomain advance</code>. No agent marks anything IMPLEMENTED or VERIFIED on its own.</p>
+
+      <div class="note"><strong class="label">Status</strong>The execution-plane commands (<code class="inline">plan</code>, <code class="inline">ground</code>, <code class="inline">build</code>, <code class="inline">run</code>, <code class="inline">verify</code>, <code class="inline">attribute</code>, <code class="inline">repatch</code>) are carried by the CLI distribution your install comes from — <code class="inline">opendomain --help</code> is authoritative about your install, and a command absent from it is a fact about the tool, not a suggestion to assume it. A build without the execution plane still carries the whole claims side — registries, gates, <code class="inline">provenance</code> — and keeps it coherent.</div>
+
+      <div class="next-links">Next: <a href="theory.html">Theory</a> — the complete framework specification.</div>
+    </article>
+
+    <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>
+  </main>
+
+  <footer class="footer">
+    <nav>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/harness.html">Edit this page</a>
+      <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
+      <a href="theory.html">Theory</a>
+    </nav>
+    <span>OpenDomain · MIT · Oct. 2026</span>
+  </footer>
+  <script src="../js/main.js"></script>
+</body>
+</html>

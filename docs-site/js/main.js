@@ -235,6 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "The 9 gates": "Nine questions you no longer get to forget.",
         "CLI reference": "Four intents: locate, link, ask, evolve.",
         "With opencode": "The same assistant, with a work contract.",
+        "The harness": "One door, gates everywhere, evidence archived.",
         "Theory": "The complete framework specification.",
       };
       const pages = Array.from(document.querySelectorAll(".sidebar a")).map((a) => ({
