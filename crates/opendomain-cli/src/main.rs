@@ -1,9 +1,9 @@
 //! L'interface en ligne de commande `opendomain` — le point d'entrée mince.
 //!
 //! La définition clap vit dans [`commands::args`] ; les commandes de registre
-//! dans [`commands`] ; le harnais d'exécution dans [`harness`] ; le
-//! sous-système de vérification (§9/§10) dans [`verification`] — chaque
-//! dossier une responsabilité, à l'image de `opendomain_core::harness`.
+//! dans [`commands`] ; le sous-système de vérification (§9/§10) dans
+//! [`verification`] — chaque dossier une responsabilité, à l'image de
+//! `opendomain_core::scaffold`.
 //!
 //! Toute commande est une coquille mince sur `opendomain_core` : découvrir un
 //! workspace, charger l'index, confier à une fonction pure, rendre le
@@ -11,9 +11,9 @@
 //! `opendomain link` et les commandes de cycle de vie — et ceux-là
 //! n'ajoutent qu'append-only.
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
-use commands::args::{Cli, Command, HarnessSpecOp, KitOp, SkillOp, WorkflowOp};
+use commands::args::{Cli, Command};
 use commands::changes::{cmd_apply, cmd_archive, cmd_propose};
 use commands::context::with_index;
 use commands::gates::cmd_gate;
@@ -25,7 +25,6 @@ use commands::status::{cmd_audit, cmd_status};
 use opendomain_core::report::Style;
 
 mod commands;
-mod harness;
 mod verification;
 
 fn main() {
@@ -41,9 +40,7 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
     match &cli.command {
         Command::Init(args) => cmd_init(args, cli, style),
         Command::Reference => cmd_reference(cli, style),
-        Command::Status => with_index(cli, style, |ws, index, _| {
-            cmd_status(ws, index, cli, style)
-        }),
+        Command::Status => with_index(cli, style, |ws, index, _| cmd_status(ws, index, cli, style)),
         Command::Trace(args) => with_index(cli, style, |_ws, index, _| {
             cmd_trace(args, index, style, cli)
         }),
@@ -61,9 +58,7 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
         Command::Show(args) => with_index(cli, style, |_ws, index, _| {
             cmd_show(args, index, style, cli)
         }),
-        Command::New(args) => with_index(cli, style, |_ws, index, _| {
-            cmd_new(args, index, cli)
-        }),
+        Command::New(args) => with_index(cli, style, |_ws, index, _| cmd_new(args, index, cli)),
         Command::Advance(args) => with_index(cli, style, |ws, index, _| {
             cmd_advance(args, ws, index, style)
         }),
@@ -73,88 +68,6 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
         Command::Apply(args) => with_index(cli, style, |ws, _index, _| cmd_apply(args, ws, style)),
         Command::Archive(args) => {
             with_index(cli, style, |ws, _index, _| cmd_archive(args, ws, style))
-        }
-        // Execution harness. These commands address the workspace from the
-        // current directory, so the global `-C` flag is honoured by entering
-        // it once — the registries commands resolve the same way.
-        Command::Spec { op } => {
-            enter(cli)?;
-            match op {
-                HarnessSpecOp::New { slug } => opendomain_core::scaffold::harness::spec_new(slug),
-            }
-        }
-        Command::Validate { path } => {
-            enter(cli)?;
-            harness::commands::validate(path)
-        }
-        Command::Doctor => {
-            enter(cli)?;
-            harness::doctor::run()
-        }
-        Command::Plan { spec_path, offline, timeout } => {
-            enter(cli)?;
-            harness::plan::run(spec_path, *offline, *timeout)
-        }
-        Command::Ground { spec_path } => {
-            enter(cli)?;
-            harness::ground::run(spec_path)
-        }
-        Command::Build { spec_path, fetch } => {
-            enter(cli)?;
-            harness::build::run(spec_path, *fetch)
-        }
-        Command::Run { spec_path, timeout, resume, graph } => {
-            enter(cli)?;
-            // Exécuteur unique : opencode — la voie réelle, visible, archivée.
-            harness::runflow::run(spec_path, "opencode", *timeout, resume.clone(), graph.clone())
-        }
-        Command::Verify { run_path } => {
-            enter(cli)?;
-            harness::audit::verify(run_path)
-        }
-        Command::Attribute { run_path } => {
-            enter(cli)?;
-            harness::audit::attribute(run_path)
-        }
-        Command::Repatch { run_path, llm, allow, timeout } => {
-            enter(cli)?;
-            harness::repatch::run(run_path, *llm, allow.as_deref(), *timeout)
-        }
-        Command::Bench => {
-            enter(cli)?;
-            harness::bench::run()
-        }
-        Command::Workflow { op } => {
-            enter(cli)?;
-            match op {
-                WorkflowOp::New { kind, slug } => harness::workflows::run(kind, slug),
-            }
-        }
-        Command::Skill { op } => {
-            enter(cli)?;
-            match op {
-                // an explicit `--provides …`? else: frontmatter or typed error
-                SkillOp::Add { source, id, provides } => {
-                    let forced = if provides.is_empty() { None } else { Some(provides.clone()) };
-                    harness::components::skill_add(source, id.clone(), forced)
-                }
-                SkillOp::New { id } => harness::components::skill_new(id),
-            }
-        }
-        Command::Kit { op } => {
-            enter(cli)?;
-            match op {
-                // la providence modulaire : le kit du nœud cite des ids,
-                // cette commande les fournit (web ou disque, avec provenance)
-                KitOp::Add { kind, source, id, provides } => {
-                    let forced = if provides.is_empty() { None } else { Some(provides.clone()) };
-                    harness::components::kit_add(kind, source, id.clone(), forced).map(|_| ())
-                }
-            }
-        }
-        Command::Resolve { spec_path } => {
-            enter(cli)?;
-            harness::components::resolve_cmd(spec_path)
         }
         // Verification subsystem (Sections 9/10): rigour table, provisioner,
         // binding audit. Workspace commands — they read registries and write
@@ -172,14 +85,4 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
             verification::provenance(ws, index, cli.json)
         }),
     }
-}
-
-/// Enters `-C <dir>` for the harness commands, which work relative to the
-/// project root the same way the registry commands resolve it.
-fn enter(cli: &Cli) -> Result<()> {
-    if let Some(dir) = &cli.directory {
-        std::env::set_current_dir(dir)
-            .with_context(|| format!("cannot enter {}", dir.display()))?;
-    }
-    Ok(())
 }

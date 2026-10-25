@@ -156,7 +156,9 @@ pub fn bind(index: &opendomain_core::workspace::Index, json: bool) -> Result<()>
         return Ok(());
     }
 
-    println!("Binding provenance & verification depth (Sections 10.9/10.10) — audit, not a gate:\n");
+    println!(
+        "Binding provenance & verification depth (Sections 10.9/10.10) — audit, not a gate:\n"
+    );
     println!(
         "tests: {total} — depth: executed {executed}/ discovered {discovered}/ declared {declared}"
     );
@@ -201,7 +203,9 @@ pub fn bind(index: &opendomain_core::workspace::Index, json: bool) -> Result<()>
         );
     }
     if !flagged {
-        println!("\nnothing flagged: every binding is explicit or confirmed, every depth is earned.");
+        println!(
+            "\nnothing flagged: every binding is explicit or confirmed, every depth is earned."
+        );
     }
     println!(
         "\nnext: `opendomain provision --sync` regenerates tags; confirm INFERRED bindings with\nbinding.confirm = true only after human review — never the reverse."

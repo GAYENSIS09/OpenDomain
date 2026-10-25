@@ -97,24 +97,18 @@ pub const OD_PLAN: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/command/opendomain-plan.md"),
 };
 
-/// `.opencode/command/opendomain-implement.md`.
-pub const OD_IMPLEMENT: Template = Template {
-    path: ".opencode/command/opendomain-implement.md",
-    contents: include_str!("../../templates/agent/.opencode/command/opendomain-implement.md"),
-};
-
-/// `.opencode/command/opendomain-complete.md`.
-pub const OD_COMPLETE: Template = Template {
-    path: ".opencode/command/opendomain-complete.md",
-    contents: include_str!("../../templates/agent/.opencode/command/opendomain-complete.md"),
-};
-
 /// `.opencode/command/opendomain-harness.md` — la porte unique du cycle du
 /// harnais : construire depuis un TASK, ou récupérer un run (verify,
 /// attribute, resume, repatch) — jamais un re-run aveugle.
 pub const OD_HARNESS: Template = Template {
     path: ".opencode/command/opendomain-harness.md",
     contents: include_str!("../../templates/agent/.opencode/command/opendomain-harness.md"),
+};
+
+/// `.opencode/command/opendomain-complete.md`.
+pub const OD_COMPLETE: Template = Template {
+    path: ".opencode/command/opendomain-complete.md",
+    contents: include_str!("../../templates/agent/.opencode/command/opendomain-complete.md"),
 };
 
 /// `.opencode/agent/domain-researcher.md`.
@@ -133,9 +127,12 @@ pub const CONTEXT_COMPLETER: Template = Template {
 /// un `TASK-###` du registre devient un système d'agents vérifié. Subagent
 /// borné (jamais persona principal), dans le moule du context-completer :
 /// permissions deny-all + allows explicites, phases, handback. La doctrine
-/// vit une fois, dans le skill `opendomain-harness`. Le spec-implementer
-/// direct a été supprimé : TOUTE implémentation exécutée par des agents
-/// passe par le harnais vérifié — pas de voie qui le contourne.
+/// d'EXÉCUTION vit une fois, dans le skill `opendomain-harness`; la
+/// discipline d'USINE (inventaire, besoins-enregistrements, épinglage des
+/// modèles, boucle de vérification post-build, inventaire de run, shift)
+/// vit dans le corps de l'agent, autoportante. Le spec-implementer direct
+/// est resté rayé : TOUTE implémentation exécutée par des agents passe par
+/// le harnais vérifié — pas de voie qui le contourne.
 pub const HARNESS_ARCHITECT: Template = Template {
     path: ".opencode/agent/opendomain-harness.md",
     contents: include_str!("../../templates/agent/.opencode/agent/opendomain-harness.md"),
@@ -182,10 +179,9 @@ pub const SKILL_GATES: Template = Template {
 
 /// `.opencode/skills/opendomain-harness/SKILL.md` — la doctrine d'exécution
 /// du harnais, à UN seul endroit : les deux phases (construction, exécution
-/// sous gates), l'attribution typée, les interdits. Les contrats de rôle par
-/// plateforme ont été supprimés — le harnais se pilote par les commandes
-/// (`/opendomain-implement` → rôles → skills), pas par un persona principal ;
-/// une doctrine unique ne peut pas diverger d'avec elle-même.
+/// sous gates), l'attribution typée, les interdits. La discipline d'usine
+/// qui enveloppe ce flux vit dans le corps de l'agent (`opendomain-harness`)
+/// — une doctrine exécutée ne peut pas diverger d'avec elle-même.
 pub const SKILL_HARNESS: Template = Template {
     path: ".opencode/skills/opendomain-harness/SKILL.md",
     contents: include_str!("../../templates/agent/.opencode/skills/opendomain-harness/SKILL.md"),
@@ -208,9 +204,8 @@ pub fn all() -> Vec<Template> {
         OD_OPPORTUNITY,
         OD_SPEC,
         OD_PLAN,
-        OD_IMPLEMENT,
-        OD_COMPLETE,
         OD_HARNESS,
+        OD_COMPLETE,
         DOMAIN_RESEARCHER,
         CONTEXT_COMPLETER,
         HARNESS_ARCHITECT,

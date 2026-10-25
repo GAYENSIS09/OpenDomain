@@ -263,25 +263,6 @@ enum_set! {
 }
 
 enum_set! {
-    /// How far a validation got. Returned by `opendomain validate`.
-    Verdict {
-        Pass    => "PASS",
-        Partial => "PARTIAL",
-        Fail    => "FAIL",
-        Blocked => "BLOCKED",
-    }
-}
-
-enum_set! {
-    /// The verdict of a spec or plan review. Returned by `opendomain review-spec` / `opendomain review-plan`.
-    ReviewVerdict {
-        Approved       => "APPROVED",
-        NeedsRevision  => "NEEDS_REVISION",
-        Blocked        => "BLOCKED",
-    }
-}
-
-enum_set! {
     /// Blast-radius classification for a change. Returned by `opendomain impact`.
     ImpactClass {
         Direct   => "DIRECT_IMPACT",

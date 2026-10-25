@@ -177,7 +177,10 @@ pub fn cmd_new(args: &NewArgs, index: &Index, cli: &Cli) -> Result<()> {
         None => Id::next_flat(kind, index.ids(kind)),
     };
     if cli.json {
-        println!("{}", to_json(&serde_json::json!({ "id": next.to_string() }))?);
+        println!(
+            "{}",
+            to_json(&serde_json::json!({ "id": next.to_string() }))?
+        );
     } else {
         println!("{next}");
     }

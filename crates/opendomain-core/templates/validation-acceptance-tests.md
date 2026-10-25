@@ -95,12 +95,12 @@ If this test fails intermittently, the guard is not correctly serialised. Do
   value in the framework to fake, and faking it makes the entire trace
   meaningless.
 - Record the tolerance. A test with no tolerance quietly grows one.
-- When the implementation under test was executed by agents, cite the archived
-  run that verified it — with the first-class field:
-  `run = "runs/run-<NNN>-<slug>"` (the run directory
-  `opendomain/harness/runs/run-<NNN>-<slug>/`), and, when the claim rests on
-  one node's verdict, `run-node = "…"` — that node's last `gates.log` line is
-  what makes the citation checkable. `opendomain provenance` verifies every
-  citation against the archive it names: a citation that names no archive is
-  an appeal, not evidence. A run archive is evidence in the same sense as
-  this registry — append-only, never rewritten after the fact.
+- When the implementation under test was executed outside this repository's own
+  loop, record where and how it was verified — an out-of-repository claim must
+  name the execution that verified it:
+  `run = "runs/run-<NNN>-<slug>"` cites an archived run directory, and, when
+  the claim rests on one node's verdict, `run-node = "…"` — that node's last
+  `gates.log` line is what makes the citation checkable. `opendomain provenance`
+  verifies every citation against the archive it names: a citation that names
+  no archive is an appeal, not evidence. An archived run is evidence in the
+  same sense as this registry — append-only, never rewritten after the fact.

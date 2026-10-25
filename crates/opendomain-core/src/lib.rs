@@ -22,7 +22,6 @@
 //! | [`report`] | Terminal and JSON rendering |
 //! | [`scaffold`] | `opendomain init` and its template set |
 //! | [`verification`] | The §9/§10 verification subsystem: rigour, provisioning, provenance |
-//! | [`harness`] | The execution harness: agent DAGs under verified gates |
 //!
 //! The flat module names are kept as aliases, so `opendomain_core::parse`,
 //! `opendomain_core::gates`, … resolve exactly as they always did.
@@ -68,7 +67,6 @@
 
 pub mod analysis;
 pub mod error;
-pub mod harness;
 pub mod model;
 pub mod registries;
 pub mod report;
@@ -85,8 +83,8 @@ pub use model::{artifact, ids, vocab};
 pub use registries::{config, parse, workspace};
 pub use verification::{provenance, provisioning};
 
-pub use analysis::graph::{Direction, Graph, ImpactReport};
 pub use analysis::gates::{evaluate, Gate, GateReport, Severity};
+pub use analysis::graph::{Direction, Graph, ImpactReport};
 pub use error::{OdError, Result};
 pub use model::artifact::{Artifact, Document, Relation};
 pub use model::ids::{Id, IdKind};

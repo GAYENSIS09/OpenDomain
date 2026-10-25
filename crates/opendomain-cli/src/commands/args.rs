@@ -12,12 +12,11 @@ use std::path::PathBuf;
 #[command(
     name = "opendomain",
     version,
-    about = "OpenDomain: evidence-driven engineering with a verified agent harness",
+    about = "OpenDomain: evidence-driven engineering",
     long_about = "OpenDomain keeps a project's domain knowledge as linked Markdown artifacts \
-                  and enforces the links with nine deterministic gates; it then runs the \
-                  implementation work through a verified multi-agent harness where no output \
-                  propagates before it passes its acceptance gate. `opendomain` reads that knowledge; \
-                  it never rewrites your registries unless a command explicitly says it does."
+                  and enforces the links with nine deterministic gates. `opendomain` reads \
+                  that knowledge; it never rewrites your registries unless a command \
+                  explicitly says it does."
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -73,91 +72,6 @@ pub enum Command {
     Archive(ArchiveArgs),
     /// List the available gates and artifact kinds.
     Reference,
-    /// Create a task spec under `opendomain/harness/specs/` (execution harness).
-    Spec { #[command(subcommand)] op: HarnessSpecOp },
-    /// Validate a `graph.json`: ids, dangling edges, cycles, contracts.
-    Validate {
-        #[arg(default_value = "opendomain/harness/graph/graph.json")]
-        path: String,
-    },
-    /// Check that executors and toolchains are available.
-    Doctor,
-    /// Compile a spec into a DAG of agents — via opencode by default (the
-    /// real decomposition, verified by the harness); `--offline` asks the
-    /// deterministic fallback explicitly (CI, no network).
-    Plan {
-        spec_path: String,
-        /// The deterministic offline graph, asked explicitly.
-        #[arg(long)]
-        offline: bool,
-        /// Max delay of one LLM call (seconds).
-        #[arg(long, default_value_t = 600)]
-        timeout: u64,
-    },
-    /// Design-time grounding: scan the repo, manifests, toolchain.
-    Ground { spec_path: String },
-    /// Build each agent's execution kit and verify the construction.
-    Build {
-        spec_path: String,
-        /// Admit explicit web-provisioning at build: remote kit components
-        /// are fetched (with provenance, installed locally). Off: a remote
-        /// source is a typed construction fault.
-        #[arg(long)]
-        fetch: bool,
-    },
-    /// Run the agent graph under the gates, archiving the whole run.
-    /// The executor is OpenCode — the real, visible, archived path; the raw
-    /// response of every node is saved into the run's `context/`.
-    Run {
-        spec_path: String,
-        /// Max delay per agent (seconds).
-        #[arg(long, default_value_t = 600)]
-        timeout: u64,
-        /// Resume an interrupted run: already-verified nodes are skipped.
-        #[arg(long)]
-        resume: Option<String>,
-        /// Alternative graph (e.g. revised by `repatch`) — admitted like a
-        /// plan graph (completeness re-verified, never short-circuited).
-        #[arg(long, value_name = "FILE")]
-        graph: Option<String>,
-    },
-    /// Replay the gates on an archived run's outputs.
-    Verify { run_path: String },
-    /// Classify the run's failure (local/upstream/structural) and record the lesson.
-    Attribute { run_path: String },
-    /// Partial re-planning after a structural attribution: revise the faulty
-    /// node only, verified upstream outputs stay anchored.
-    Repatch {
-        /// Run directory (`runs/run-NNN-…`): the terminal failure is read there.
-        run_path: String,
-        /// Revision by the OpenCode meta-agent (re-verified by the harness)
-        /// instead of the offline, evidence-backed relaxation.
-        #[arg(long)]
-        llm: bool,
-        /// Sandbox violation: record this binary into `[sandbox] allow`
-        /// (explicit decision, never automatic).
-        #[arg(long, value_name = "BINARY")]
-        allow: Option<String>,
-        /// Max delay of one LLM call (seconds).
-        #[arg(long, default_value_t = 600)]
-        timeout: u64,
-    },
-    /// Run the harness's deterministic, offline invariant suite.
-    Bench,
-    /// Pre-fill a task spec from a domain playbook (migration, refactor, tests, doc).
-    Workflow { #[command(subcommand)] op: WorkflowOp },
-    /// Add a reusable procedure (skill) or start one from a template.
-    Skill { #[command(subcommand)] op: SkillOp },
-    /// Install a kit component from the web or a local file — skills,
-    /// commands, tools — with provenance (source + date). The modular
-    /// provisioning step of the harness: the agent kit cites ids, this
-    /// command provides them.
-    Kit {
-        #[command(subcommand)]
-        op: KitOp,
-    },
-    /// Match every spec need to exactly one component, then check its requirements.
-    Resolve { spec_path: String },
     /// Print the §9.7 rigour table and audit the workspace's rigour
     /// declarations (Section 9 verification subsystem).
     Rigour,
@@ -178,56 +92,6 @@ pub enum Command {
     /// Verify each record's archived-run citation (`run = "…"`) against the
     /// run it names, and list the runs no record claims (F14/L9 bridge).
     Provenance,
-}
-
-#[derive(Subcommand)]
-pub enum HarnessSpecOp {
-    /// Create `opendomain/harness/specs/<slug>/spec.md` from the template.
-    New { slug: String },
-}
-
-#[derive(clap::Subcommand)]
-pub enum WorkflowOp {
-    /// Pre-fill `opendomain/harness/specs/<slug>/spec.md` from the playbook.
-    New {
-        /// migration | refactor | tests | doc
-        kind: String,
-        slug: String,
-    },
-}
-
-#[derive(clap::Subcommand)]
-pub enum KitOp {
-    /// Install a kit component from a URL (curl) or a local file.
-    Add {
-        /// skill | command | tool (closed vocabulary)
-        kind: String,
-        /// `https://…` URL or local path of the component markdown.
-        source: String,
-        /// Force the id (else: frontmatter or file name).
-        #[arg(long)]
-        id: Option<String>,
-        /// Provided capabilities (else: frontmatter `provides:`).
-        #[arg(long, value_delimiter = ',')]
-        provides: Vec<String>,
-    },
-}
-
-#[derive(clap::Subcommand)]
-pub enum SkillOp {
-    /// Install from a URL (downloaded via curl) or a local file.
-    Add {
-        /// `https://…` URL or local path of the skill markdown.
-        source: String,
-        /// Force the id (else: frontmatter or file name).
-        #[arg(long)]
-        id: Option<String>,
-        /// Provided capabilities (else: frontmatter `provides:`).
-        #[arg(long, value_delimiter = ',')]
-        provides: Vec<String>,
-    },
-    /// Written by the meta-agent: a skill template to complete.
-    New { id: String },
 }
 
 #[derive(Args)]

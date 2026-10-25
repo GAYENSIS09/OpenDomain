@@ -28,7 +28,6 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
-      <a href="harness.html">The harness</a>
       <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
@@ -64,22 +63,17 @@
         <tr><td><code class="inline">/opendomain-opportunity</code></td><td>Opportunity</td><td>Challenges the design, earns one falsifiable concept.</td></tr>
         <tr><td><code class="inline">/opendomain-spec</code></td><td>Specification</td><td>Specifies one capability as observable behaviour.</td></tr>
         <tr><td><code class="inline">/opendomain-plan</code></td><td>Plan</td><td>Produces one bounded, ordered plan with decisions.</td></tr>
-        <tr><td><code class="inline">/opendomain-implement</code></td><td>Implementation</td><td>Routes through the verified harness — a TASK to the architect, a SPEC/AC through its TASK record.</td></tr>
         <tr><td><code class="inline">/opendomain-complete</code></td><td>Completion</td><td>Reuses the audit, then calls the release: ship or stop.</td></tr>
-        <tr><td><code class="inline">/opendomain-harness</code></td><td>The harness</td><td>One door for the whole verified-execution cycle: a TASK builds the agent system; a run recovers (verify → attribute → resume/repatch) — never a blind re-run.</td></tr>
       </table>
       <p>Every command answers summary-first — verdict, top blockers, one next action — with the tool's full output in an appendix. No wall-of-gates noise.</p>
+
+      <h2>Execution by agents, behind one door</h2>
+      <p><code class="inline">/opendomain-harness</code> routes a <code class="inline">TASK-###</code> record to the <strong>harness architect</strong>: the task becomes a planned, grounded, gated agent system, executed and archived under <code class="inline">opendomain/harness/runs/run-NNN-…/</code>. A finished or failed run is recovered (<code class="inline">verify</code>, <code class="inline">attribute</code>, <code class="inline">resume</code>, <code class="inline">repatch</code>), never re-run blind. The record that cites a run stores it as <code class="inline">run = "…"</code>, and <code class="inline">opendomain provenance</code> verifies that citation against the archived run it names. There is no free-standing implementer to call.</p>
 
       <h2>Three roles</h2>
       <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/opendomain-project</code>.</p>
       <p><strong>domain-researcher, the investigator.</strong> It reads, searches, and reports only dated sources and evidence, fanning out in parallel by keyword. Called by the interviewer, <code class="inline">/opendomain-research</code>, <code class="inline">/opendomain-domain</code>, and <code class="inline">/opendomain-requirements</code>. By default it can hardly execute anything — except <code class="inline">opendomain *</code> to check its own work.</p>
-      <p><strong>opendomain-harness, the harness architect.</strong> A TASK record becomes a verified agent system: plan (the record <em>is</em> the task description), grounding, kits, run under the gates, per-attribution recovery. Called by <code class="inline">/opendomain-implement</code> on a <code class="inline">TASK-</code>. Bash deny by default with <code class="inline">opendomain *</code> + read-only repo commands allowed; doctrine in the <code class="inline">opendomain-harness</code> skill. There is no direct-coding role: every agent-executed implementation goes through the verified harness.</p>
-      <p><strong>opendomain-harness, the harness architect.</strong> A fourth role — a bounded subagent, never a primary persona. It turns ONE <code class="inline">TASK-###</code> record into a verified agent system: <code class="inline">opendomain plan TASK-012</code> (the record <em>is</em> the task description <code class="inline">T</code>), grounding, kits (<code class="inline">opendomain build</code>), then the run under the gates (<code class="inline">opendomain run</code>) — where the coordinator, not the architect, applies them — and per-attribution recovery. Its doctrine lives once, in the <code class="inline">opendomain-harness</code> skill; the role file carries identity, report shape, and stops. Called by <code class="inline">/opendomain-implement TASK-…</code>.</p>
-
-      <h2>The fourth role: the harness architect — not a persona</h2>
-      <p>There is <strong>no primary persona</strong>, and the fourth role is a bounded subagent: <strong>opendomain-harness, the harness architect</strong>. The harness is driven the way every other stage is: a command hands off to a role, a role loads a skill. <code class="inline">/opendomain-implement</code> names a <code class="inline">TASK-###</code> → the task record <em>is</em> the task description <code class="inline">T</code>: the architect compiles it into a DAG of agents (<code class="inline">opendomain plan TASK-012</code>), grounds, equips each one with a complete execution kit (<code class="inline">opendomain build</code>), then drives the run — where the coordinator, not the architect, applies the gates. The execution doctrine lives once, in the <code class="inline">opendomain-harness</code> skill — no per-platform copies, nothing to diverge. Doctrine: see <a href="harness.html">The harness</a>
-      <a href="brownfield.html">Brownfield</a>.</p>
-      <p>The same projection mechanism is what the runtime agents themselves receive: each node of a run graph is written as its own agent file (universal <code class="inline">deny</code>, then one <code class="inline">allow</code> per whitelisted tool), so least privilege is enforced by the executor, not suggested by a phrase in a prompt.</p>
+      <p><strong>opendomain-harness, the execution architect.</strong> One <code class="inline">TASK-###</code> record becomes a planned, grounded, gated, archived agent system; failures come back typed — <code class="inline">local</code>, <code class="inline">upstream</code> or <code class="inline">structural</code> — never as a blind re-run. Called only by <code class="inline">/opendomain-harness</code>, the single door into agent-executed work.</p>
 
       <h2>Six skills</h2>
       <p>The framework's know-how, loaded on demand by commands and roles:</p>
@@ -90,9 +84,9 @@
         <tr><td><code class="inline">opendomain-artifacts</code></td><td>Writing or repairing any record — format, ids, relations.</td></tr>
         <tr><td><code class="inline">opendomain-research</code></td><td>Gathering evidence — parallel search, triangulation, saturation.</td></tr>
         <tr><td><code class="inline">opendomain-gates</code></td><td>Reading any gate, status, or audit output — identifier to action.</td></tr>
-        <tr><td><code class="inline">opendomain-harness</code></td><td>The work executes through agents — the execution doctrine: task → DAG → kits → run under gates → attribution.</td></tr>
+        <tr><td><code class="inline">opendomain-harness</code></td><td>Driving the verified execution flow — build an agent system from a record, recover a run.</td></tr>
       </table>
-      <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator → architect), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role. Implementation has ONE path: through the verified harness — <code class="inline">spec-implementer</code> was removed so agent-authored code can never bypass the run archive.</div>
+      <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role.</div>
 
       <h2>Permissions: read freely, change by agreement</h2>
 <pre>{

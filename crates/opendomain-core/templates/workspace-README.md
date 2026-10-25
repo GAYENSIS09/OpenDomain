@@ -21,13 +21,6 @@ verification lives here, in plain Markdown, addressable by identifier.
 | `architecture/` | `architecture.md` and `ADR` decision records | 3 |
 | `validation/` | `SCN` scenarios, `TEST` acceptance tests, drift findings, audits | 3 |
 | `changes/` | In-flight change proposals, one directory each | all |
-| `harness/` | Verified execution: task specs, grounding, the agent DAG, runs, memory; governed by `opendomain.toml` (`[gates]`, `[sandbox]`) | execution |
-
-When implementation is executed by agents, it runs through `harness/`: every
-agent output passes its gate before it reaches the next agent, and each run is
-archived under `harness/runs/` — the registries' `TEST` and `DRIFT` records
-may cite those archives as their provenance. The full execution doctrine is
-the framework's documentation; the directory contract is `harness/README.md`.
 
 ## The file format
 

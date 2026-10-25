@@ -4,7 +4,6 @@
 
 use opendomain_core::ids::IdKind;
 
-
 /// The requirement-side kinds a rigour declaration answers
 /// (§9.7: "made per requirement... and recorded as an artifact").
 pub const REQUIREMENT_KINDS: [IdKind; 5] = [

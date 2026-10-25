@@ -1,6 +1,5 @@
-//! Les commandes de registre de `opendomain` — tout ce qui n'est ni le harnais
-//! ([`crate::harness`]) ni le sous-système de vérification
-//! ([`crate::verification`]).
+//! Les commandes de registre de `opendomain` — tout ce qui n'est pas le
+//! sous-système de vérification ([`crate::verification`]).
 //!
 //! Une commande = une fonction mince : découvrir le workspace, déléguer à
 //! `opendomain_core`, rendre. Rien ici ne réécrit un registre, sauf

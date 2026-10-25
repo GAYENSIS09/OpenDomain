@@ -5,14 +5,13 @@
 //! templates are exposed through [`templates::all`] so the docs site and the
 //! tests can assert on them.
 
-use crate::registries::config::Config;
 use crate::error::{OdError, Result};
 use crate::model::ids::IdKind;
 use crate::model::vocab::{AuthorityModel, Profile};
+use crate::registries::config::Config;
 use std::path::Path;
 
 pub mod agent_contract;
-pub mod harness;
 pub mod templates;
 
 /// Marker files or directories whose presence suggests the project already
@@ -87,7 +86,6 @@ pub struct Template {
     /// The literal file contents.
     pub contents: &'static str,
 }
-
 
 /// What `opendomain init` wrote.
 ///
@@ -188,10 +186,8 @@ fn write_agent_contract(opendomain_dir: &Path, force: bool, report: &mut InitRep
 /// Renders `opendomain.toml`, header comments included.
 ///
 /// The body comes from the serializer rather than from string formatting, so
-/// The config file the CLI writes — header + serialized config, so the file
-/// the CLI writes is guaranteed to be the file the parser accepts.
-/// Public: `repatch --allow` edits the `[sandbox]` section of the workspace's
-/// single config and must write it back through this same rendering.
+/// the config file the CLI writes is guaranteed to be the file the parser
+/// accepts.
 pub fn render_config(config: &Config) -> String {
     let mut text = String::new();
     text.push_str("# OpenDomain workspace configuration.\n");
@@ -246,7 +242,11 @@ mod tests {
         let report = scaffold(&opendomain, &cfg, false).unwrap();
         assert!(!report.created.is_empty());
         for t in templates::all() {
-            assert!(opendomain.join(t.path).exists(), "{} was not written", t.path);
+            assert!(
+                opendomain.join(t.path).exists(),
+                "{} was not written",
+                t.path
+            );
         }
     }
 
@@ -277,7 +277,10 @@ mod tests {
         // comme les autres fichiers, sans drapeau ; le .gitignore de la
         // racine du projet n'appartient pas au scaffold.
         assert!(report.created.contains(&".gitignore".to_string()));
-        assert!(report.agent_files.iter().any(|p| p == ".opencode/.gitignore"));
+        assert!(report
+            .agent_files
+            .iter()
+            .any(|p| p == ".opencode/.gitignore"));
         for tree in [
             opendomain.join(".gitignore"),
             dir.join(".opencode").join(".gitignore"),
@@ -299,7 +302,10 @@ mod tests {
         // Idempotent : un re-run ne les réécrit pas.
         let report2 = scaffold(&opendomain, &cfg, false).unwrap();
         assert!(report2.skipped.contains(&".gitignore".to_string()));
-        assert!(report2.agent_files.iter().all(|p| p != ".opencode/.gitignore"));
+        assert!(report2
+            .agent_files
+            .iter()
+            .all(|p| p != ".opencode/.gitignore"));
     }
 
     #[test]
@@ -591,10 +597,7 @@ mod tests {
                 let name = name.trim_end_matches(',').trim();
                 (!name.is_empty()
                     && !name.starts_with('#')
-                    && name
-                        .chars()
-                        .next()
-                        .is_some_and(char::is_uppercase))
+                    && name.chars().next().is_some_and(char::is_uppercase))
                 .then(|| name.to_string())
             })
             .collect()
@@ -698,16 +701,29 @@ mod tests {
         // is a second researcher with no completion contract.
         let body = agent_contract::CONTEXT_COMPLETER.contents;
         assert!(body.contains("Phase 1"), "must read the repository first");
-        assert!(body.contains("Phase 2"), "must run external research from keywords");
-        assert!(body.contains("Phase 4"), "must ask the user for the rest");
-        assert!(body.contains("**Human-only gaps**"), "report contract: gaps section");
-        assert!(body.contains("INFERRED"), "code findings are INFERRED at best");
         assert!(
-            agent_contract::all().iter().any(|t| t.path.ends_with("context-completer.md")),
+            body.contains("Phase 2"),
+            "must run external research from keywords"
+        );
+        assert!(body.contains("Phase 4"), "must ask the user for the rest");
+        assert!(
+            body.contains("**Human-only gaps**"),
+            "report contract: gaps section"
+        );
+        assert!(
+            body.contains("INFERRED"),
+            "code findings are INFERRED at best"
+        );
+        assert!(
+            agent_contract::all()
+                .iter()
+                .any(|t| t.path.ends_with("context-completer.md")),
             "context-completer must be emitted by `opendomain init`"
         );
         assert!(
-            !agent_contract::all().iter().any(|t| t.path.ends_with("brownfield-discoverer.md")),
+            !agent_contract::all()
+                .iter()
+                .any(|t| t.path.ends_with("brownfield-discoverer.md")),
             "brownfield-discoverer must be gone"
         );
     }
@@ -716,7 +732,7 @@ mod tests {
     fn gate_commands_cover_all_nine_gates() {
         // One useful command per gate stage: project(0), research(1),
         // domain(2), requirements(3), opportunity(4), spec(5), plan(6),
-        // implement(7), complete(8). A missing stage command means the
+        // complete(8). A missing stage command means the
         // framework's full potential is undiscoverable from slash commands.
         for path in [
             ".opencode/command/opendomain-project.md",
@@ -726,7 +742,6 @@ mod tests {
             ".opencode/command/opendomain-opportunity.md",
             ".opencode/command/opendomain-spec.md",
             ".opencode/command/opendomain-plan.md",
-            ".opencode/command/opendomain-implement.md",
             ".opencode/command/opendomain-complete.md",
         ] {
             assert!(
@@ -771,8 +786,9 @@ mod tests {
         assert!(index.contains("opendomain-gates"));
 
         // Inter-agent calls are declared, not implied.
-        assert!(agent_contract::CONTEXT_COMPLETER.contents.contains("domain-researcher"));
-        assert!(agent_contract::HARNESS_ARCHITECT.contents.contains("Called by"));
+        assert!(agent_contract::CONTEXT_COMPLETER
+            .contents
+            .contains("domain-researcher"));
 
         // Summary-first kills the verbatim-noise: every command states it.
         for t in agent_contract::all() {
@@ -786,7 +802,9 @@ mod tests {
         }
 
         // opendomain-complete routes to opendomain-audit instead of re-rendering the chain.
-        assert!(agent_contract::OD_COMPLETE.contents.contains("/opendomain-audit"));
+        assert!(agent_contract::OD_COMPLETE
+            .contents
+            .contains("/opendomain-audit"));
         assert!(agent_contract::OD_AUDIT.contents.contains("PAS"));
     }
 }

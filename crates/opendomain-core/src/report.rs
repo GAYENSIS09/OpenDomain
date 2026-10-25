@@ -5,9 +5,9 @@
 //! `opendomain status` is what a person reads. Second, colour is never load-bearing:
 //! severity is always stated in words, so piping to a file loses nothing.
 
-use crate::model::artifact::Artifact;
 use crate::analysis::gates::{Gate, GateReport, Severity};
 use crate::analysis::graph::{Graph, ImpactReport, TraceStep};
+use crate::model::artifact::Artifact;
 use crate::model::ids::{Id, IdKind};
 use crate::model::vocab::{ArtifactStatus, Stage};
 use crate::registries::workspace::Index;
@@ -94,7 +94,11 @@ pub struct StatusReport {
 }
 
 /// Builds the status report for a loaded workspace.
-pub fn status(name: &str, config: &crate::registries::config::Config, index: &Index) -> StatusReport {
+pub fn status(
+    name: &str,
+    config: &crate::registries::config::Config,
+    index: &Index,
+) -> StatusReport {
     let mut counts = BTreeMap::new();
     for kind in IdKind::ALL {
         let n = index.ids(*kind).len();
@@ -807,7 +811,12 @@ mod tests {
         let graph = Graph::build(&index);
         let id = Id::parse("REQ-001").unwrap();
         let steps = graph.trace_backward(&id, &index);
-        let text = render_trace(&id, &steps, crate::analysis::graph::Direction::Backward, Style::Off);
+        let text = render_trace(
+            &id,
+            &steps,
+            crate::analysis::graph::Direction::Backward,
+            Style::Off,
+        );
         assert!(text.contains("no recorded origin"), "{text}");
     }
 
@@ -820,7 +829,12 @@ mod tests {
         let graph = Graph::build(&index);
         let id = Id::parse("EVD-001").unwrap();
         let steps = graph.trace_forward(&id, &index);
-        let text = render_trace(&id, &steps, crate::analysis::graph::Direction::Forward, Style::Off);
+        let text = render_trace(
+            &id,
+            &steps,
+            crate::analysis::graph::Direction::Forward,
+            Style::Off,
+        );
         assert!(text.contains("downstream"), "{text}");
         assert!(!text.contains("no recorded origin"), "{text}");
     }

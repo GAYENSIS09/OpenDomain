@@ -1,7 +1,7 @@
 # REQ-001 (change : ci-build-gate) — la gate d'installation du dépôt lui-même.
 # Le cas 7b82228 (push cassé installable, découvert par l'utilisateur final
 # ~4 min après cargo install) ne doit plus pouvoir se répéter : aucun push
-# n'atterrit sans build --locked, tests, bench du harnais et e2e offline.
+# n'atterrit sans build --locked, tests et e2e offline.
 name: CI
 
 on:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-test-bench:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,35 +30,31 @@ jobs:
       - name: tests
         run: cargo test --workspace --locked
 
-      # Rapporté, non bloquant au départ : 13 findings clippy actuels dans
-      # opendomain-core (ex. clippy::manual_contains, runner.rs:384).
+      # Rapporté, non bloquant au départ : 27 findings clippy actuels
+      # (13 dans opendomain-core, 14 dans opendomain-cli).
       # Escalade en bloquant après nettoyage — ne pas laissé en advisory.
       - name: clippy (rapporté, non bloquant — escalade à prévoir)
         run: cargo clippy --workspace
         continue-on-error: true
 
-      # M5 : auto-vérification déterministe du harnais, offline, sans LLM.
-      - name: bench (invariants du harnais, offline)
-        run: cargo run --locked -p opendomain-cli -- bench
-
-      # E2E offline — la séquence exacte vérifiée en local le 2026-10-23
-      # (init → spec new → plan --offline → validate). Aucun LLM, aucun
+      # E2E offline — la séquence exacte vérifiée en local le 2026-10-24
+      # (init → status → new spec → provenance). Aucun LLM, aucun
       # réseau : c'est la chaîne d'installation qui est sous gate, pas le
       # contenu.
-      - name: e2e offline (init → spec new → plan --offline → validate)
+      - name: e2e offline (init → status → new spec → provenance)
         run: |
           E2E=$(mktemp -d)
           cargo run --locked -p opendomain-cli -- -C "$E2E" init --name e2e-smoke --repository greenfield --no-color
-          cargo run --locked -p opendomain-cli -- -C "$E2E" spec new 001-smoke --no-color
-          cargo run --locked -p opendomain-cli -- -C "$E2E" plan 001-smoke --offline --no-color
-          cargo run --locked -p opendomain-cli -- -C "$E2E" validate --no-color
+          cargo run --locked -p opendomain-cli -- -C "$E2E" status --no-color
+          cargo run --locked -p opendomain-cli -- -C "$E2E" new spec --no-color
+          cargo run --locked -p opendomain-cli -- -C "$E2E" provenance --no-color
 
   # Binaires précompilés : chaque utilisateur recompile ~3-4 min aujourd'hui.
   # Sur tag v*, chaque plateforme produit son binaire et l'attache à la
   # release. (v1 : binaire brut ; cross-compilation et checksums à suivre.)
   release-binaries:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build-test-bench
+    needs: build-test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

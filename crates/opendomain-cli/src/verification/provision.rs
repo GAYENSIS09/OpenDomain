@@ -6,9 +6,7 @@
 
 use anyhow::{bail, Context as _, Result};
 use opendomain_core::ids::IdKind;
-use opendomain_core::provisioning::{
-    self, BddCriteria, CriterionRef, Detection, Selection,
-};
+use opendomain_core::provisioning::{self, BddCriteria, CriterionRef, Detection, Selection};
 use opendomain_core::Workspace;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -97,7 +95,11 @@ fn next_dec_id(index: &opendomain_core::workspace::Index) -> opendomain_core::Id
         let digits = text
             .split('-')
             .last()
-            .map(|seg| seg.chars().all(|c| c.is_ascii_digit()).then(|| seg.to_string()))
+            .map(|seg| {
+                seg.chars()
+                    .all(|c| c.is_ascii_digit())
+                    .then(|| seg.to_string())
+            })
             .flatten()
             .unwrap_or_default();
         if let Ok(n) = digits.parse::<u32>() {
@@ -125,20 +127,19 @@ fn criteria_per_requirement(
     for ac in index.of_kind(IdKind::Ac) {
         for parent in ac.upstream() {
             if requirement_kinds.contains(&parent.kind().prefix().to_string()) {
-                map.entry(parent.to_string()).or_default().push(CriterionRef {
-                    id: ac.id.clone(),
-                    text: Some(ac.title.clone()),
-                });
+                map.entry(parent.to_string())
+                    .or_default()
+                    .push(CriterionRef {
+                        id: ac.id.clone(),
+                        text: Some(ac.title.clone()),
+                    });
             }
         }
     }
 
     // Requirement side: declared `verifies` ids that no AC record covers.
     for req in REQUIREMENT_KINDS.iter().flat_map(|k| index.of_kind(*k)) {
-        if let Some(list) = req
-            .links
-            .get(&opendomain_core::Relation::Verifies)
-        {
+        if let Some(list) = req.links.get(&opendomain_core::Relation::Verifies) {
             let entry = map.entry(req.id.to_string()).or_default();
             for target in list {
                 if target.kind() != IdKind::Ac {
@@ -201,10 +202,10 @@ pub fn provision(
     // manifests and entry probes live at the project root.
     let detection = detection(&ws.project_root);
     let cfg = &ws.config.verification;
-    let named_actor = index
-        .of_kind(IdKind::Uc)
-        .iter()
-        .any(|uc| uc.field("primary-actor").map_or(false, |s| !s.trim().is_empty()));
+    let named_actor = index.of_kind(IdKind::Uc).iter().any(|uc| {
+        uc.field("primary-actor")
+            .map_or(false, |s| !s.trim().is_empty())
+    });
     let input = BddCriteria {
         behavioural_acs: index.of_kind(IdKind::Ac).len(),
         minimum: cfg.minimal_acceptance_criteria as usize,
@@ -254,7 +255,11 @@ pub fn provision(
                 "provisioning refused — the decision record names the alternative mechanism (Section 10.13)"
             );
         }
-        Selection::Generate { rule, stack, existing } => {
+        Selection::Generate {
+            rule,
+            stack,
+            existing,
+        } => {
             let per_req = criteria_per_requirement(index);
             let mut requirements: Vec<&opendomain_core::Artifact> = REQUIREMENT_KINDS
                 .iter()
@@ -280,16 +285,15 @@ pub fn provision(
                     );
                 }
                 println!("[dry-run] would write opendomain/verification/README.md");
-                println!("[dry-run] would record the decision as a DEC artifact — nothing installed.");
+                println!(
+                    "[dry-run] would record the decision as a DEC artifact — nothing installed."
+                );
                 return Ok(());
             }
 
             let mut written = 0usize;
             for r in &requirements {
-                let criteria = per_req
-                    .get(&r.id.to_string())
-                    .cloned()
-                    .unwrap_or_default();
+                let criteria = per_req.get(&r.id.to_string()).cloned().unwrap_or_default();
                 let feature = provisioning::feature_for(r, &criteria);
                 let rel = provisioning::feature_path(r);
                 let path = ws.path(&rel);

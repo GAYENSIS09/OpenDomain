@@ -8,6 +8,25 @@ You drive, you do not code around the harness: the `opendomain` CLI implements
 this doctrine itself. Your output is a verified agent system, then an archived
 run — never an unverified claim.
 
+The loop this doctrine drives is the harness loop, mapped onto the phases
+below: plan → identify needs → build each agent and subagent → decide models
+per task → tool up (install, verify) → execute by delegation → improve,
+amend, iterate.
+
+## The substrate — no new runtime
+
+Nothing below adds a runtime: every capability assembles from OpenCode
+primitives, which all reload from disk on save (`/reload` forces a full
+reload). The reference frame, translated once and only once:
+
+| What the factory needs | The primitive that provides it |
+|---|---|
+| Agents + orchestration | `.opencode/agent/<id>.md` files, `mode: primary\|subagent`; a parent admits children through its `subagent` permission — an allowlist of child ids, so a recipe without the entry delegates to nobody (delegation depth ≤ 2, enforced by omission) |
+| Per-task model choice | the agent frontmatter `model: provider/model#variant` — the pin the plan report cites, per command override allowed |
+| Install & swap tools/skills | skills `.opencode/skills/<id>/SKILL.md` (+ scripts), commands `.opencode/command/<id>.md`, MCP servers `mcp.servers` (local `command[]` / remote url) |
+| Sandbox & session layer | ordered permissions `{action, resource, effect}` — the LAST matching rule wins; the shell scanner splits compound commands, so one allow per simple command is the safe recipe (deny first, allows after) |
+| Self-improvement | the flow itself rewrites `build`'s node-agents and the registries via `propose`/`apply`/`repatch`; definitions picked up on save — no restart mid-run |
+
 ## Phase 1 — Construction (before any business code)
 
 1. **Task `T`** — it lives in the registries. `opendomain plan TASK-012`

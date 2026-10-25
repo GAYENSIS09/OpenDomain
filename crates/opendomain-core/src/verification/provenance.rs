@@ -10,22 +10,23 @@
 //! ```
 //!
 //! [`verify`] checks that citation against the archive on disk: the run
-//! directory exists under `opendomain/harness/runs/`, the frozen `graph.json`
-//! and `gates.log` are present, the archived outputs are counted, the run did
-//! not terminate in a final failure, and — when a node is cited — that node's
-//! last verdict line is read from `gates.log`.
+//! directory exists under `opendomain/harness/runs/` (the documented archive
+//! location), its `graph.json` and `gates.log` are present, the archived
+//! outputs are counted, the run did not terminate in a final failure, and —
+//! when a node is cited — that node's last verdict line is read from
+//! `gates.log`.
 //!
 //! The isolation the framework builds on purpose is respected: nothing here
-//! imports the harness crate. A run archive is a documented directory layout
-//! *of the workspace*, so verifying a citation is a pure function of the
-//! workspace on disk — the same stance the gates already take.
+//! imports any execution module. A run archive is a documented directory
+//! layout *of the workspace*, so verifying a citation is a pure function of
+//! the workspace on disk — the same stance the gates already take.
 
 use crate::model::artifact::Artifact;
 use crate::registries::workspace::Index;
 use std::path::Path;
 
-/// Where archived runs live, relative to `opendomain/` — the layout the
-/// harness templates and the AGENTS contract document.
+/// Where archived runs live, relative to `opendomain/` — the documented
+/// archive location, shared with records that cite `run = "…"`.
 pub const RUNS_ROOT: &str = "harness/runs";
 
 /// A record's `run = …` citation, normalized to the run name.
@@ -245,7 +246,10 @@ impl ProvenanceReport {
 
     /// The rest: citations that name a missing or broken archive.
     pub fn broken(&self) -> Vec<&CitationRow> {
-        self.rows.iter().filter(|r| !row_ok(&r.verification)).collect()
+        self.rows
+            .iter()
+            .filter(|r| !row_ok(&r.verification))
+            .collect()
     }
 }
 
@@ -314,9 +318,15 @@ mod tests {
         let a = artifact_with_run("TEST-001", "run = \"runs/run-007-reservations\"");
         assert_eq!(
             citation(&a),
-            Some(RunCitation { run: "run-007-reservations".into(), node: None })
+            Some(RunCitation {
+                run: "run-007-reservations".into(),
+                node: None
+            })
         );
-        let a = artifact_with_run("TEST-001", "run = \"opendomain/harness/runs/run-007-reservations\"");
+        let a = artifact_with_run(
+            "TEST-001",
+            "run = \"opendomain/harness/runs/run-007-reservations\"",
+        );
         assert_eq!(citation(&a).unwrap().run, "run-007-reservations");
         let a = artifact_with_run("TEST-001", "run = \"run-007-reservations\"");
         assert_eq!(citation(&a).unwrap().run, "run-007-reservations");
@@ -370,7 +380,10 @@ mod tests {
         );
         let v = verify(
             &dir.join(RUNS_ROOT),
-            &RunCitation { run: "run-002-demo".into(), node: Some("verificateur".into()) },
+            &RunCitation {
+                run: "run-002-demo".into(),
+                node: Some("verificateur".into()),
+            },
         );
         // The LAST verdict line wins: the node went red on attempt 2.
         assert_eq!(
@@ -390,7 +403,10 @@ mod tests {
         let dir = temp_dir("missing");
         let v = verify(
             &dir.join(RUNS_ROOT),
-            &RunCitation { run: "run-099-ghost".into(), node: None },
+            &RunCitation {
+                run: "run-099-ghost".into(),
+                node: None,
+            },
         );
         assert!(!v.exists);
         assert!(!v.frozen_graph);
@@ -410,7 +426,10 @@ mod tests {
 
         let mut index = Index::default();
         for (id, extra) in [
-            ("TEST-001", "run = \"run-003-cited\"\nrun-node = \"verificateur\""),
+            (
+                "TEST-001",
+                "run = \"run-003-cited\"\nrun-node = \"verificateur\"",
+            ),
             ("TEST-002", "run = \"run-099-ghost\""),
         ] {
             let a = artifact_with_run(id, extra);

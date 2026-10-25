@@ -232,7 +232,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "Getting started": "Install the tool, create a project, get your first verdict.",
         "Concepts": "The three ideas everything else follows from.",
         "Artifacts": "Text for humans, evidence for the machine.",
-        "The harness": "Agents build the work; every output passes its gate before it propagates.",
         "The 9 gates": "Nine questions you no longer get to forget.",
         "CLI reference": "Four intents: locate, link, ask, evolve.",
         "With opencode": "The same assistant, with a work contract.",

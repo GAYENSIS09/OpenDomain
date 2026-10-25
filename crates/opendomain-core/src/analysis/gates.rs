@@ -807,7 +807,10 @@ fn gate_domain(index: &Index, out: &mut Vec<Finding>) {
     }
 
     for a in index.of_kind(IdKind::Ent) {
-        if a.links.get(&crate::model::artifact::Relation::OwnedBy).is_none() {
+        if a.links
+            .get(&crate::model::artifact::Relation::OwnedBy)
+            .is_none()
+        {
             out.push(advisory(
                 "gate-2/entity-without-owner",
                 format!("{} has no owning domain", a.id),
@@ -1121,7 +1124,10 @@ fn gate_specification(index: &Index, out: &mut Vec<Finding>) {
                 break;
             }
         }
-        if !s.links.contains_key(&crate::model::artifact::Relation::Verifies) {
+        if !s
+            .links
+            .contains_key(&crate::model::artifact::Relation::Verifies)
+        {
             out.push(advisory(
                 "gate-5/spec-without-verification",
                 format!("{} has no linked acceptance criteria or test", s.id),
@@ -1195,7 +1201,9 @@ fn gate_plan(index: &Index, out: &mut Vec<Finding>) {
             ));
         }
         if t.downstream().is_empty()
-            && !t.links.contains_key(&crate::model::artifact::Relation::Verifies)
+            && !t
+                .links
+                .contains_key(&crate::model::artifact::Relation::Verifies)
             && t.status != ArtifactStatus::Draft
         {
             out.push(advisory(
@@ -2131,7 +2139,11 @@ mod tests {
                 "purpose = \"x\"\nepistemic = \"ASSUMED\"\nconfidence = \"LOW\"",
                 "Declared at init.",
             ),
-            ("STK-001", "epistemic = \"ASSUMED\"\nconfidence = \"LOW\"", "Declared at init."),
+            (
+                "STK-001",
+                "epistemic = \"ASSUMED\"\nconfidence = \"LOW\"",
+                "Declared at init.",
+            ),
         ]);
         let report = evaluate(Gate::by_name("context").unwrap(), &index);
         assert!(report.passed());
@@ -2154,7 +2166,11 @@ mod tests {
 
     #[test]
     fn gate_1_flags_open_question_with_no_follow_up() {
-        let index = index_from(&[("RES-001", "status = \"OPEN\"\nepistemic = \"UNKNOWN\"", "What?")]);
+        let index = index_from(&[(
+            "RES-001",
+            "status = \"OPEN\"\nepistemic = \"UNKNOWN\"",
+            "What?",
+        )]);
         let report = evaluate(Gate::by_name("research").unwrap(), &index);
         // Other rules block (no sources at all); the new rule itself is advisory.
         assert!(rules(&report).contains(&"gate-1/open-question-untracked"));
@@ -2177,7 +2193,10 @@ mod tests {
         ] {
             let report = evaluate(Gate::by_name(gate).unwrap(), &empty);
             assert!(report.passed(), "{gate} should stay advisory-only");
-            assert!(rules(&report).contains(&slug), "{gate} should report {slug}");
+            assert!(
+                rules(&report).contains(&slug),
+                "{gate} should report {slug}"
+            );
         }
     }
 

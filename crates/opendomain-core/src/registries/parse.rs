@@ -6,8 +6,8 @@
 //! fallback — because a registry that quietly drops requirements is worse than
 //! one that refuses to load.
 
-use crate::model::artifact::{Artifact, Document, Promotion, Relation};
 use crate::error::{OdError, Result};
+use crate::model::artifact::{Artifact, Document, Promotion, Relation};
 use crate::model::ids::{Id, IdKind};
 use crate::model::vocab::ArtifactStatus;
 use std::collections::{BTreeMap, BTreeSet};

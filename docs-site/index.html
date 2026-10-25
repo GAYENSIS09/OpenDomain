@@ -32,7 +32,6 @@
       <a href="docs/getting-started.html">Getting started</a>
       <a href="docs/concepts.html">Concepts</a>
       <a href="docs/artifacts.html">Artifacts</a>
-      <a href="docs/harness.html">The harness</a>
       <a href="docs/brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="docs/gates.html">The 9 gates</a>
@@ -58,12 +57,9 @@
       <p>Sources, evidence, business rules, requirements, specifications, tests: all form a single traceability chain. Two questions then become mechanical — <em>why does this code exist?</em> (<code class="inline">opendomain trace</code>) and <em>what would this change break?</em> (<code class="inline">opendomain impact</code>). It is no longer your memory that answers, it is the graph.</p>
       <h3>Verify before moving on</h3>
       <p>Nine quality gates check the work at every stage. The most important one forbids "whitewashing": turning an assumption into a certainty by changing a label, without bringing evidence, is blocked. See <a href="docs/gates.html">The 9 gates</a>.</p>
-      <h3>Execute under the same discipline</h3>
-      <p>OpenDomain does not stop at checking: it can run the work itself. A task becomes a DAG of agents, and the coordinator feeds downstream context <strong>only with outputs that passed their gate</strong> (<code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>). A rejected output returns as a typed failure with a recovery directive — retries are local and directed, never blind. See <a href="docs/harness.html">The harness</a>
-      <a href="docs/brownfield.html">Brownfield</a>.</p>
 
       <h2>What the tool does, and doesn't do</h2>
-      <p>For the registries, the <code class="inline">opendomain</code> command reads and checks; it never writes for you. You write the records in Markdown, it tells you whether they hold together — with the exact name of the violated rule and the offending line, never guessing the fix. A demanding reviewer, not an author. For execution, the harness is the opposite of hubris: agents produce, but the runner — not the agent — applies the gates, and a run that cannot verify itself archives its failure for attribution.</p>
+      <p>For the registries, the <code class="inline">opendomain</code> command reads and checks; it never writes for you. You write the records in Markdown, it tells you whether they hold together — with the exact name of the violated rule and the offending line, never guessing the fix. A demanding reviewer, not an author.</p>
 
       <div class="tip"><strong class="label">Tip</strong>Start with <a href="docs/getting-started.html">Getting started</a> to install the tool and get your first gate verdict, then read <a href="docs/concepts.html">Concepts</a> for the substance. The <a href="docs/cli-reference.html">CLI reference</a> and <a href="docs/opencode.html">With opencode</a> pages serve daily use.</div>
 

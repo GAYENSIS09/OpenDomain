@@ -92,7 +92,7 @@ unreadable; raise `--limit` if you need the whole graph and accept the output.
 
 | Command | What it does |
 |---|---|
-| `opendomain init [--name N] [--profile lean\|core\|full]` | Writes `opendomain/` and the agent contract; each generated tree (opendomain/, .opencode/) carries its own `.gitignore` — regenerable like the rest, delete it to version that tree (registries + runs are the F14/L9 evidence). |
+| `opendomain init [--name N] [--profile lean\|core\|full]` | Writes `opendomain/` and the agent contract; each generated tree (opendomain/, .opencode/) carries its own `.gitignore` — regenerable like the rest, delete it to version that tree (the registries are the F14/L9 evidence). |
 | `opendomain gate <gate>` | Runs one gate. Exits non-zero on a blocking finding. |
 | `opendomain gate --through <n>` | Runs every gate up to and including number `n` (0–8). |
 | `opendomain link <ID> <relation> <TARGET>` | Records a link declared by the dependent artifact. |
@@ -103,47 +103,14 @@ unreadable; raise `--limit` if you need the whole graph and accept the output.
 | `opendomain apply <slug>` | Marks a change as applied. |
 | `opendomain archive <slug>` | Moves a completed change under `changes/archive/`. |
 
-### Executing under the harness
-
-The registries say what must be true; the harness makes agents build it under
-the same discipline. Each task is a spec compiled into a DAG of agents; no
-agent output reaches downstream context before its gate (`y_i ∈ C_i`) passes,
-and a failure is typed and attributed (local / upstream / structural) instead
-of retried blind.
+### Verification (Sections 9/10)
 
 | Command | What it does |
 |---|---|
-| `opendomain spec new <slug>` | Creates `opendomain/harness/specs/<slug>/spec.md` from the template. |
-| `opendomain workflow new <kind> <slug>` | Pre-fills a spec from a playbook (migration, refactor, tests, doc). |
-| `opendomain ground <slug>` | Design-time grounding: repo scan, manifests, toolchain, fingerprint. |
-| `opendomain plan <slug> [--offline]` | Compiles the spec into an agent DAG — via opencode by default (the real decomposition); `--offline` asks the deterministic fallback explicitly. Incomplete agents are refused at admission. |
-| `opendomain build <slug> [--fetch]` | Writes each agent's execution kit, resolves every node's kit (skills, commands, protocols) against the component registry, and defines the node-agents in `.opencode/agent/` — reviewable before the run. `--fetch` admits explicit web-provisioning with provenance. |
-| `opendomain validate [<graph.json>]` | Replays the static graph checks (ids, dangling edges, cycles, contracts). |
-| `opendomain run <slug> [--resume <run>]` | Executes the DAG under the gates via opencode — the real, visible, archived path — and archives the run. |
-| `opendomain verify <run>` | Replays every gate on an archived run's outputs — offline, at any time. |
-| `opendomain attribute <run>` | Types the failure, names the recovery, records the lesson in memory. |
-| `opendomain repatch <run> [--allow BIN]` | Partial re-planning: revise the faulty node, verified upstream outputs stay frozen. |
-| `opendomain resolve <slug>` | Matches each spec need to exactly one component; a missed need is a typed error, never an invention. |
-| `opendomain skill add <url\|path>` · `opendomain skill new <id>` | Installs or starts a reusable procedure (skill). |
-| `opendomain kit add <kind> <url\|path>` | Installs a kit component (skill \| command \| tool) from the web or a local file, with provenance (source + date). The agent kit cites ids; this command provides them. |
-| `opendomain doctor` | Checks that executors and toolchains are present. |
-| `opendomain bench` | Runs the harness's deterministic invariants — usable as a CI step. |
 | `opendomain rigour` | Prints the Section 9.7 rigour table; audits which requirement records declare a rigour today. |
 | `opendomain provision [--dry-run]` | Stack detection (repository-only), the ordered selection rules, then generated `.feature` scaffolds with `@AC` tags and provenance — or a refusal recorded as a DEC artifact. Nothing is installed. |
 | `opendomain bind` | Audit of binding provenance (GENERATED/ANNOTATED/ATTRIBUTED/INFERRED) and verification depth (executed/discovered/declared). Findings, not gate rules. |
-| `opendomain provenance` | Verifies each record's `run = "…"` citation against the archived run it names — and lists the runs no record claims (F14/L9 bridge). |
-
-The canonical loop is *Generate → Verify → Attribute → Refine*. A local
-failure retries with typed feedback; an upstream failure re-runs the dependent
-agent first; a structural one comes back to the plan via `opendomain repatch`. The
-gate config (`opendomain/opendomain.toml`, sections `[gates]`, `[sandbox]` and
-`[harness]`) governs the
-runner: `gates.strict` stays on, `opendomain run` refuses a workspace that
-disables it, and `[harness]` pins each node-agent's `model` (`OPENCODE_MODEL`
-honoured when unset) and its `steps` budget — bounded runs, reviewable in the
-emitted agent files. The execution doctrine lives once, in the `opendomain-harness`
-skill — the harness is driven by the commands (`/opendomain-implement` →
-roles → skills), not by a persona.
+| `opendomain provenance` | Verifies each record's `run = "…"` citation against the archived run it names — and lists the archives no record claims (F14/L9 bridge). |
 
 Gates are named `context`, `research`, `domain`, `requirements`, `opportunity`,
 `specification`, `plan`, `implementation`, `completion`. `opendomain gate <name>` takes
@@ -167,16 +134,13 @@ silent no-op.
 Gates are cumulative: reaching gate 8 means 0 through 7 passed too. Run
 `opendomain gate --through 8` to check the whole chain, or `opendomain gate <n>` for one stage.
 
-These gates guard what the project **claims** in its registries. When
-implementation work is executed by agents, the same discipline is applied
-again to what they **produce**: through the execution harness
-(`opendomain/harness/`), no agent output propagates before its gate
-passes, failures come back typed (criteria / grounding / contract / sandbox,
-attributed local / upstream / structural), and each run is archived
-append-only under `harness/runs/`. A `TEST` or `DRIFT` record may cite that
-archive as its provenance. The runtime's own refusal rules mirror this
-section's: a re-plan cannot disarm its schema gate, exactly as no one can
-re-label `ASSUMED` as `EXPLICIT` without intervening evidence.
+These gates guard what the project **claims** in its registries: a claim whose
+chain is broken is a gate finding, not an opinion. Keep the same discipline in
+whatever executes the work — no execution may rewrite a claim without the
+evidence its gate requires, and a verification the party it verifies controls
+is not a verification: never re-label `ASSUMED` as `EXPLICIT` without
+intervening evidence. A `TEST` or `DRIFT` record stores its evidence in the
+registries themselves, cited by identifier.
 
 `opendomain reference` lists the **63 rules** these gates apply — 35 blocking, 28
 advisory — grouped by gate, and `opendomain reference --json` returns the same list
@@ -195,10 +159,19 @@ layout: propose it, implement it, apply it, archive it. An agent working a task
 should propose rather than edit registries directly, so that what changed and why
 is recorded as a change rather than as an unexplained diff.
 
-Only `init`, `link`, `advance`, `propose`, `apply`, `archive` and the harness's
-producing commands (`spec`, `workflow`, `ground`, `plan`, `build`, `run`,
-`verify`, `attribute`, `repatch`, `skill`, `kit`, `resolve`) write. Every other
-command only reads, and reads the registries as they are.
+Only `init`, `link`, `advance`, `propose`, `apply` and `archive` write. Every
+other command only reads, and reads the registries as they are.
+
+### When the work must be executed by agents
+
+The door is one: `/opendomain-harness` (opencode) routes to the
+`opendomain-harness` agent — the execution architect. A `TASK-###` record
+becomes a planned, grounded and gated agent system; a finished or failed run
+is recovered (`verify`, `attribute`, `resume`, `repatch`), never re-run
+blind. Every implementation executed by agents goes through this verified
+harness; evidence is archived under `opendomain/harness/runs/` and cited
+`run = "…"`, then checked by `opendomain provenance`. There is no
+free-standing implementer to call.
 
 ## Gates are not a formality
 

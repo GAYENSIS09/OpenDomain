@@ -1,5 +1,5 @@
 ---
-description: Use when working in a project that has an opendomain/ workspace. The front door: shared discipline plus a map to the four focused skills.
+description: Use when working in a project that has an opendomain/ workspace. The front door: shared discipline plus a map to the five focused skills.
 ---
 
 # Working under OpenDomain
@@ -10,7 +10,7 @@ Welcome. This project keeps what it knows about its domain in `opendomain/` — 
 
 ## Where to look, depending on your task
 
-This file states the one discipline everyone shares. The operative know-how lives in four focused skills — load the one your task needs:
+This file states the one discipline everyone shares. The operative know-how lives in five focused skills — load the one your task needs:
 
 | When you need to... | Load this skill |
 |---|---|
@@ -18,6 +18,7 @@ This file states the one discipline everyone shares. The operative know-how live
 | Write or repair any artifact — format, ids, relations | `.opencode/skills/opendomain-artifacts/SKILL.md` |
 | Gather external evidence — parallel search, triangulation | `.opencode/skills/opendomain-research/SKILL.md` |
 | Read a gate, status, or audit output — and fix what it reports | `.opencode/skills/opendomain-gates/SKILL.md` |
+| Execute work by agents — build the agent system from a `TASK-###`, then drive the run under gates and recover it | `.opencode/skills/opendomain-harness/SKILL.md` |
 
 ## The one discipline everyone shares
 

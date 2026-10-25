@@ -28,7 +28,6 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
-      <a href="harness.html">The harness</a>
       <a href="brownfield.html">Brownfield</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
@@ -68,22 +67,8 @@ opendomain apply tighter-reservation
 opendomain archive tighter-reservation</pre>
       <p>Propose, apply, archive. Even refuted hypotheses are kept: a deleted failure gets re-derived, an archived failure teaches.</p>
 
-      <h2>Execute — the verified harness</h2>
-      <p>The same binary runs the work itself: a spec becomes a DAG of agents, and no agent output propagates before its gate (<code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>) passes. Failures are typed and attributed — local, upstream, structural. See <a href="harness.html">The harness</a>
-      <a href="brownfield.html">Brownfield</a>.</p>
-<pre>opendomain spec new 001-migrate-invoice       # the task, its constraints, its criteria
-opendomain ground 001-migrate-invoice         # repo scan + fingerprint, replayed before every run
-opendomain plan 001-migrate-invoice           # the DAG (via opencode, verified; --offline = deterministic fallback)
-opendomain build 001-migrate-invoice          # each agent's kit + node-agents defined, construction-verified
-opendomain run 001-migrate-invoice            # the run — executor opencode — gated and archived
-opendomain verify runs/run-001-…              # replay every gate on the archived run, offline
-opendomain attribute runs/run-001-…           # typed attribution + lesson memory
-opendomain repatch runs/run-001-… --allow BIN # partial re-plan: faulty node only, upstreams frozen
-opendomain bench                              # the harness's invariants, deterministic and offline
-opendomain new REQ --scope inventory          # next free identifier (read-only)
-opendomain workflow new tests 002-bdd-pass    # pre-fill a spec from a playbook
-opendomain skill add URL·PATH | skill new ID  # install or start a reusable procedure
-opendomain resolve 001-migrate-invoice        # one provider per need; a miss is a typed error</pre>
+      <h2>Write — registry plumbing</h2>
+<pre>opendomain new REQ --scope inventory          # next free identifier (read-only)</pre>
 
       <h2>Verify — the verification subsystem</h2>
       <p>Sections 9/10 of the paper, in the order F10 fixes: the rigour table, then the generated executable specifications, then the binding-provenance record, then the provisioner — each stage gated on the previous one.</p>
@@ -95,12 +80,12 @@ opendomain provenance             # each record's run citation verified against 
       <p>Nothing is ever installed and no generated file ever contains a passing assertion (PP4); the decision — or the §10.13 refusal, with its alternative mechanism — lands as a <code class="inline">DEC</code> artifact. <code class="inline">bind</code> reports findings; it is not a gate, so no legacy workspace starts failing.</p>
 
       <h2>Global options and CI</h2>
-      <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">opendomain gate --through specification --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
+      <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">opendomain gate --through 5 --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
 
       <h2>Check the workshop itself</h2>
-<pre>cargo test --workspace      # 206 unit tests + 2 doctests across the two crates (engine + cli)
+<pre>cargo test --workspace      # 152 unit tests + 2 doctests across the two crates (engine + cli)
 cargo fmt --all -- --check</pre>
-      <p>The workshop: <code class="inline">crates/opendomain-core/</code> — the engine in one crate: <code class="inline">model/</code> (artifacts, ids, vocabularies), <code class="inline">registries/</code> (config, parser, workspace index), <code class="inline">analysis/</code> (the nine gates, the traceability graph), <code class="inline">scaffold/</code> (the single template writer), <code class="inline">verification/</code> (Sections 9/10 + the F14 bridge) and <code class="inline">harness/</code> (agent DAG, gates <code class="inline">y<sub>i</sub> ∈ C<sub>i</sub></code>, attribution, runner) — and <code class="inline">crates/opendomain-cli/</code>, the thin <code class="inline">opendomain</code> binary that drives it.</p>
+      <p>The workshop: <code class="inline">crates/opendomain-core/</code> — the engine in one crate: <code class="inline">model/</code> (artifacts, ids, vocabularies), <code class="inline">registries/</code> (config, parser, workspace index), <code class="inline">analysis/</code> (the nine gates, the traceability graph), <code class="inline">scaffold/</code> (the single template writer), <code class="inline">verification/</code> (Sections 9/10 + the F14 bridge) — and <code class="inline">crates/opendomain-cli/</code>, the thin <code class="inline">opendomain</code> binary that drives it.</p>
     </article>
 
     <aside class="toc" id="toc"><strong>On this page</strong><nav id="tocNav"></nav></aside>

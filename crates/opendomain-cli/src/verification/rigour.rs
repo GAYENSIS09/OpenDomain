@@ -72,7 +72,9 @@ pub fn rigour(index: &opendomain_core::workspace::Index, json: bool) -> Result<(
         return Ok(());
     }
 
-    println!("Verification rigour selection (Section 9.7) — an engineering decision, never inferred:\n");
+    println!(
+        "Verification rigour selection (Section 9.7) — an engineering decision, never inferred:\n"
+    );
     println!(
         "{:<28} {:<24} {}",
         "Requirement character", "Primary mechanism", "Secondary"
@@ -93,7 +95,11 @@ pub fn rigour(index: &opendomain_core::workspace::Index, json: bool) -> Result<(
     if !unknown.is_empty() {
         println!("\nunresolved declarations (no table row matches — fix the value):");
         for u in &unknown {
-            println!("  - {}: rigour = \"{}\"", u["id"].as_str().unwrap_or(""), u["declared"].as_str().unwrap_or(""));
+            println!(
+                "  - {}: rigour = \"{}\"",
+                u["id"].as_str().unwrap_or(""),
+                u["declared"].as_str().unwrap_or("")
+            );
         }
     }
     if !missing.is_empty() {
@@ -101,7 +107,11 @@ pub fn rigour(index: &opendomain_core::workspace::Index, json: bool) -> Result<(
         println!(
             "\nmissing: {}{} — declare `rigour` so the provisioner can bind the right mechanism.",
             shown.join(", "),
-            if missing.len() > 5 { format!(" … +{}", missing.len() - 5) } else { String::new() }
+            if missing.len() > 5 {
+                format!(" … +{}", missing.len() - 5)
+            } else {
+                String::new()
+            }
         );
         println!("\nnext: declare the rigour per record, then run `opendomain provision`.");
     } else if audit.declared > 0 {

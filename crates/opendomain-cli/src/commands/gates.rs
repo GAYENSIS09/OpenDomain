@@ -16,8 +16,12 @@ fn parse_gate(raw: &str) -> Result<Gate> {
         }
         bail!("no gate numbered {}; gates run 0-8", n);
     }
-    Gate::by_name(&raw.to_ascii_lowercase())
-        .ok_or_else(|| anyhow!("unknown gate '{}'; run `opendomain reference` for the list", raw))
+    Gate::by_name(&raw.to_ascii_lowercase()).ok_or_else(|| {
+        anyhow!(
+            "unknown gate '{}'; run `opendomain reference` for the list",
+            raw
+        )
+    })
 }
 
 pub fn cmd_gate(args: &GateArgs, index: &Index, style: Style, cli: &Cli) -> Result<()> {

@@ -32,7 +32,6 @@
       <a href="getting-started.html">Getting started</a>
       <a href="concepts.html">Concepts</a>
       <a href="artifacts.html">Artifacts</a>
-      <a href="harness.html">The harness</a>
       <a href="brownfield.html">Brownfield adoption</a>
       <h4>Reference</h4>
       <a href="gates.html">The 9 gates</a>
@@ -83,13 +82,14 @@ opendomain gate --through 8</pre>
         <li><code class="inline">opendomain trace --provenance REQ-…</code> — nearest-source-first: a requirement whose chain stops at a repository behaviour reads as what it is.</li>
       </ul>
 
-      <h2><span class="stepnum">6</span>When new work is agent-executed</h2>
-      <p><span class="pill pass">shipped</span> The increments themselves can run through the execution harness:</p>
-<pre>opendomain spec new 002-drift-migration
-opendomain ground 002-drift-migration     # fingerprint of the brown tree
-opendomain plan 002-drift-migration --offline   # the DAG, deterministic; incomplete agents refused
-opendomain run 002-drift-migration        # the real run — executor opencode — gated and archived</pre>
-      <p>The grounding fingerprint matters most here: a brown tree drifts by design, and a run against a stale fingerprint fails <strong>before any model call</strong> — typed <code class="inline">grounding_failure</code>, upstream attribution, no spend. The F10/F14 machinery is now in the tool: <code class="inline">opendomain provision</code> generates the BDD scaffolds bound by <code class="inline">@AC</code> tags with provenance comments (offline, nothing installed), and <code class="inline">run = "runs/run-NNN-…"</code> is a first-class registry field — <code class="inline">opendomain provenance</code> verifies each citation against the archived run it names; a citation that names no archive is an appeal, not evidence.</p>
+      <h2><span class="stepnum">6</span>When the work runs outside the workspace</h2>
+      <p><span class="pill pass">shipped</span> Work that does not flow through the registries alone still has to leave an addressable trace. Two mechanical checks keep the posture honest:</p>
+      <ul>
+        <li><code class="inline">opendomain provision</code> generates the BDD scaffolds bound by <code class="inline">@AC</code> tags with provenance comments (offline, nothing installed);</li>
+        <li>when a step is verified by a run kept outside the registries, <code class="inline">run = "runs/run-NNN-…"</code> is a first-class registry field — <code class="inline">opendomain provenance</code> verifies each citation against the archived run it names; a citation that names no archive is an appeal, not evidence.</li>
+      </ul>
+
+      <p>The increments themselves are memorable here, since a brown tree drifts by design: <code class="inline">opendomain audit</code> and <code class="inline">opendomain trace --provenance REQ-…</code> tell you which reversal to take next. A run whose verification is archive-based answers the same question: check <code class="inline">opendomain provenance</code> before believing the citation.</p>
 
       <div class="warn"><strong class="label">Anti-pattern</strong>Adopting on everything at once. The minimal-artifact principle is the cost bound: registries are a menu (per profile), and the 20%-baseline is a floor, not a ceiling you must jump to. If the domain is low-entropy (pure UI, no regulation), the framework's own prediction is that its overhead is unjustified — and it gives the falsification condition in the paper rather than hiding it.</div>
 
@@ -103,7 +103,6 @@ opendomain run 002-drift-migration        # the real run — executor opencode �
     <nav>
       <a href="https://github.com/GAYENSIS09/OpenDomain/blob/main/docs-site/docs/brownfield.html">Edit this page</a>
       <a href="https://github.com/GAYENSIS09/OpenDomain/issues/new">Report an issue</a>
-      <a href="harness.html">The harness</a>
     </nav>
     <span>OpenDomain · MIT · Oct. 2026</span>
   </footer>

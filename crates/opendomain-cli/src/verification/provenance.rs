@@ -3,8 +3,8 @@
 //! qu'aucun enregistrement ne réclame sont listés.
 
 use anyhow::Result;
-use opendomain_core::Workspace;
 use opendomain_core::provenance as run_provenance;
+use opendomain_core::Workspace;
 
 /// `opendomain provenance` — le pont F14 : chaque enregistrement qui cite un
 /// run (`run = "…"`) est vérifié contre l'archive qu'il nomme, et les runs
@@ -51,10 +51,10 @@ pub fn provenance(
         return Ok(());
     }
 
-    println!("Run provenance (F14/L9) — le pont de l'exécution vérifiée vers les registres :\n");
+    println!("Run provenance (F14/L9) — le pont des archives de run vers les registres :\n");
     if !report.runs_dir_exists {
         if report.rows.is_empty() {
-            println!("aucune archive de run (`opendomain/harness/runs/` n'existe) et aucun\nenregistrement n'en cite : la première archive naît d'un run réel —\n`opendomain run <spec>` (exécuteur opencode),\npuis `run = \"…\"` cite l'archive qui a vérifié l'étape.");
+            println!("aucune archive de run (`opendomain/harness/runs/` n'existe) et aucun\nenregistrement n'en cite : quand un travail exécuté hors des registres a\nvérifié une étape, archivez-le là, puis `run = \"…\"` cite l'archive qui\na porté la vérification.");
             return Ok(());
         }
         println!(

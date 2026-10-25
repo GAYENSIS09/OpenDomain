@@ -5,7 +5,7 @@ agent: build
 
 # Driving the harness
 
-The verified-execution flow has one door: "$ARGUMENTS" tells me which. With no argument, I show the last run's verdict (`opendomain provenance` + the newest `runs/run-*`) and ask.
+The verified-execution flow has one door: "$ARGUMENTS" tells me which. With no argument, I show the last run's verdict (`opendomain provenance` + the newest `runs/run-*`) and ask. The agreed design frame of this flow — the agent-factory record — lives in `meta-design.md` at the repository root when the repository carries it.
 
 ## A `TASK-` — build and execute
 

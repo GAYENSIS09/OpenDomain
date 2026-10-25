@@ -1,9 +1,9 @@
 //! Workspace discovery and artifact indexing.
 
-use crate::model::artifact::{Artifact, Document};
-use crate::registries::config::Config;
 use crate::error::{OdError, Result};
+use crate::model::artifact::{Artifact, Document};
 use crate::model::ids::{Id, IdKind};
+use crate::registries::config::Config;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -341,7 +341,11 @@ mod tests {
     fn rejects_duplicate_ids_across_files() {
         let project = fixture("dupes");
         let opendomain = project.join("opendomain");
-        write(&opendomain, "domain/entities.md", "## TERM-001 — Duplicate\n\nx\n");
+        write(
+            &opendomain,
+            "domain/entities.md",
+            "## TERM-001 — Duplicate\n\nx\n",
+        );
         let ws = Workspace::discover(&project).unwrap();
         let err = ws.load().unwrap_err();
         assert!(format!("{err}").contains("already defined"), "{err}");

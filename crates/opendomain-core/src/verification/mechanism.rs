@@ -16,8 +16,8 @@
 //! Everything here is additive: every field is optional at parse time, so
 //! existing workspaces keep loading untouched.
 
-use crate::model::artifact::Artifact;
 use crate::error::Result;
+use crate::model::artifact::Artifact;
 use crate::model::ids::Id;
 use std::fmt;
 use std::str::FromStr;
@@ -322,14 +322,9 @@ impl std::str::FromStr for VerificationDepth {
 pub fn declared_depth(a: &Artifact) -> Result<Option<VerificationDepth>> {
     match a.field("verification-depth") {
         None => Ok(None),
-        Some(raw) => {
-            VerificationDepth::from_str(raw)
-                .map(Some)
-                .map_err(|e| crate::error::OdError::artifact(
-                    a.file.as_path(),
-                    format!("line {}: {e}", a.line),
-                ))
-        }
+        Some(raw) => VerificationDepth::from_str(raw).map(Some).map_err(|e| {
+            crate::error::OdError::artifact(a.file.as_path(), format!("line {}: {e}", a.line))
+        }),
     }
 }
 
@@ -388,13 +383,13 @@ pub fn read_binding(a: &Artifact) -> Result<Option<TestBinding>> {
         .get("provisionance")
         .and_then(|v| v.as_str())
         .ok_or_else(|| err("`binding.provisionance` must be a string".into()))?;
-    let provisionance = prov_raw
-        .parse::<BindingProvenance>()
-        .map_err(|e| err(e))?;
+    let provisionance = prov_raw.parse::<BindingProvenance>().map_err(|e| err(e))?;
 
     let confirmed = match table.get("confirmed") {
         None => false,
-        Some(v) => v.as_bool().ok_or_else(|| err("`binding.confirmed` must be a boolean".into()))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| err("`binding.confirmed` must be a boolean".into()))?,
     };
 
     let note = match table.get("note") {

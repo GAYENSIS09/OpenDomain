@@ -1,10 +1,10 @@
 //! `opendomain init` — crée `opendomain/` : registres + `opendomain.toml` +
-//! contrats agent, puis le harnais. Idempotent : n'écrase jamais un fichier
+//! contrats agent. Idempotent : n'écrase jamais un fichier
 //! existant sans `--force` (et `AGENTS.md` jamais).
 
 use anyhow::Result;
-use opendomain_core::scaffold;
 use opendomain_core::report::Style;
+use opendomain_core::scaffold;
 use opendomain_core::vocab::RepositoryKind;
 
 use super::args::{Cli, InitArgs};
@@ -97,15 +97,8 @@ pub fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
             };
             println!("  {}{note}", t.path);
         }
-        // The execution scaffold sits inside the same workspace directory and
-        // is idempotent without --force: nothing it wrote before is replaced,
-        // so a preview that omits it would under-report what `opendomain init` does.
-        println!("\nharness (under opendomain/harness/):");
-        for p in opendomain_core::scaffold::harness::preview_targets() {
-            let exists = start.join(p).exists();
-            let note = if exists { "  (unchanged; never overwritten)" } else { "" };
-            println!("  {p}{note}");
-        }
+        // `opendomain init` writes only the registries and the agent contract,
+        // so the real-run listing below must cover exactly that set.
         println!("\nagent instructions: {would_write} to write, {would_keep} left alone");
         return Ok(());
     }
@@ -151,26 +144,19 @@ pub fn cmd_init(args: &InitArgs, cli: &Cli, style: Style) -> Result<()> {
         }
     }
 
-    // The execution harness scaffolds under the same workspace directory:
-    // `opendomain/harness/` — spec/graph/runs/config.opendomain.toml — and
-    // the meta-agent contract (the architect `opendomain-harness`), which the
-    // run invokes via opencode. Idempotent: it never overwrites an existing file.
-    opendomain_core::scaffold::harness::run(&start.to_string_lossy())?;
-
     // Versionnement : les deux arbres générés portent DÉSORMAIS leur propre
     // .gitignore (`opendomain/.gitignore`, `.opencode/.gitignore`) — écrits
     // par le scaffold comme les autres fichiers, sans drapeau, et le
     // .gitignore du projet n'est jamais touché. La doctrine F14/L9 (les
-    // registres et les runs sont la preuve citée par `run = "…"`,
+    // registres sont la preuve citée par leurs relations tracées,
     // `opendomain provenance`) vit dans le texte de chaque fichier généré :
     // un projet qui versionne un arbre supprime son .gitignore.
     if start.join(".git").exists() {
         println!(
-            "\nversionnement : les deux arbres générés portent leur propre\n.gitignore (régénérable — supprimer celui d'un arbre pour le\nversionner). Les registres (opendomain/*.md) et les runs\n(opendomain/harness/runs/) sont la preuve citée par `run = \"…\"`\n(opendomain provenance) — à commiter : supprimer opendomain/.gitignore."
+            "\nversionnement : les deux arbres générés portent leur propre\n.gitignore (régénérable — supprimer celui d'un arbre pour le\nversionner). Les registres (opendomain/*.md) sont la preuve citée\npar `run = \"…\"` (opendomain provenance) — à commiter : supprimer\nopendomain/.gitignore."
         );
     }
 
     println!("\nnext: run /opendomain-project to complete context, then `opendomain status` + `opendomain gate context`");
-    println!("next (harness): `opendomain spec new 001-my-task` → `opendomain ground` → `opendomain plan` → `opendomain run`");
     Ok(())
 }

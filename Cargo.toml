@@ -11,7 +11,7 @@ edition = "2021"
 rust-version = "1.75"
 license = "MIT"
 repository = "https://github.com/GAYENSIS09/OpenDomain"
-description = "Domain-first, evidence-driven engineering with a verified agent harness"
+description = "Domain-first, evidence-driven engineering"
 
 [workspace.dependencies]
 opendomain-core = { path = "crates/opendomain-core", version = "0.20.26" }

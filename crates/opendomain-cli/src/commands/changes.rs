@@ -86,7 +86,10 @@ pub fn cmd_propose(args: &ProposeArgs, ws: &Workspace, style: Style) -> Result<(
     ] {
         println!("  + changes/{slug}/{f}", slug = slug);
     }
-    println!("\nnext: fill in proposal.md, then `opendomain apply {}`", slug);
+    println!(
+        "\nnext: fill in proposal.md, then `opendomain apply {}`",
+        slug
+    );
     Ok(())
 }
 
