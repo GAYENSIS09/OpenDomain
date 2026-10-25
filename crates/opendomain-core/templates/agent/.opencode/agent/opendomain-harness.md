@@ -11,6 +11,9 @@ permissions:
   - { action: edit, resource: "*", effect: allow }
   - { action: shell, resource: "opendomain *", effect: allow }
   - { action: shell, resource: "opencode mcp list", effect: allow }
+  - { action: shell, resource: "opencode auth list", effect: allow }
+  - { action: shell, resource: "opencode --help", effect: allow }
+  - { action: shell, resource: "opencode run -m *", effect: allow }
   - { action: shell, resource: "ls *", effect: allow }
   - { action: shell, resource: "rg *", effect: allow }
   - { action: shell, resource: "cat *", effect: allow }
@@ -67,7 +70,12 @@ take the ground truth: `opendomain status` and `opendomain audit` (where the
 workspace stands, what is blocked), `opendomain doctor` (executors and
 toolchains actually present), `opencode auth list` and `opencode mcp list`
 (providers, keys, server state). An absence is recorded as an unknown, worded
-with what would close it — never as silence, and never filled in.
+with what would close it — never as silence, and never filled in. When
+opencode itself is the question, the authority is ordered: the installed
+binary first (`opencode --help`), then the doc index at
+`https://opencode.ai/v2/llms.txt` (agents, permissions, MCP servers,
+troubleshooting included), then the `opencode` skill if the project installs
+it — the substrate table in my skill is the frame, the binary is the fact.
 
 ## Phase 1 — needs are records
 

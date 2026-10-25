@@ -27,6 +27,17 @@ reload). The reference frame, translated once and only once:
 | Sandbox & session layer | ordered permissions `{action, resource, effect}` — the LAST matching rule wins; the shell scanner splits compound commands, so one allow per simple command is the safe recipe (deny first, allows after) |
 | Self-improvement | the flow itself rewrites `build`'s node-agents and the registries via `propose`/`apply`/`repatch`; definitions picked up on save — no restart mid-run |
 
+The table is the frame, not the authority: OpenCode V2 evolves, and the
+installed version decides. When opencode itself misbehaves — a permission
+that did not bite, an MCP server that will not start, a definition that did
+not reload — go in this order: the installed binary first (`opencode
+--help`, `--version`, `opencode mcp list`, `opencode auth list`), then the
+doc index at <https://opencode.ai/v2/llms.txt> (agents, skills, commands,
+permissions, MCP servers, config, troubleshooting — one page per question),
+then the `opencode` skill when the project or user installs it. Never retype
+what the help already answers; when the table and the installed opencode
+disagree, the binary wins and a lesson records which line drifted.
+
 ## Phase 1 — Construction (before any business code)
 
 1. **Task `T`** — it lives in the registries. `opendomain plan TASK-012`
