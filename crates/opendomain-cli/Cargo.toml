@@ -15,6 +15,10 @@ categories = ["command-line-utilities"]
 name = "opendomain"
 path = "src/main.rs"
 
+# cible lib minimale : docs.rs construit `--lib` ; le moteur reste dans opendomain-core
+[lib]
+path = "src/lib.rs"
+
 [dependencies]
 opendomain-core = { path = "../opendomain-core", version = "0.20.26" }
 clap = { version = "4", features = ["derive"] }
