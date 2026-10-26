@@ -6,7 +6,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.20.27"
+version = "0.20.26"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT"
@@ -17,7 +17,7 @@ keywords = ["domain", "traceability", "quality-gates", "requirements"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
-opendomain-core = { path = "crates/opendomain-core", version = "0.20.27" }
+opendomain-core = { path = "crates/opendomain-core", version = "0.20.26" }
 anyhow = "1"
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }
