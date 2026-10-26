@@ -21,7 +21,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: fmt (exigé par le readme : cargo fmt --all -- --check)
+      - name: "fmt (exigé par le readme : cargo fmt --all -- --check)"
         run: cargo fmt --all -- --check
 
       - name: build (--locked)
