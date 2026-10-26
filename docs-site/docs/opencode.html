@@ -74,20 +74,21 @@
       <p><code class="inline">/opendomain-harness</code> routes a <code class="inline">TASK-###</code> record to the <strong>harness architect</strong>: the task becomes a planned, grounded, gated agent system, executed and archived under <code class="inline">opendomain/harness/runs/run-NNN-…/</code>. A finished or failed run is recovered (<code class="inline">verify</code>, <code class="inline">attribute</code>, <code class="inline">resume</code>, <code class="inline">repatch</code>), never re-run blind. The record that cites a run stores it as <code class="inline">run = "…"</code>, and <code class="inline">opendomain provenance</code> verifies that citation against the archived run it names. There is no free-standing implementer to call. The full flow, principles and archive layout live in <a href="harness.html">The harness</a>.</p>
 
       <h2>Three roles</h2>
-      <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/opendomain-project</code>.</p>
+      <p><strong>context-completer, the interviewer.</strong> Owns Phase 0 context: it reads the repository itself, delegates external research to the investigator, then asks you what no reading could answer. Brought in by <code class="inline">/opendomain-project</code>. Its doctrine is also loadable as the <code class="inline">context-completer</code> skill — the role's name, with no <code class="inline">opendomain-</code> prefix.</p>
       <p><strong>domain-researcher, the investigator.</strong> It reads, searches, and reports only dated sources and evidence, fanning out in parallel by keyword. Called by the interviewer, <code class="inline">/opendomain-research</code>, <code class="inline">/opendomain-domain</code>, and <code class="inline">/opendomain-requirements</code>. By default it can hardly execute anything — except <code class="inline">opendomain *</code> to check its own work.</p>
       <p><strong>opendomain-harness, the execution architect.</strong> One <code class="inline">TASK-###</code> record becomes a planned, grounded, gated, archived agent system; failures come back typed — <code class="inline">local</code>, <code class="inline">upstream</code> or <code class="inline">structural</code> — never as a blind re-run. Called only by <code class="inline">/opendomain-harness</code>, the single door into agent-executed work.</p>
 
-      <h2>Six skills</h2>
+      <h2>Seven skills</h2>
       <p>The framework's know-how, loaded on demand by commands and roles:</p>
       <table>
         <tr><th>Skill</th><th>Load it when…</th></tr>
-        <tr><td><code class="inline">opendomain</code></td><td>You need the shared discipline and the map to the other five.</td></tr>
+        <tr><td><code class="inline">opendomain</code></td><td>You need the shared discipline and the map to the other six.</td></tr>
         <tr><td><code class="inline">opendomain-epistemics</code></td><td>Choosing a knowledge value, recording a promotion, checking laundering.</td></tr>
         <tr><td><code class="inline">opendomain-artifacts</code></td><td>Writing or repairing any record — format, ids, relations.</td></tr>
         <tr><td><code class="inline">opendomain-research</code></td><td>Gathering evidence — parallel search, triangulation, saturation.</td></tr>
         <tr><td><code class="inline">opendomain-gates</code></td><td>Reading any gate, status, or audit output — identifier to action.</td></tr>
         <tr><td><code class="inline">opendomain-harness</code></td><td>Driving the verified execution flow — build an agent system from a record, recover a run.</td></tr>
+        <tr><td><code class="inline">context-completer</code></td><td>Completing or refreshing Phase 0 context — the interviewer's doctrine, loadable when the role itself cannot be spawned.</td></tr>
       </table>
       <div class="tip"><strong class="label">Tip</strong>Commands are thin routers (user experience), roles call each other (interviewer → investigator), skills carry the know-how. Run the command for the stage you're in; it loads the right skill and delegates to the right role.</div>
 

@@ -773,6 +773,7 @@ mod tests {
             ".opencode/skills/opendomain-artifacts/SKILL.md",
             ".opencode/skills/opendomain-research/SKILL.md",
             ".opencode/skills/opendomain-gates/SKILL.md",
+            ".opencode/skills/context-completer/SKILL.md",
         ] {
             assert!(
                 agent_contract::all().iter().any(|t| t.path == path),
@@ -784,6 +785,33 @@ mod tests {
         assert!(index.contains("opendomain-artifacts"));
         assert!(index.contains("opendomain-research"));
         assert!(index.contains("opendomain-gates"));
+        assert!(index.contains("context-completer"));
+
+        // The role's doctrine exists once as an agent body and once as a
+        // loadable skill; both must state the same phases or one has already
+        // diverged from the other.
+        let skill = agent_contract::SKILL_CONTEXT_COMPLETER.contents;
+        for binding in [
+            "Phase 1",
+            "Phase 2",
+            "Phase 4",
+            "**Human-only gaps**",
+            "INFERRED",
+        ] {
+            let role_says = agent_contract::CONTEXT_COMPLETER.contents.contains(binding);
+            let skill_says = skill.contains(binding);
+            assert!(
+                role_says && skill_says,
+                "the role and the `context-completer` skill must both carry {binding:?}"
+            );
+        }
+
+        // The misnamed skill agents guessed at must be refuted by name in the
+        // skill itself, so the wrong guess corrects itself on the next load.
+        assert!(
+            skill.contains("opendomain-context-completer"),
+            "the skill must name the wrong skill agents guessed, and refuse it"
+        );
 
         // Inter-agent calls are declared, not implied.
         assert!(agent_contract::CONTEXT_COMPLETER

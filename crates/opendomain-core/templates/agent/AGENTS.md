@@ -173,6 +173,20 @@ harness; evidence is archived under `opendomain/harness/runs/` and cited
 `run = "…"`, then checked by `opendomain provenance`. There is no
 free-standing implementer to call.
 
+Roles and skills are different objects, and their names are not interchangeable.
+The three roles (`context-completer`, `domain-researcher`, `opendomain-harness`)
+live in `.opencode/agent/` and are invoked with the subagent tool
+(`agent: "<role name>"`) or through the slash command that routes to them;
+they are never loaded through the skill tool. The skills live in
+`.opencode/skills/<name>/SKILL.md` and are loaded by exact directory name —
+including `context-completer`, the Phase 0 doctrine of the interviewer role.
+No skill named `opendomain-context-completer` exists, and no other name that
+merely sounds plausible does either: when a skill fails to load, the reason is
+a wrong name, and the correction is to check the index
+(`.opencode/skills/opendomain/SKILL.md`) rather than to try variants. The same
+applies to commands and agent identifiers: aliases are not inferred, they are
+read where they are declared.
+
 ## Gates are not a formality
 
 A gate failure is a finding with a stable rule slug, such as

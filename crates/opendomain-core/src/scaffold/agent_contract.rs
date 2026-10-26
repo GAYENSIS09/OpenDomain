@@ -187,6 +187,17 @@ pub const SKILL_HARNESS: Template = Template {
     contents: include_str!("../../templates/agent/.opencode/skills/opendomain-harness/SKILL.md"),
 };
 
+/// `.opencode/skills/context-completer/SKILL.md` — la doctrine de complétion
+/// de contexte en forme chargeable : le même contrat que le corps de l'agent
+/// (`context-completer`), pour l'appelant qui ne peut pas spawner le rôle.
+/// Le nom n'a jamais eu de préfixe `opendomain-` — la charge d'échouer sous
+/// ce nom-là est précisément l'erreur de nommage que ce fichier rend
+/// impossible de répéter.
+pub const SKILL_CONTEXT_COMPLETER: Template = Template {
+    path: ".opencode/skills/context-completer/SKILL.md",
+    contents: include_str!("../../templates/agent/.opencode/skills/context-completer/SKILL.md"),
+};
+
 /// Every agent integration file.
 pub fn all() -> Vec<Template> {
     vec![
@@ -216,6 +227,7 @@ pub fn all() -> Vec<Template> {
         SKILL_RESEARCH,
         SKILL_GATES,
         SKILL_HARNESS,
+        SKILL_CONTEXT_COMPLETER,
     ]
 }
 
