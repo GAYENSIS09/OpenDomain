@@ -118,6 +118,7 @@ opendomain impact RULE-007               # what breaks if this changes?
 opendomain graph --root REQ-012 --depth 3
 opendomain audit                         # traceability health across the workspace
 opendomain reference                     # the gates and the 37 artifact kinds
+opendomain export                        # the whole base as one paginated PDF (Mermaid graph inside)
 ```
 
 The verification subsystem (Sections 9/10 of the paper — the rigour table, the

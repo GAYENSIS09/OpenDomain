@@ -20,6 +20,7 @@
 //! | [`registries`] | Reading the workspace from disk: `config`, `parse`, `workspace` |
 //! | [`analysis`] | Traceability (`graph`) and the nine quality gates (`gates`) |
 //! | [`report`] | Terminal and JSON rendering |
+//! | [`export`] | `opendomain export`: the whole base as one paginated document |
 //! | [`scaffold`] | `opendomain init` and its template set |
 //! | [`verification`] | The §9/§10 verification subsystem: rigour, provisioning, provenance |
 //!
@@ -67,6 +68,7 @@
 
 pub mod analysis;
 pub mod error;
+pub mod export;
 pub mod model;
 pub mod registries;
 pub mod report;

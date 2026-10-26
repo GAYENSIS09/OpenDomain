@@ -42,7 +42,7 @@
 
     <article class="prose">
       <h1>CLI reference</h1>
-      <p class="subtitle">Four intents: locate, link, ask, evolve.</p>
+      <p class="subtitle">Five intents: locate, link, ask, share, evolve.</p>
 
       <h2>Locate — where do we stand?</h2>
 <pre>opendomain status                 # project weather: real progress + blockers
@@ -64,6 +64,12 @@ opendomain show REQ-012                         # full record of one artifact</p
 opendomain trace --forward REQ-012          # walk down: who implements and verifies it
 opendomain impact RULE-007                  # what a change would invalidate
 opendomain graph --root REQ-012 --depth 3   # the neighborhood, to see the web</pre>
+
+      <h2>Share — the whole base as one document</h2>
+<pre>opendomain export                          # the whole base as one paginated PDF, Mermaid graph inside
+opendomain export --format html            # the styled HTML the PDF is printed from
+opendomain export --graph dot              # the traceability graph pre-rendered by Graphviz instead</pre>
+      <p>A status cover (the same numbers <code class="inline">status</code> reports), the traceability graph, then every file in gate order with its records unfolded as readable tables. The PDF is printed headlessly by the machine's own browser (Edge/Chrome detected; <code class="inline">--browser</code> or <code class="inline">OPENDOMAIN_BROWSER</code> to pick another); without one, the styled HTML stays and the command says so. A printout is not evidence: cite the registries, rerun the export for a reader.</p>
 
       <h2>Evolve — change without rewriting history</h2>
 <pre>opendomain propose tighter-reservation --summary "Tighten the reservation window"
@@ -87,7 +93,7 @@ opendomain provenance             # each record's run citation verified against 
       <p><code class="inline">--json</code> yields machine-readable reports on every reporting command, and a blocking gate fails the command — <code class="inline">opendomain gate --through 5 --json &gt; gate-report.json</code> makes a CI step. <code class="inline">--no-color</code> and <code class="inline">-C &lt;dir&gt;</code> work everywhere.</p>
 
       <h2>Check the workshop itself</h2>
-<pre>cargo test --workspace      # 152 unit tests + 2 doctests across the two crates (engine + cli)
+<pre>cargo test --workspace      # 167 unit tests + 2 doctests across the two crates (engine + cli)
 cargo fmt --all -- --check</pre>
       <p>The workshop: <code class="inline">crates/opendomain-core/</code> — the engine in one crate: <code class="inline">model/</code> (artifacts, ids, vocabularies), <code class="inline">registries/</code> (config, parser, workspace index), <code class="inline">analysis/</code> (the nine gates, the traceability graph), <code class="inline">scaffold/</code> (the single template writer), <code class="inline">verification/</code> (Sections 9/10 + the F14 bridge) — and <code class="inline">crates/opendomain-cli/</code>, the thin <code class="inline">opendomain</code> binary that drives it.</p>
     </article>

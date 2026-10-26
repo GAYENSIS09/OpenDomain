@@ -79,6 +79,7 @@ fact about the tool, not an invitation to assume it exists.
 | Who said so, nearest source first? | `opendomain trace <ID> --provenance` |
 | What breaks if this changes? | `opendomain impact <ID>` |
 | What does the traceability graph look like? | `opendomain graph [--root <ID>] [--depth N] [--dot]` |
+| Give the whole knowledge base to a human? | `opendomain export [--format pdf\|html] [--graph mermaid\|dot\|none]` |
 | Is it consistent enough to proceed? | `opendomain gate <gate>` |
 
 `opendomain show` prints the record; `opendomain trace` explains it. Reach for `show` when you
@@ -87,6 +88,16 @@ want the artifact, and for `trace` when you want the argument for it.
 `opendomain graph` renders Mermaid by default and Graphviz DOT under `--dot`. It is
 capped at 200 nodes, so a large workspace will be truncated rather than
 unreadable; raise `--limit` if you need the whole graph and accept the output.
+
+`opendomain export` mirrors the whole `opendomain/` tree as one paginated document -
+a status cover, the traceability graph (Mermaid by default, Graphviz DOT under
+`--graph dot`), then every file in gate order, records unfolded as readable
+tables. The PDF is printed headlessly by the machine's own browser (Edge or
+Chrome are auto-detected; `--browser` or `OPENDOMAIN_BROWSER` pick another);
+without one the styled HTML stays instead, and the command says so. The
+printout lists the same numbers `status` does; a PDF is a printout, so never
+cite it against a registry changed since - rerun the export or read the
+registry.
 
 ### Checking and writing
 
@@ -159,8 +170,9 @@ layout: propose it, implement it, apply it, archive it. An agent working a task
 should propose rather than edit registries directly, so that what changed and why
 is recorded as a change rather than as an unexplained diff.
 
-Only `init`, `link`, `advance`, `propose`, `apply` and `archive` write. Every
-other command only reads, and reads the registries as they are.
+Only `init`, `link`, `advance`, `propose`, `apply`, `archive` and `export` write -
+and `export` writes its own output file only. Every other command only reads, and
+reads the registries as they are.
 
 ### When the work must be executed by agents
 

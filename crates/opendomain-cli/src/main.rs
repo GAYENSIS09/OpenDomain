@@ -16,6 +16,7 @@ use clap::Parser;
 use commands::args::{Cli, Command};
 use commands::changes::{cmd_apply, cmd_archive, cmd_propose};
 use commands::context::with_index;
+use commands::export::cmd_export;
 use commands::gates::cmd_gate;
 use commands::init::cmd_init;
 use commands::inspect::{cmd_graph, cmd_impact, cmd_show, cmd_trace};
@@ -48,6 +49,9 @@ fn run(cli: &Cli, style: Style) -> Result<()> {
             cmd_impact(args, index, style, cli)
         }),
         Command::Graph(args) => with_index(cli, style, |_ws, index, _| cmd_graph(args, index)),
+        Command::Export(args) => with_index(cli, style, |ws, index, style| {
+            cmd_export(args, ws, index, style, cli)
+        }),
         Command::Gate(args) => with_index(cli, style, |_ws, index, _| {
             cmd_gate(args, index, style, cli)
         }),

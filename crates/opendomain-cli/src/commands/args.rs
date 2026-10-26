@@ -51,6 +51,10 @@ pub enum Command {
     Impact(ImpactArgs),
     /// Render the traceability graph.
     Graph(GraphArgs),
+    /// Export the whole knowledge base as one paginated document: a styled
+    /// PDF printed by the machine's own headless browser, or the HTML it is
+    /// printed from — with the traceability graph as a Mermaid diagram.
+    Export(ExportArgs),
     /// Run a quality gate.
     Gate(GateArgs),
     /// Report traceability health across the whole workspace.
@@ -151,6 +155,53 @@ pub struct GraphArgs {
     /// Output Graphviz DOT instead of Mermaid.
     #[arg(long)]
     pub dot: bool,
+}
+
+/// Arguments of `opendomain export`.
+#[derive(Clone, Args)]
+pub struct ExportArgs {
+    /// Output format: the PDF, or the HTML it is printed from.
+    #[arg(long, value_enum, default_value_t = ExportFormat::default())]
+    pub format: ExportFormat,
+    /// Where to write the file. Defaults to
+    /// `<project root>/<name>-knowledge-<date>.pdf` (or `.html`).
+    #[arg(long)]
+    pub out: Option<PathBuf>,
+    /// Keep the intermediate HTML next to the PDF instead of removing it
+    /// once the print succeeded.
+    #[arg(long)]
+    pub keep_html: bool,
+    /// Which form the traceability graph takes in the document.
+    #[arg(long, value_enum, default_value_t = ExportGraph::default())]
+    pub graph: ExportGraph,
+    /// Browser binary that prints the PDF. Overrides the
+    /// `OPENDOMAIN_BROWSER` environment variable and auto-detection.
+    #[arg(long)]
+    pub browser: Option<String>,
+}
+
+/// Output format of `opendomain export`.
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, ValueEnum)]
+pub enum ExportFormat {
+    /// Paginated PDF, printed by the machine's own headless browser.
+    #[default]
+    Pdf,
+    /// Standalone styled HTML — the PDF's source of truth, printable with
+    /// Ctrl+P when no browser can be driven headlessly.
+    Html,
+}
+
+/// How the traceability graph is carried into the exported document.
+#[derive(Copy, Clone, Default, Debug, PartialEq, Eq, ValueEnum)]
+pub enum ExportGraph {
+    /// Mermaid source, rendered by the browser from the pinned CDN release.
+    #[default]
+    Mermaid,
+    /// Graphviz DOT, pre-rendered to inline SVG when `dot` is on `PATH`,
+    /// printed as escaped source otherwise.
+    Dot,
+    /// No diagram; the cover still states the node and link counts.
+    None,
 }
 
 #[derive(Args)]

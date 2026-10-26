@@ -14,12 +14,14 @@
 //! | [`status`] | `opendomain status`, `audit` | la vue d'ensemble et la prochaine étape |
 //! | [`gates`] | `opendomain gate` | exécuter une gate (0-8) et rendre les findings |
 //! | [`inspect`] | `trace`, `impact`, `graph`, `show` | lire la traçabilité |
+//! | [`export`] | `opendomain export` | toute la base en un document paginé (PDF/HTML) |
 //! | [`registry`] | `link`, `new`, `advance` | écrire dans un registre (append-only) |
 //! | [`changes`] | `propose`, `apply`, `archive` | le cycle de change (layout OpenSpec) |
 
 pub mod args;
 pub mod changes;
 pub mod context;
+pub mod export;
 pub mod gates;
 pub mod init;
 pub mod inspect;
