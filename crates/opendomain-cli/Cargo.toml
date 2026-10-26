@@ -1,16 +1,22 @@
 [package]
 name = "opendomain-cli"
-version = "0.20.26"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 description = "The `opendomain` command-line interface for OpenDomain"
-license = "MIT"
+readme = "../../readme.md"
+documentation = "https://docs.rs/opendomain-cli"
+keywords.workspace = true
+categories = ["command-line-utilities"]
 
 [[bin]]
 name = "opendomain"
 path = "src/main.rs"
 
 [dependencies]
-opendomain-core = { path = "../opendomain-core" }
+opendomain-core = { path = "../opendomain-core", version = "0.20.26" }
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

@@ -11,6 +11,8 @@
  <a href="LICENSE">MIT</a>
  </p>
  <p>
+ <a href="https://crates.io/crates/opendomain-cli"><img src="https://img.shields.io/crates/v/opendomain-cli.svg" alt="crates.io" /></a>
+ <a href="https://docs.rs/opendomain-cli"><img src="https://img.shields.io/docsrs/opendomain-cli.svg" alt="docs.rs" /></a>
  <img src="https://img.shields.io/badge/rust-1.75%2B-orange" alt="Rust 1.75+" />
  <img src="https://img.shields.io/badge/tests-154_passing-green" alt="154 tests passing" />
  <img src="https://img.shields.io/badge/gates-9_deterministic-blue" alt="9 deterministic gates" />
@@ -48,7 +50,8 @@ opendomain impact RULE-007        # if this changes, what breaks?
 Requires **Rust 1.75+**. No clone needed — `cargo install` puts `opendomain` in `~/.cargo/bin`, already on your `PATH`:
 
 ```bash
-cargo install --git https://github.com/GAYENSIS09/OpenDomain --locked opendomain-cli
+cargo install opendomain-cli                                            # from crates.io
+cargo install --git https://github.com/GAYENSIS09/OpenDomain --locked opendomain-cli   # from this repository
 opendomain --version
 ```
 

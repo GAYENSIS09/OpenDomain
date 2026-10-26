@@ -82,3 +82,36 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.artifact }}
+
+  # Publication crates.io — Trusted Publishing (OIDC) : aucun jeton long-terme
+  # stocké. crates-io-auth-action échange le jeton OIDC du runner contre un
+  # jeton temporaire, révoqué automatiquement à la fin du job.
+  # Pré-requis côté crates.io (après la première publication manuelle) : page
+  # de chaque crate → Settings → Trusted Publishing → dépôt
+  # GAYENSIS09/OpenDomain, workflow ci.yml, environnement vide.
+  # L'ordre compte : le core publie d'abord (la CLI en dépend au registre).
+  publish-crates:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: auth crates.io (OIDC, jeton temporaire)
+        uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
+      - name: publish opendomain-core
+        run: cargo publish -p opendomain-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: attendre l'indexation du registre
+        run: sleep 15
+
+      - name: publish opendomain-cli
+        run: cargo publish -p opendomain-cli
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}

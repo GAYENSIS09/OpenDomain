@@ -6,6 +6,10 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Core engine for the OpenDomain framework: ids, artifacts, traceability graph, quality gates"
+readme = "../../readme.md"
+documentation = "https://docs.rs/opendomain-core"
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
 anyhow.workspace = true
