@@ -15,7 +15,7 @@ use opendomain_core::export::{self, ExportDoc, GraphFormat, GRAPH_NODE_LIMIT};
 use opendomain_core::report::Style;
 use opendomain_core::workspace::{Index, Workspace};
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::Command as SysCommand;
 
 use super::args::{Cli, ExportArgs, ExportFormat, ExportGraph};
@@ -266,12 +266,17 @@ fn write_html(html: &Path, content: &str) -> Result<()> {
 /// Where the files go. The default dates itself — `<name>-knowledge-<date>`
 /// beside the project — so a re-export the same day replaces its own file
 /// instead of growing a pile.
+///
+/// Both targets come back absolute, because the two writers disagree:
+/// `std::fs` happily writes a relative path, but the browser refuses or
+/// misplaces a relative `--print-to-pdf`, so `-C .` (whose `project_root`
+/// stays relative) would otherwise print nothing while claiming success.
 fn resolve_targets(
     args: &ExportArgs,
     ws: &Workspace,
     doc: &ExportDoc,
 ) -> (Option<PathBuf>, PathBuf) {
-    match (&args.format, &args.out) {
+    let (pdf, html) = match (&args.format, &args.out) {
         (ExportFormat::Html, Some(out)) => (None, out.clone()),
         (ExportFormat::Html, None) => (None, default_base(ws, doc).with_extension("html")),
         (ExportFormat::Pdf, Some(out)) => (Some(out.clone()), html_sibling(out)),
@@ -282,7 +287,30 @@ fn resolve_targets(
                 base.with_extension("html"),
             )
         }
+    };
+    (pdf.as_ref().map(|p| absolutize(p)), absolutize(&html))
+}
+
+/// Anchors a possibly-relative target onto the process's directory. No
+/// `canonicalize`: that would surface `\\?\` prefixes in every message, and
+/// a resolved read is not asked for — only an anchor the browser accepts.
+fn absolutize(path: &Path) -> PathBuf {
+    if path.is_absolute() {
+        return path.to_path_buf();
     }
+    let mut out = match std::env::current_dir() {
+        Ok(dir) => dir,
+        // No anchor available: hand the path back and let the writer report
+        // its own honest failure.
+        Err(_) => return path.to_path_buf(),
+    };
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            comp => out.push(comp),
+        }
+    }
+    out
 }
 
 fn default_base(ws: &Workspace, doc: &ExportDoc) -> PathBuf {
@@ -523,6 +551,30 @@ mod tests {
             html_sibling(Path::new("report.doc")),
             PathBuf::from("report.html")
         );
+    }
+
+    #[test]
+    fn relative_targets_are_anchored_to_the_process_directory() {
+        // An anchor the caller already made absolute passes through untouched.
+        let anchored = if cfg!(windows) {
+            PathBuf::from(r"C:\somewhere\x.html")
+        } else {
+            PathBuf::from("/somewhere/x.html")
+        };
+        assert_eq!(absolutize(&anchored), anchored);
+
+        // Dot-prefixed or bare, a relative target ends up beside the
+        // process, keeping its own name — what makes `--print-to-pdf` land.
+        for given in [PathBuf::from(".").join("x.html"), PathBuf::from("x.html")] {
+            let out = absolutize(&given);
+            assert!(
+                out.is_absolute(),
+                "{} stayed relative: {}",
+                given.display(),
+                out.display()
+            );
+            assert_eq!(out.file_name(), given.file_name());
+        }
     }
 
     #[test]
