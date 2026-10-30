@@ -1,25 +1,19 @@
-<div align="center">
- <img src="https://raw.githubusercontent.com/GAYENSIS09/OpenDomain/HEAD/opendomain.svg?sanitize=true" alt="OpenDomain — spirale épistémique traversée par un axe diagonal" width="220" />
- <h1>OpenDomain</h1>
- <p><strong>Domain-first, evidence-driven engineering for AI coding assistants.</strong><br />
- From real-world knowledge to validated software — with every claim traced, graded, gated, and executed by agents that cannot propagate unverified output.</p>
- <p>
- <a href="https://gayensis09.github.io/OpenDomain/"><strong>Documentation</strong></a>
- &nbsp;·&nbsp;
- <a href="https://gayensis09.github.io/OpenDomain/docs/theory.html">Spécification</a>
- &nbsp;·&nbsp;
- <a href="https://github.com/GAYENSIS09/OpenDomain/blob/HEAD/LICENSE">MIT</a>
- </p>
- <p>
- <a href="https://crates.io/crates/opendomain-cli"><img src="https://img.shields.io/crates/v/opendomain-cli.svg" alt="crates.io" /></a>
- <a href="https://docs.rs/opendomain-cli"><img src="https://img.shields.io/docsrs/opendomain-cli.svg" alt="docs.rs" /></a>
- <img src="https://img.shields.io/badge/rust-1.75%2B-orange" alt="Rust 1.75+" />
- <img src="https://img.shields.io/badge/tests-154_passing-green" alt="154 tests passing" />
- <img src="https://img.shields.io/badge/gates-9_deterministic-blue" alt="9 deterministic gates" />
- <img src="https://img.shields.io/badge/artifacts-37_kinds-red" alt="37 artifact kinds" />
- <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT license" />
- </p>
-</div>
+![OpenDomain — spirale épistémique traversée par un axe diagonal](https://raw.githubusercontent.com/GAYENSIS09/OpenDomain/HEAD/opendomain.svg?sanitize=true)
+
+# OpenDomain
+
+**Domain-first, evidence-driven engineering for AI coding assistants.**
+From real-world knowledge to validated software — with every claim traced, graded, gated, and executed by agents that cannot propagate unverified output.
+
+[Documentation](https://gayensis09.github.io/OpenDomain/) · [Spécification](https://gayensis09.github.io/OpenDomain/docs/theory.html) · [MIT](https://github.com/GAYENSIS09/OpenDomain/blob/HEAD/LICENSE)
+
+[![crates.io](https://img.shields.io/crates/v/opendomain-cli.svg)](https://crates.io/crates/opendomain-cli)
+[![docs.rs](https://img.shields.io/docsrs/opendomain-cli.svg)](https://docs.rs/opendomain-cli)
+![Rust 1.75+](https://img.shields.io/badge/rust-1.75%2B-orange)
+![154 tests passing](https://img.shields.io/badge/tests-154_passing-green)
+![9 deterministic gates](https://img.shields.io/badge/gates-9_deterministic-blue)
+![37 artifact kinds](https://img.shields.io/badge/artifacts-37_kinds-red)
+![MIT license](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ---
 
